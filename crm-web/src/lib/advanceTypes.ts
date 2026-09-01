@@ -1,0 +1,1 @@
+export const ADVANCE_TYPES = ['Chi tạm ứng', 'Phiếu tạm ứng', 'Chi trực tiếp'] as const;

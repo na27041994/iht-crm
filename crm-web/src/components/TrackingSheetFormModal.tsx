@@ -1,0 +1,284 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { App, DatePicker, Form, Input, InputNumber, Modal, Select } from 'antd';
+import dayjs from 'dayjs';
+import { apiFetch } from '@/lib/api';
+
+interface UserOption {
+  id: number;
+  fullName: string;
+}
+
+interface CustomerOption {
+  id: number;
+  customerName: string;
+  companyName: string;
+}
+
+interface CarrierOption {
+  id: number;
+  carrierName: string;
+  companyName: string;
+}
+
+interface AgentOption {
+  id: number;
+  agentName: string;
+  companyName: string;
+}
+
+export interface TrackingSheetFormValues {
+  docStaffId?: number;
+  deliveryStaffId?: number;
+  nw?: number;
+  containerNumber?: string;
+  customerId?: number;
+  carrierId?: number;
+  agentId?: number;
+  fromLocation?: string;
+  toLocation?: string;
+  containerQuantity?: number;
+  etaDate?: string;
+  gw?: number;
+  customNo?: string;
+  declarationDate?: string;
+  billNumber?: string;
+  invoiceNumber?: string;
+  pol?: string;
+  pod?: string;
+  note?: string;
+}
+
+interface TrackingSheetFormModalProps {
+  open: boolean;
+  editingId: number | null;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+export default function TrackingSheetFormModal({
+  open,
+  editingId,
+  onClose,
+  onSaved,
+}: TrackingSheetFormModalProps) {
+  const { message } = App.useApp();
+  const [form] = Form.useForm();
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [carriers, setCarriers] = useState<CarrierOption[]>([]);
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    Promise.all([
+      apiFetch<UserOption[]>('/auth/users'),
+      apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=100'),
+      apiFetch<{ items: CarrierOption[] }>('/carriers?pageSize=100'),
+      apiFetch<{ items: AgentOption[] }>('/agents?pageSize=100'),
+    ])
+      .then(([us, cs, ca, ag]) => {
+        setUsers(us);
+        setCustomers(cs.items);
+        setCarriers(ca.items);
+        setAgents(ag.items);
+        form.resetFields();
+        if (editingId) {
+          return apiFetch<TrackingSheetFormValues & { id: number; sheetNumber: string; etaDate: string | null; declarationDate: string | null }>(
+            `/tracking-sheets/${editingId}`,
+          ).then((s) => {
+            form.setFieldsValue({
+              docStaffId: s.docStaffId ?? undefined,
+              deliveryStaffId: s.deliveryStaffId ?? undefined,
+              nw: s.nw == null ? undefined : Number(s.nw),
+              containerNumber: s.containerNumber ?? '',
+              customerId: s.customerId ?? undefined,
+              carrierId: s.carrierId ?? undefined,
+              agentId: s.agentId ?? undefined,
+              fromLocation: s.fromLocation ?? '',
+              toLocation: s.toLocation ?? '',
+              containerQuantity: s.containerQuantity ?? undefined,
+              etaDate: s.etaDate ? dayjs(s.etaDate) : undefined,
+              gw: s.gw == null ? undefined : Number(s.gw),
+              customNo: s.customNo ?? '',
+              declarationDate: s.declarationDate ? dayjs(s.declarationDate) : undefined,
+              billNumber: s.billNumber ?? '',
+              invoiceNumber: s.invoiceNumber ?? '',
+              pol: s.pol ?? '',
+              pod: s.pod ?? '',
+              note: s.note ?? '',
+            });
+          });
+        }
+        return Promise.resolve();
+      })
+      .catch((err) => message.error(err instanceof Error ? err.message : 'Không tải được dữ liệu'))
+      .finally(() => setLoading(false));
+  }, [open, editingId, form, message]);
+
+  // Hàm handleSubmit: xử lý handleSubmit
+  async function handleSubmit(values: TrackingSheetFormValues) {
+    setSaving(true);
+    try {
+      const body: Record<string, unknown> = {
+        docStaffId: values.docStaffId ?? null,
+        deliveryStaffId: values.deliveryStaffId ?? null,
+        nw: values.nw ?? null,
+        containerNumber: values.containerNumber && String(values.containerNumber).trim() !== '' ? String(values.containerNumber).trim() : null,
+        customerId: values.customerId ?? null,
+        carrierId: values.carrierId ?? null,
+        agentId: values.agentId ?? null,
+        fromLocation: values.fromLocation && String(values.fromLocation).trim() !== '' ? String(values.fromLocation).trim() : null,
+        toLocation: values.toLocation && String(values.toLocation).trim() !== '' ? String(values.toLocation).trim() : null,
+        containerQuantity: values.containerQuantity ?? null,
+        etaDate: values.etaDate ? dayjs(values.etaDate).format('YYYY-MM-DD') : null,
+        gw: values.gw ?? null,
+        customNo: values.customNo && String(values.customNo).trim() !== '' ? String(values.customNo).trim() : null,
+        declarationDate: values.declarationDate ? dayjs(values.declarationDate).format('YYYY-MM-DD') : null,
+        billNumber: values.billNumber && String(values.billNumber).trim() !== '' ? String(values.billNumber).trim() : null,
+        invoiceNumber: values.invoiceNumber && String(values.invoiceNumber).trim() !== '' ? String(values.invoiceNumber).trim() : null,
+        pol: values.pol && String(values.pol).trim() !== '' ? String(values.pol).trim() : null,
+        pod: values.pod && String(values.pod).trim() !== '' ? String(values.pod).trim() : null,
+        note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
+      };
+
+      if (editingId) {
+        await apiFetch(`/tracking-sheets/${editingId}`, { method: 'PUT', body: JSON.stringify(body) });
+        message.success('Đã cập nhật phiếu theo dõi');
+      } else {
+        await apiFetch('/tracking-sheets', { method: 'POST', body: JSON.stringify(body) });
+        message.success('Đã tạo phiếu theo dõi');
+      }
+      onSaved();
+      onClose();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Lưu thất bại');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const todayPrefix = `J${dayjs().format('YYMMDD')}`;
+
+  return (
+    <Modal
+      open={open}
+      title={editingId ? 'Sửa phiếu theo dõi' : 'Tạo phiếu theo dõi'}
+      onCancel={onClose}
+      onOk={() => form.submit()}
+      okText={editingId ? 'Lưu thay đổi' : 'Tạo phiếu'}
+      confirmLoading={saving}
+      width={720}
+      destroyOnHidden
+    >
+      <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
+        <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+          {editingId ? (
+            <Form.Item label="Mã phiếu" name="sheetNumber">
+              <Input disabled />
+            </Form.Item>
+          ) : (
+            <Form.Item label="Mã phiếu (tự sinh)">
+              <Input value={`${todayPrefix}-xxx`} disabled />
+            </Form.Item>
+          )}
+          <Form.Item label="Mã khách hàng" name="customerId">
+            <Select
+              placeholder="Chọn khách hàng"
+              showSearch
+              optionFilterProp="label"
+              options={customers.map((c) => ({
+                value: c.id,
+                label: `#${c.id} - ${c.customerName}`,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item label="Hãng tàu" name="carrierId">
+            <Select
+              placeholder="Chọn hãng tàu"
+              showSearch
+              optionFilterProp="label"
+              options={carriers.map((c) => ({
+                value: c.id,
+                label: c.carrierName,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item label="Đại lý" name="agentId">
+            <Select
+              placeholder="Chọn đại lý"
+              showSearch
+              optionFilterProp="label"
+              options={agents.map((a) => ({
+                value: a.id,
+                label: a.agentName,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item label="Nhân viên chứng từ" name="docStaffId">
+            <Select
+              placeholder="Chọn nhân viên"
+              showSearch
+              optionFilterProp="label"
+              options={users.map((u) => ({ value: u.id, label: u.fullName }))}
+            />
+          </Form.Item>
+          <Form.Item label="Nhân viên giao nhận" name="deliveryStaffId">
+            <Select
+              placeholder="Chọn nhân viên"
+              showSearch
+              optionFilterProp="label"
+              options={users.map((u) => ({ value: u.id, label: u.fullName }))}
+            />
+          </Form.Item>
+          <Form.Item label="Số container" name="containerNumber">
+            <Input placeholder="VD: MSKU1234567" />
+          </Form.Item>
+          <Form.Item label="Container Quantity" name="containerQuantity">
+            <InputNumber min={1} precision={0} style={{ width: '100%' }} placeholder="VD: 1" />
+          </Form.Item>
+          <Form.Item label="Ngày ETA/ETD" name="etaDate">
+            <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" />
+          </Form.Item>
+          <Form.Item label="Từ (From)" name="fromLocation">
+            <Input placeholder="VD: Cat Lai Port, HCM" />
+          </Form.Item>
+          <Form.Item label="Đến (To)" name="toLocation">
+            <Input placeholder="VD: Shanghai Port" />
+          </Form.Item>
+          <Form.Item label="NW (kg)" name="nw">
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Net weight" />
+          </Form.Item>
+          <Form.Item label="GW (kg)" name="gw">
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" />
+          </Form.Item>
+          <Form.Item label="POL (Port of Loading)" name="pol">
+            <Input placeholder="VD: Cat Lai Port, HCM" />
+          </Form.Item>
+          <Form.Item label="POD (Port of Discharge)" name="pod">
+            <Input placeholder="VD: Shanghai Port" />
+          </Form.Item>
+          <Form.Item label="Custom No" name="customNo">
+            <Input placeholder="Số tờ khai hải quan" />
+          </Form.Item>
+          <Form.Item label="Ngày tờ khai" name="declarationDate">
+            <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" />
+          </Form.Item>
+          <Form.Item label="Số bill" name="billNumber">
+            <Input placeholder="VD: MSK1234567890" />
+          </Form.Item>
+          <Form.Item label="Số hóa đơn" name="invoiceNumber">
+            <Input placeholder="VD: INV-2026-0001" />
+          </Form.Item>
+          <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
+            <Input.TextArea rows={3} placeholder="Ghi chú thêm" />
+          </Form.Item>
+        </div>
+      </Form>
+    </Modal>
+  );
+}

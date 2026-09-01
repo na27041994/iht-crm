@@ -1,0 +1,448 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { App, Button, Card, Descriptions, Popconfirm, Space, Table, Tag, Typography } from 'antd';
+import { ArrowLeftOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
+import Link from 'next/link';
+import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
+import JobOrderModal, { JobOrderItem } from '@/components/JobOrderModal';
+import JobBookingModal, { JobBookingItem } from '@/components/JobBookingModal';
+import DebitNoteModal, { DebitNoteItem } from '@/components/DebitNoteModal';
+
+interface StaffRef {
+  id: number;
+  fullName: string;
+}
+
+interface CustomerRef {
+  id: number;
+  customerName: string;
+  companyName: string;
+}
+
+interface CarrierRef {
+  id: number;
+  carrierName: string;
+  companyName: string;
+}
+
+interface AgentRef {
+  id: number;
+  agentName: string;
+  companyName: string;
+}
+
+interface TrackingSheetDetail {
+  id: number;
+  sheetNumber: string;
+  docStaff: StaffRef | null;
+  deliveryStaff: StaffRef | null;
+  nw: string | null;
+  containerNumber: string | null;
+  customer: CustomerRef | null;
+  carrier: CarrierRef | null;
+  agent: AgentRef | null;
+  fromLocation: string | null;
+  toLocation: string | null;
+  containerQuantity: number | null;
+  etaDate: string | null;
+  gw: string | null;
+  customNo: string | null;
+  declarationDate: string | null;
+  billNumber: string | null;
+  invoiceNumber: string | null;
+  pol: string | null;
+  pod: string | null;
+  note: string | null;
+  jobOrders: JobOrderItem[];
+  jobBookings: JobBookingItem[];
+  debitNotes: DebitNoteItem[];
+}
+
+// Định dạng số tiền/số lượng theo chuẩn vi-VN
+function fmtMoney(v: string | null) {
+  if (v == null) return '-';
+  const n = Number(v);
+  return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN');
+}
+
+// Định dạng ngày YYYY/MM/DD
+function fmtDate(v: string | null) {
+  if (!v) return '-';
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('vi-VN');
+}
+
+function sortByType<T extends { id: number; type: string }>(items: T[]) {
+  return [...items].sort((a, b) => a.type.localeCompare(b.type, 'vi') || a.id - b.id);
+}
+
+export default function TrackingSheetDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { message } = App.useApp();
+  const [sheet, setSheet] = useState<TrackingSheetDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<JobOrderItem | null>(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [editingBooking, setEditingBooking] = useState<JobBookingItem | null>(null);
+  const [debitModalOpen, setDebitModalOpen] = useState(false);
+  const [editingDebit, setEditingDebit] = useState<DebitNoteItem | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
+  const [selectedBookingIds, setSelectedBookingIds] = useState<number[]>([]);
+  const [selectedDebitIds, setSelectedDebitIds] = useState<number[]>([]);
+
+  const load = useCallback(async () => {
+    const id = (await params).id;
+    setLoading(true);
+    try {
+      const res = await apiFetch<TrackingSheetDetail>(`/tracking-sheets/${id}`);
+      setSheet(res);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Không tải được phiếu theo dõi');
+    } finally {
+      setLoading(false);
+    }
+  }, [params, message]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Hàm openAddOrder: xử lý openAddOrder
+  function openAddOrder() {
+    setEditingOrder(null);
+    setOrderModalOpen(true);
+  }
+
+  // Hàm openEditOrder: xử lý openEditOrder
+  function openEditOrder(item: JobOrderItem) {
+    setEditingOrder(item);
+    setOrderModalOpen(true);
+  }
+
+  // Hàm deleteOrder: xử lý deleteOrder
+  async function deleteOrder(item: JobOrderItem) {
+    try {
+      await apiFetch(`/tracking-sheets/${sheet?.id}/job-orders/${item.id}`, { method: 'DELETE' });
+      message.success('Đã xóa mục Job Order');
+      load();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xóa thất bại');
+    }
+  }
+
+  // Hàm openAddBooking: xử lý openAddBooking
+  function openAddBooking() {
+    setEditingBooking(null);
+    setBookingModalOpen(true);
+  }
+
+  // Hàm openEditBooking: xử lý openEditBooking
+  function openEditBooking(item: JobBookingItem) {
+    setEditingBooking(item);
+    setBookingModalOpen(true);
+  }
+
+  // Hàm deleteBooking: xử lý deleteBooking
+  async function deleteBooking(item: JobBookingItem) {
+    try {
+      await apiFetch(`/tracking-sheets/${sheet?.id}/job-bookings/${item.id}`, { method: 'DELETE' });
+      message.success('Đã xóa mục Job Book');
+      load();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xóa thất bại');
+    }
+  }
+
+  // Hàm openAddDebit: xử lý openAddDebit
+  function openAddDebit() {
+    setEditingDebit(null);
+    setDebitModalOpen(true);
+  }
+
+  // Hàm openEditDebit: xử lý openEditDebit
+  function openEditDebit(item: DebitNoteItem) {
+    setEditingDebit(item);
+    setDebitModalOpen(true);
+  }
+
+  // Xóa mềm Job item
+  async function deleteDebit(item: DebitNoteItem) {
+    try {
+      await apiFetch(`/tracking-sheets/${sheet?.id}/debit-notes/${item.id}`, { method: 'DELETE' });
+      message.success('Đã xóa Debit Note');
+      load();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xóa thất bại');
+    }
+  }
+
+  const totalSelected = selectedOrderIds.length + selectedBookingIds.length + selectedDebitIds.length;
+
+  // Hàm exportJobs: xử lý exportJobs
+  async function exportJobs(type: 'order' | 'booking' | 'debit') {
+    if (!sheet) return;
+    try {
+      const blob = await apiDownload(`/tracking-sheets/${sheet.id}/export?type=${type}`);
+      const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : 'debit-note';
+      saveBlob(blob, `${prefix}-${sheet.sheetNumber}.xlsx`);
+      message.success('Đã xuất file Excel');
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
+    }
+  }
+
+  // Hàm openPrint: xử lý openPrint
+  function openPrint() {
+    if (!sheet) return;
+    const parts = [`ids=${sheet.id}`];
+    if (totalSelected > 0) {
+      parts.push(`orders=${selectedOrderIds.join(',')}`);
+      parts.push(`bookings=${selectedBookingIds.join(',')}`);
+      parts.push(`debits=${selectedDebitIds.join(',')}`);
+    }
+    window.open(`/print/tracking-sheets?${parts.join('&')}`, '_blank', 'noopener');
+  }
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 12 }}>
+        <Link href="/tracking-sheets">
+          <Button icon={<ArrowLeftOutlined />}>Quay lại</Button>
+        </Link>
+        <Typography.Title level={3} style={{ margin: 0 }}>
+          Phiếu {sheet?.sheetNumber ?? ''}
+        </Typography.Title>
+        {sheet && (
+          <Button type="primary" icon={<PrinterOutlined />} onClick={openPrint}>
+            {totalSelected > 0 ? `In mục đã chọn (${totalSelected})` : 'In phiếu'}
+          </Button>
+        )}
+      </Space>
+
+      <Card loading={loading} style={{ marginBottom: 16 }}>
+        {sheet && (
+          <Descriptions
+            bordered
+            size="small"
+            column={{ xs: 1, sm: 2, lg: 4 }}
+            items={[
+              { key: 'customer', label: 'Khách hàng', children: sheet.customer ? `${sheet.customer.companyName} (#${sheet.customer.id})` : '-' },
+              { key: 'carrier', label: 'Hãng tàu', children: sheet.carrier ? `${sheet.carrier.carrierName} (#${sheet.carrier.id})` : '-' },
+              { key: 'agent', label: 'Đại lý', children: sheet.agent ? `${sheet.agent.agentName} (#${sheet.agent.id})` : '-' },
+              { key: 'container', label: 'Số container', children: sheet.containerNumber ?? '-' },
+              { key: 'route', label: 'Tuyến', children: `${sheet.fromLocation ?? '?'} → ${sheet.toLocation ?? '?'}` },
+              { key: 'containerQty', label: 'Container Qty', children: sheet.containerQuantity ?? '-' },
+              { key: 'docStaff', label: 'NV chứng từ', children: sheet.docStaff?.fullName ?? '-' },
+              { key: 'deliveryStaff', label: 'NV giao nhận', children: sheet.deliveryStaff?.fullName ?? '-' },
+              { key: 'createdBy', label: 'Người tạo', children: (sheet as { createdBy?: StaffRef | null }).createdBy?.fullName ?? '-' },
+              { key: 'nw', label: 'NW', children: fmtMoney(sheet.nw) },
+              { key: 'gw', label: 'GW', children: fmtMoney(sheet.gw) },
+              { key: 'eta', label: 'Ngày ETA/ETD', children: fmtDate(sheet.etaDate) },
+              { key: 'customNo', label: 'Custom No', children: sheet.customNo ?? '-' },
+              { key: 'decl', label: 'Ngày tờ khai', children: fmtDate(sheet.declarationDate) },
+              { key: 'bill', label: 'Số bill', children: sheet.billNumber ?? '-' },
+              { key: 'invoice', label: 'Số hóa đơn', children: sheet.invoiceNumber ?? '-' },
+              { key: 'pol', label: 'POL', children: sheet.pol ?? '-' },
+              { key: 'pod', label: 'POD', children: sheet.pod ?? '-' },
+              { key: 'note', label: 'Ghi chú', children: sheet.note ?? '-' },
+            ]}
+          />
+        )}
+      </Card>
+
+      <Card
+        title="Job Order"
+        extra={
+          <Space>
+            <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('order')}>
+              Xuất Excel
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openAddOrder} size="small">
+              Thêm mục
+            </Button>
+          </Space>
+        }
+        style={{ marginBottom: 16 }}
+      >
+        <Table<JobOrderItem>
+          size="small"
+          rowKey="id"
+          loading={loading}
+          dataSource={sortByType(sheet?.jobOrders ?? [])}
+          rowSelection={{
+            selectedRowKeys: selectedOrderIds,
+            onChange: (keys) => setSelectedOrderIds(keys as number[]),
+          }}
+          pagination={{
+            defaultPageSize: 10,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50],
+            showTotal: (t) => `${t} mục`,
+          }}
+          locale={{ emptyText: 'Chưa có mục Job Order' }}
+          scroll={{ x: 800 }}
+          columns={[
+            { title: 'Loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
+            { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
+            { title: 'Port Amt', dataIndex: 'portAmt', align: 'right' as const, render: fmtMoney },
+            { title: 'Industry', dataIndex: 'industry', render: (v: string | null) => v ?? '-' },
+            { title: 'Ghi chú', dataIndex: 'note', render: (v: string | null) => v ?? '-', ellipsis: true },
+            {
+              title: 'Thao tác',
+              key: 'actions',
+              width: 110,
+              render: (_: unknown, item: JobOrderItem) => (
+                <Space>
+                  <Button size="small" icon={<EditOutlined />} onClick={() => openEditOrder(item)} />
+                  <Popconfirm title="Xóa mục này?" onConfirm={() => deleteOrder(item)} okText="Xóa" cancelText="Hủy">
+                    <Button size="small" danger icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                </Space>
+              ),
+            },
+          ]}
+        />
+      </Card>
+
+      <Card
+        title="Job Book tàu"
+        extra={
+          <Space>
+            <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('booking')}>
+              Xuất Excel
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openAddBooking} size="small">
+              Thêm mục
+            </Button>
+          </Space>
+        }
+      >
+        <Table<JobBookingItem>
+          size="small"
+          rowKey="id"
+          loading={loading}
+          dataSource={sortByType(sheet?.jobBookings ?? [])}
+          rowSelection={{
+            selectedRowKeys: selectedBookingIds,
+            onChange: (keys) => setSelectedBookingIds(keys as number[]),
+          }}
+          pagination={{
+            defaultPageSize: 10,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50],
+            showTotal: (t) => `${t} mục`,
+          }}
+          locale={{ emptyText: 'Chưa có mục Job Book' }}
+          scroll={{ x: 1200 }}
+          columns={[
+            { title: 'Loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
+            { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
+            { title: 'Đơn vị tính', dataIndex: 'unit', render: (v: string | null) => v ?? '-' },
+            { title: 'Số lượng', dataIndex: 'quantity', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
+            { title: 'Trước thuế', dataIndex: 'pretaxAmount', align: 'right' as const, render: fmtMoney },
+            { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
+            { title: 'Tiền thuế', dataIndex: 'taxAmount', align: 'right' as const, render: fmtMoney },
+            { title: 'Sau thuế', dataIndex: 'afterTaxAmount', align: 'right' as const, render: fmtMoney },
+            { title: 'Tổng tiền', dataIndex: 'total', align: 'right' as const, render: (v: string | null) => <span className="font-medium">{fmtMoney(v)}</span> },
+            {
+              title: 'Thao tác',
+              key: 'actions',
+              width: 110,
+              render: (_: unknown, item: JobBookingItem) => (
+                <Space>
+                  <Button size="small" icon={<EditOutlined />} onClick={() => openEditBooking(item)} />
+                  <Popconfirm title="Xóa mục này?" onConfirm={() => deleteBooking(item)} okText="Xóa" cancelText="Hủy">
+                    <Button size="small" danger icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                </Space>
+              ),
+            },
+          ]}
+        />
+      </Card>
+
+      <Card
+        title="Debit Note"
+        extra={
+          <Space>
+            <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('debit')}>
+              Xuất Excel
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openAddDebit} size="small">
+              Thêm mục
+            </Button>
+          </Space>
+        }
+        style={{ marginTop: 16 }}
+      >
+        <Table<DebitNoteItem>
+          size="small"
+          rowKey="id"
+          loading={loading}
+          dataSource={sortByType(sheet?.debitNotes ?? [])}
+          rowSelection={{
+            selectedRowKeys: selectedDebitIds,
+            onChange: (keys) => setSelectedDebitIds(keys as number[]),
+          }}
+          pagination={{
+            defaultPageSize: 10,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50],
+            showTotal: (t) => `${t} mục`,
+          }}
+          locale={{ emptyText: 'Chưa có mục Debit Note' }}
+          scroll={{ x: 1200 }}
+          columns={[
+            { title: 'Loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
+            { title: 'Số hóa đơn', dataIndex: 'invoiceNumber', render: (v: string | null) => v ?? '-' },
+            { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
+            { title: 'Unit', dataIndex: 'unit', render: (v: string | null) => v ?? '-' },
+            { title: 'Current', dataIndex: 'currency', align: 'center' as const, render: (v: string) => <Tag color={v === 'USD' ? 'green' : 'default'}>{v}</Tag> },
+            { title: 'Số lượng', dataIndex: 'quantity', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
+            { title: 'Giá VND', dataIndex: 'priceVnd', align: 'right' as const, render: fmtMoney },
+            { title: 'Giá USD', dataIndex: 'priceUsd', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v).toLocaleString('en-US')) },
+            { title: 'Tỷ giá', dataIndex: 'exchangeRate', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v).toLocaleString('vi-VN')) },
+            { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
+            { title: 'Tổng tiền', dataIndex: 'total', align: 'right' as const, render: (v: string | null) => <span className="font-medium">{fmtMoney(v)}</span> },
+            {
+              title: 'Thao tác',
+              key: 'actions',
+              width: 110,
+              render: (_: unknown, item: DebitNoteItem) => (
+                <Space>
+                  <Button size="small" icon={<EditOutlined />} onClick={() => openEditDebit(item)} />
+                  <Popconfirm title="Xóa mục này?" onConfirm={() => deleteDebit(item)} okText="Xóa" cancelText="Hủy">
+                    <Button size="small" danger icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                </Space>
+              ),
+            },
+          ]}
+        />
+      </Card>
+
+      <JobOrderModal
+        open={orderModalOpen}
+        sheetId={sheet?.id ?? 0}
+        editing={editingOrder}
+        onClose={() => setOrderModalOpen(false)}
+        onSaved={load}
+      />
+      <JobBookingModal
+        open={bookingModalOpen}
+        sheetId={sheet?.id ?? 0}
+        editing={editingBooking}
+        onClose={() => setBookingModalOpen(false)}
+        onSaved={load}
+      />
+      <DebitNoteModal
+        open={debitModalOpen}
+        sheetId={sheet?.id ?? 0}
+        editing={editingDebit}
+        onClose={() => setDebitModalOpen(false)}
+        onSaved={load}
+      />
+    </div>
+  );
+}

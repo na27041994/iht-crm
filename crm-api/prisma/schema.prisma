@@ -1,0 +1,447 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  sales
+  ops
+  accountant
+  viewer
+}
+
+enum OrderStatus {
+  draft
+  confirmed
+  in_progress
+  completed
+  cancelled
+}
+
+enum ActivityType {
+  call
+  email
+  meeting
+  note
+  task
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  passwordHash String
+  fullName     String
+  chineseName  String?
+  cccd         String?
+  phone        String?
+  address      String?
+  avatarUrl    String?
+  role         UserRole   @default(viewer)
+  isActive     Boolean    @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  customersCreated Customer[] @relation("CustomerCreatedBy")
+  activities       Activity[]
+  quotesCreated    Quote[]
+  docSheets        TrackingSheet[] @relation("SheetDocStaff")
+  deliverySheets   TrackingSheet[] @relation("SheetDeliveryStaff")
+  sheetsCreated    TrackingSheet[] @relation("SheetCreatedBy")
+  advanceVouchers  AdvanceVoucher[] @relation("VoucherCreator")
+  permissions      UserPermission[]
+
+  @@map("users")
+}
+
+model Customer {
+  id             Int        @id @default(autoincrement())
+  customerName   String
+  companyName    String
+  contactPerson  String?
+  taxCode        String?
+  phone          String?
+  fax            String?
+  email          String?
+  address        String?
+  country        String?
+  note           String?
+  deletedAt      DateTime?
+  isDelete       Int        @default(1)
+  createdBy      User?      @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  createdById    Int?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  contacts   Contact[]
+  quotes     Quote[]
+  orders     Order[]
+  activities Activity[]
+  trackingSheets TrackingSheet[]
+  advanceVouchers AdvanceVoucher[]
+
+  @@index([companyName])
+  @@index([deletedAt])
+  @@map("customers")
+}
+
+model Contact {
+  id         Int      @id @default(autoincrement())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId Int
+  fullName   String
+  position   String?
+  phone      String?
+  email      String?
+  isPrimary  Boolean  @default(false)
+  note       String?
+  isDelete   Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([customerId])
+  @@map("contacts")
+}
+
+model Carrier {
+  id            Int            @id @default(autoincrement())
+  carrierName   String
+  companyName   String
+  address       String?
+  phone         String?
+  fax           String?
+  taxCode       String?
+  contactPerson String?
+  note          String?
+  isDelete      Int            @default(1)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sheets        TrackingSheet[] @relation("SheetCarrier")
+
+  @@index([companyName])
+  @@map("carriers")
+}
+
+model Trucker {
+  id            Int      @id @default(autoincrement())
+  truckerName   String
+  companyName   String
+  address       String?
+  phone         String?
+  fax           String?
+  taxCode       String?
+  contactPerson String?
+  note          String?
+  isDelete      Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([companyName])
+  @@map("truckers")
+}
+
+model Agent {
+  id            Int      @id @default(autoincrement())
+  agentName     String
+  companyName   String
+  address       String?
+  phone         String?
+  fax           String?
+  taxCode       String?
+  contactPerson String?
+  note          String?
+  isDelete      Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  sheets        TrackingSheet[] @relation("SheetAgent")
+
+  @@index([companyName])
+  @@map("agents")
+}
+
+model TrackingSheet {
+  id                 Int       @id @default(autoincrement())
+  sheetNumber        String    @unique
+  docStaff           User?     @relation("SheetDocStaff", fields: [docStaffId], references: [id])
+  docStaffId         Int?
+  deliveryStaff      User?     @relation("SheetDeliveryStaff", fields: [deliveryStaffId], references: [id])
+  deliveryStaffId    Int?
+  createdBy          User?     @relation("SheetCreatedBy", fields: [createdById], references: [id])
+  createdById        Int?
+  nw                 Decimal?  @db.Decimal(12, 2)
+  containerNumber    String?
+  customer           Customer? @relation(fields: [customerId], references: [id])
+  customerId         Int?
+  carrier            Carrier?       @relation("SheetCarrier", fields: [carrierId], references: [id])
+  carrierId          Int?
+  agent              Agent?         @relation("SheetAgent", fields: [agentId], references: [id])
+  agentId            Int?
+  fromLocation       String?
+  toLocation         String?
+  containerQuantity  Int?
+  etaDate            DateTime? @db.Date
+  gw                 Decimal?  @db.Decimal(12, 2)
+  customNo           String?
+  declarationDate    DateTime? @db.Date
+  billNumber         String?
+  invoiceNumber      String?
+  pol                String?
+  pod                String?
+  note               String?
+  isDelete           Int       @default(1)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  jobOrders   JobOrder[]
+  jobBookings JobBooking[]
+  debitNotes  DebitNote[]
+  advanceVouchers AdvanceVoucher[]
+
+  @@index([sheetNumber])
+  @@index([customerId])
+  @@index([createdAt])
+  @@map("tracking_sheets")
+}
+
+model JobOrder {
+  id          Int            @id @default(autoincrement())
+  sheet       TrackingSheet  @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  sheetId     Int
+  type        String
+  description String?
+  portAmt     Decimal?       @db.Decimal(15, 2)
+  industry    String?
+  note        String?
+  isDelete    Int            @default(1)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([sheetId])
+  @@map("job_orders")
+}
+
+model JobBooking {
+  id             Int            @id @default(autoincrement())
+  sheet          TrackingSheet  @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  sheetId        Int
+  type           String
+  description    String?
+  unit           String?
+  quantity       Decimal?       @db.Decimal(12, 2)
+  pretaxAmount   Decimal?       @db.Decimal(15, 2)
+  taxRate        Decimal?       @db.Decimal(5, 2)
+  taxAmount      Decimal?       @db.Decimal(15, 2)
+  afterTaxAmount Decimal?       @db.Decimal(15, 2)
+  total          Decimal?       @db.Decimal(15, 2)
+  isDelete       Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([sheetId])
+  @@map("job_bookings")
+}
+
+model DebitNote {
+  id            Int            @id @default(autoincrement())
+  sheet         TrackingSheet  @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  sheetId       Int
+  type          String
+  invoiceNumber String?
+  description   String?
+  unit          String?
+  currency      String         @default("VND")
+  quantity      Decimal?       @db.Decimal(12, 2)
+  priceVnd      Decimal?       @db.Decimal(15, 2)
+  taxRate       Decimal?       @db.Decimal(5, 2)
+  priceUsd      Decimal?       @db.Decimal(15, 2)
+  exchangeRate  Decimal?       @db.Decimal(15, 4)
+  total         Decimal?       @db.Decimal(15, 2)
+  isDelete      Int            @default(1)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([sheetId])
+  @@map("debit_notes")
+}
+
+model AdvanceVoucher {
+  id           Int            @id @default(autoincrement())
+  advanceNo    String         @unique
+  sheet        TrackingSheet? @relation(fields: [sheetId], references: [id])
+  sheetId      Int?
+  type         String
+  advanceDate  DateTime       @db.Date
+  currency     String         @default("VND")
+  customer     Customer?      @relation(fields: [customerId], references: [id])
+  customerId   Int?
+  orderFrom    String?
+  orderTo      String?
+  containerQty Int?
+  qty          Decimal?       @db.Decimal(12, 2)
+  note         String?
+  isDelete     Int            @default(1)
+  createdBy    User?          @relation("VoucherCreator", fields: [createdById], references: [id])
+  createdById  Int?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  items AdvanceVoucherItem[]
+
+  @@index([advanceNo])
+  @@index([sheetId])
+  @@index([customerId])
+  @@index([advanceDate])
+  @@map("advance_vouchers")
+}
+
+model AdvanceVoucherItem {
+  id        Int            @id @default(autoincrement())
+  voucher   AdvanceVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  voucherId Int
+  amount    Decimal        @db.Decimal(15, 2)
+  note      String?
+  isDelete  Int            @default(1)
+  createdAt DateTime       @default(now())
+
+  @@index([voucherId])
+  @@map("advance_voucher_items")
+}
+
+model Quote {
+  id          Int          @id @default(autoincrement())
+  quoteNumber String       @unique
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  customerId  Int
+  totalAmount Decimal      @default(0) @db.Decimal(15, 2)
+  status      OrderStatus  @default(draft)
+  validUntil  DateTime?    @db.Date
+  note        String?
+  createdBy   User?        @relation(fields: [createdById], references: [id])
+  createdById Int?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  items    QuoteItem[]
+  order    Order?
+
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id          Int      @id @default(autoincrement())
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId     Int
+  description String
+  quantity    Decimal  @default(1) @db.Decimal(12, 2)
+  unit        String?
+  unitPrice   Decimal  @default(0) @db.Decimal(15, 2)
+  amount      Decimal  @db.Decimal(15, 2)
+
+  @@index([quoteId])
+  @@map("quote_items")
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  orderNumber   String      @unique
+  quote         Quote?      @relation(fields: [quoteId], references: [id])
+  quoteId       Int?        @unique
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  customerId    Int
+  totalAmount   Decimal     @default(0) @db.Decimal(15, 2)
+  status        OrderStatus @default(draft)
+  paymentTerms  String?
+  note          String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  activities Activity[]
+
+  @@map("orders")
+}
+
+model Activity {
+  id         Int          @id @default(autoincrement())
+  type       ActivityType
+  subject    String
+  notes      String?
+  user       User         @relation(fields: [userId], references: [id])
+  userId     Int
+  customer   Customer?    @relation(fields: [customerId], references: [id])
+  customerId Int?
+  order      Order?       @relation(fields: [orderId], references: [id])
+  orderId    Int?
+  dueAt      DateTime?
+  doneAt     DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@index([userId, dueAt])
+  @@index([customerId, orderId])
+  @@map("activities")
+}
+model UserPermission {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource  String
+  canView   Boolean  @default(false)
+  canCreate Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, resource])
+  @@index([userId])
+  @@map("user_permissions")
+}
+
+model ImportLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  userEmail   String?
+  userName    String?
+  filename    String
+  fileSize    Int
+  totalRows   Int
+  successRows Int
+  errorRows   Int
+  status      String   @default("pending")
+  errorDetails String?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("import_logs")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  userEmail  String?
+  userName   String?
+  action     String
+  entity     String
+  entityId   String?
+  entityCode String?
+  description String?
+  method     String
+  path       String
+  statusCode Int
+  ip         String?
+  userAgent  String?
+  bodyJson   String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([action])
+  @@map("audit_logs")
+}
