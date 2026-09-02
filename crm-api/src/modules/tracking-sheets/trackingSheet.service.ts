@@ -170,13 +170,25 @@ export async function getTrackingSheetsForExport(opts: {
   });
 }
 
-// Tạo phiếu theo dõi mới, sinh mã sheetNumber
+// Tạo phiếu theo dõi mới, sinh mã sheetNumber (chống duplicate khi bấm liên tục)
 export async function createTrackingSheet(input: TrackingSheetInput, createdById?: number) {
-  const sheetNumber = await nextSheetNumber();
-  return prisma.trackingSheet.create({
-    data: { ...input, sheetNumber, createdById },
-    include: trackingSheetInclude,
-  });
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const sheetNumber = await nextSheetNumber();
+    try {
+      return await prisma.trackingSheet.create({
+        data: { ...input, sheetNumber, createdById },
+        include: trackingSheetInclude,
+      });
+    } catch (e: any) {
+      // P2002 unique violation trên sheetNumber do race khi bấm liên tục
+      if (e?.code === 'P2002' && String(e?.meta?.target ?? '').includes('sheetNumber')) {
+        await new Promise((r) => setTimeout(r, 20 + Math.random() * 30));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new AppError('Không tạo được phiếu, vui lòng thử lại', 409);
 }
 
 // Cập nhật phiếu theo dõi

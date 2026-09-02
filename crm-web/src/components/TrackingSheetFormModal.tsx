@@ -120,8 +120,9 @@ export default function TrackingSheetFormModal({
       .finally(() => setLoading(false));
   }, [open, editingId, form, message]);
 
-  // Hàm handleSubmit: xử lý handleSubmit
+  // Hàm handleSubmit: xử lý handleSubmit (chống double-click tạo trùng)
   async function handleSubmit(values: TrackingSheetFormValues) {
+    if (saving) return;
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
