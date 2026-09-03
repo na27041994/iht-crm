@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Empty, Input, Table, Typography } from 'antd';
-import { EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { App, Button, Empty, Input, Popconfirm, Space, Table, Typography } from 'antd';
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { apiFetch } from '@/lib/api';
 import { usePermission } from '@/hooks/usePermission';
 import TruckerFormModal from '@/components/TruckerFormModal';
@@ -77,6 +77,17 @@ export default function TruckersPage() {
     setModalOpen(true);
   }
 
+  // Xóa nhà xe
+  async function handleDelete(id: number) {
+    try {
+      await apiFetch(`/truckers/${id}`, { method: 'DELETE' });
+      message.success('Đã xóa nhà xe');
+      load(search, page);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xóa thất bại');
+    }
+  }
+
   return (
     <div>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -141,13 +152,21 @@ export default function TruckersPage() {
               {
                 title: 'Thao tác',
                 key: 'actions',
-                width: 80,
-                render: (_: unknown, c: Trucker) =>
-                  canEdit ? (
-                    <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(c.id)}>
-                      Sửa
-                    </Button>
-                  ) : null,
+                width: 120,
+                render: (_: unknown, c: Trucker) => (
+                  <Space>
+                    {canEdit && (
+                      <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(c.id)}>
+                        Sửa
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Popconfirm title="Xóa nhà xe này?" onConfirm={() => handleDelete(c.id)} okText="Xóa" cancelText="Hủy">
+                        <Button size="small" danger icon={<DeleteOutlined />} />
+                      </Popconfirm>
+                    )}
+                  </Space>
+                ),
               },
             ]}
           />

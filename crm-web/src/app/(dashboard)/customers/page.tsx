@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Empty, Input, Table, Typography } from 'antd';
-import { EditOutlined, LinkOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { App, Button, Empty, Input, Popconfirm, Space, Table, Typography } from 'antd';
+import { DeleteOutlined, EditOutlined, LinkOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { usePermission } from '@/hooks/usePermission';
@@ -79,6 +79,17 @@ export default function CustomersPage() {
   function openEdit(id: number) {
     setEditingId(id);
     setModalOpen(true);
+  }
+
+  // Xóa khách hàng (kiểm quyền delete)
+  async function handleDelete(id: number) {
+    try {
+      await apiFetch(`/customers/${id}`, { method: 'DELETE' });
+      message.success('Đã xóa khách hàng');
+      load(search, page);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xóa thất bại');
+    }
   }
 
   return (
@@ -166,13 +177,21 @@ export default function CustomersPage() {
               {
                 title: 'Thao tác',
                 key: 'actions',
-                width: 80,
-                render: (_: unknown, c: Customer) =>
-                  canEdit ? (
-                    <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(c.id)}>
-                      Sửa
-                    </Button>
-                  ) : null,
+                width: 120,
+                render: (_: unknown, c: Customer) => (
+                  <Space>
+                    {canEdit && (
+                      <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(c.id)}>
+                        Sửa
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Popconfirm title="Xóa khách hàng này?" onConfirm={() => handleDelete(c.id)} okText="Xóa" cancelText="Hủy">
+                        <Button size="small" danger icon={<DeleteOutlined />} />
+                      </Popconfirm>
+                    )}
+                  </Space>
+                ),
               },
             ]}
           />
