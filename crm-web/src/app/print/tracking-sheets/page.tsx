@@ -80,11 +80,11 @@ interface TrackingSheet {
   debitNotes: DebitNoteItem[];
 }
 
-// Định dạng số tiền/số lượng theo chuẩn vi-VN
+const MONEY_SCALE = 100;
 function fmtMoney(v: string | null | undefined) {
   if (v == null || v === '') return '-';
   const n = Number(v);
-  return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN');
+  return Number.isNaN(n) ? '-' : (n / MONEY_SCALE).toLocaleString('vi-VN');
 }
 
 // Hàm fmtNum: xử lý fmtNum
@@ -293,7 +293,7 @@ function SheetDocument({
                 <td>{d.currency}</td>
                 <td className="right">{d.quantity == null ? '-' : Number(d.quantity)}</td>
                 <td className="right">{fmtMoney(d.priceVnd)}</td>
-                <td className="right">{d.priceUsd == null ? '-' : Number(d.priceUsd).toLocaleString('en-US')}</td>
+                <td className="right">{d.priceUsd == null ? '-' : (Number(d.priceUsd) / MONEY_SCALE).toLocaleString('en-US')}</td>
                 <td className="right">{fmtNum(d.exchangeRate)}</td>
                 <td className="right">{d.taxRate == null ? '-' : `${Number(d.taxRate)}%`}</td>
                 <td className="right">{fmtMoney(d.total)}</td>

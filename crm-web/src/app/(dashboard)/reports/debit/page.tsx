@@ -1,4 +1,5 @@
 ﻿'use client';
+const MONEY_SCALE = 100;
 
 import { useCallback, useEffect, useState } from 'react';
 import { App, Button, Card, DatePicker, Input, Select, Space, Table, Tag, Typography } from 'antd';

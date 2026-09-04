@@ -22,11 +22,17 @@ function styleHeader(row: ExcelJS.Row) {
   row.height = 20;
 }
 
-// Hàm num: xử lý num
+// Chuẩn tiền x100: DB lưu *100, xuất chia 100
+const MONEY_SCALE = 100;
 function num(v: unknown): number | null {
   if (v == null) return null;
   const n = Number(v);
   return Number.isNaN(n) ? null : n;
+}
+function numMoney(v: unknown): number | null {
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n / MONEY_SCALE;
 }
 
 // Hàm dateCell: xử lý dateCell
@@ -88,7 +94,7 @@ function jobOrderRow(s: TrackingSheetWithRelations, o: TrackingSheetWithRelation
     customer: s.customer?.companyName ?? '',
     type: o.type,
     description: o.description ?? '',
-    portAmt: num(o.portAmt),
+    portAmt: numMoney(o.portAmt),
     industry: o.industry ?? '',
     note: o.note ?? '',
   };
@@ -103,11 +109,11 @@ function jobBookingRow(s: TrackingSheetWithRelations, b: TrackingSheetWithRelati
     description: b.description ?? '',
     unit: b.unit ?? '',
     quantity: num(b.quantity),
-    pretaxAmount: num(b.pretaxAmount),
+    pretaxAmount: numMoney(b.pretaxAmount),
     taxRate: num(b.taxRate),
-    taxAmount: num(b.taxAmount),
-    afterTaxAmount: num(b.afterTaxAmount),
-    total: num(b.total),
+    taxAmount: numMoney(b.taxAmount),
+    afterTaxAmount: numMoney(b.afterTaxAmount),
+    total: numMoney(b.total),
   };
 }
 
@@ -122,11 +128,11 @@ function debitNoteRow(s: TrackingSheetWithRelations, d: TrackingSheetWithRelatio
     unit: d.unit ?? '',
     currency: d.currency,
     quantity: num(d.quantity),
-    priceVnd: num(d.priceVnd),
-    priceUsd: num(d.priceUsd),
+    priceVnd: numMoney(d.priceVnd),
+    priceUsd: numMoney(d.priceUsd),
     exchangeRate: num(d.exchangeRate),
     taxRate: num(d.taxRate),
-    total: num(d.total),
+    total: numMoney(d.total),
   };
 }
 
@@ -374,6 +380,11 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
     const n = Number(v);
     return Number.isNaN(n) ? null : n;
   }
+  function numMoney(v: unknown): number | null {
+    if (v == null) return null;
+    const n = Number(v);
+    return Number.isNaN(n) ? null : n / MONEY_SCALE;
+  }
 
   if (type === 'order') {
     const ws = wb.addWorksheet('Job Order');
@@ -394,7 +405,7 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
         type: o.type,
         description: o.description ?? '',
         partner: o.carrier?.carrierName ?? o.agent?.agentName ?? '',
-        portAmt: num(o.portAmt),
+        portAmt: numMoney(o.portAmt),
         industry: o.industry ?? '',
         note: o.note ?? '',
       });
@@ -424,11 +435,11 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
         partner: b.carrier?.carrierName ?? b.agent?.agentName ?? '',
         unit: b.unit ?? '',
         quantity: num(b.quantity),
-        pretaxAmount: num(b.pretaxAmount),
+        pretaxAmount: numMoney(b.pretaxAmount),
         taxRate: num(b.taxRate),
-        taxAmount: num(b.taxAmount),
-        afterTaxAmount: num(b.afterTaxAmount),
-        total: num(b.total),
+        taxAmount: numMoney(b.taxAmount),
+        afterTaxAmount: numMoney(b.afterTaxAmount),
+        total: numMoney(b.total),
       });
     }
   } else {
@@ -458,11 +469,11 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
         unit: d.unit ?? '',
         currency: d.currency,
         quantity: num(d.quantity),
-        priceVnd: num(d.priceVnd),
-        priceUsd: num(d.priceUsd),
+        priceVnd: numMoney(d.priceVnd),
+        priceUsd: numMoney(d.priceUsd),
         exchangeRate: num(d.exchangeRate),
         taxRate: num(d.taxRate),
-        total: num(d.total),
+        total: numMoney(d.total),
       });
     }
   }

@@ -59,8 +59,14 @@ interface TrackingSheetDetail {
   debitNotes: DebitNoteItem[];
 }
 
-// Định dạng số tiền/số lượng theo chuẩn vi-VN
+// Chuẩn tiền x100: DB lưu *100, hiển thị chia 100
+const MONEY_SCALE = 100;
 function fmtMoney(v: string | null) {
+  if (v == null) return '-';
+  const n = Number(v);
+  return Number.isNaN(n) ? '-' : (n / MONEY_SCALE).toLocaleString('vi-VN');
+}
+function fmtWeight(v: string | null) {
   if (v == null) return '-';
   const n = Number(v);
   return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN');
@@ -236,8 +242,8 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               { key: 'docStaff', label: 'NV chứng từ', children: sheet.docStaff?.fullName ?? '-' },
               { key: 'deliveryStaff', label: 'NV giao nhận', children: sheet.deliveryStaff?.fullName ?? '-' },
               { key: 'createdBy', label: 'Người tạo', children: (sheet as { createdBy?: StaffRef | null }).createdBy?.fullName ?? '-' },
-              { key: 'nw', label: 'NW', children: fmtMoney(sheet.nw) },
-              { key: 'gw', label: 'GW', children: fmtMoney(sheet.gw) },
+              { key: 'nw', label: 'NW', children: fmtWeight(sheet.nw) },
+              { key: 'gw', label: 'GW', children: fmtWeight(sheet.gw) },
               { key: 'eta', label: 'Ngày ETA/ETD', children: fmtDate(sheet.etaDate) },
               { key: 'customNo', label: 'Custom No', children: sheet.customNo ?? '-' },
               { key: 'decl', label: 'Ngày tờ khai', children: fmtDate(sheet.declarationDate) },
@@ -401,7 +407,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             { title: 'Current', dataIndex: 'currency', align: 'center' as const, render: (v: string) => <Tag color={v === 'USD' ? 'green' : 'default'}>{v}</Tag> },
             { title: 'Số lượng', dataIndex: 'quantity', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
             { title: 'Giá VND', dataIndex: 'priceVnd', align: 'right' as const, render: fmtMoney },
-            { title: 'Giá USD', dataIndex: 'priceUsd', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v).toLocaleString('en-US')) },
+            { title: 'Giá USD', dataIndex: 'priceUsd', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : (Number(v) / MONEY_SCALE).toLocaleString('en-US')) },
             { title: 'Tỷ giá', dataIndex: 'exchangeRate', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v).toLocaleString('vi-VN')) },
             { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
             { title: 'Tổng tiền', dataIndex: 'total', align: 'right' as const, render: (v: string | null) => <span className="font-medium">{fmtMoney(v)}</span> },
