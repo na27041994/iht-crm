@@ -9,6 +9,7 @@ import {
   Form,
   Input,
   Modal,
+  Popconfirm,
   Select,
   Space,
   Switch,
@@ -95,6 +96,7 @@ export default function UsersPage() {
   const { can } = usePermissions();
 
   const isAdmin = me?.role === 'admin';
+  const canDeleteUser = can('user', 'delete');
 
   const load = useCallback(async () => {
     try {
@@ -249,6 +251,21 @@ export default function UsersPage() {
     }
   }
 
+  // Xóa nhân viên (không cho xóa chính mình)
+  async function handleDeleteUser(user: User) {
+    if (me?.sub === user.id) {
+      message.error('Không thể xóa chính mình');
+      return;
+    }
+    try {
+      await apiFetch(`/auth/users/${user.id}`, { method: 'DELETE' });
+      message.success('Đã xóa nhân viên');
+      await load();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xóa thất bại');
+    }
+  }
+
   // Hàm handleAvatarUpload: xử lý handleAvatarUpload
   async function handleAvatarUpload(file: File) {
     setUploading(true);
@@ -322,7 +339,7 @@ export default function UsersPage() {
     {
       title: 'Thao tác',
       key: 'actions',
-      width: 180,
+      width: 260,
       render: (_: unknown, u: User) => (
         <Space>
           <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(u)}>
@@ -332,6 +349,13 @@ export default function UsersPage() {
             <Button size="small" icon={<SafetyOutlined />} onClick={() => openPermModal(u)}>
               Phân quyền
             </Button>
+          )}
+          {(isAdmin || canDeleteUser) && me?.sub !== u.id && (
+            <Popconfirm title={`Xóa nhân viên ${u.fullName}?`} onConfirm={() => handleDeleteUser(u)} okText="Xóa" cancelText="Hủy">
+              <Button size="small" danger icon={<DeleteOutlined />}>
+                Xóa
+              </Button>
+            </Popconfirm>
           )}
         </Space>
       ),
