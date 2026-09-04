@@ -55,12 +55,12 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
       sheetNumber: v.sheet?.sheetNumber ?? '',
       customer: v.customer ? v.customer.companyName || v.customer.customerName : '',
       createdBy: v.createdBy?.fullName ?? '',
-      totalAmount: v.totalAmount ?? 0,
+      totalAmount: Number(v.totalAmount ?? 0) / 100,
       note: v.note ?? '',
     });
   });
 
-  const total = vouchers.reduce((s, v) => s + Number(v.totalAmount ?? 0), 0);
+  const total = vouchers.reduce((s, v) => s + Number(v.totalAmount ?? 0) / 100, 0);
   const sumRow = ws.addRow({
     customer: 'Tổng cộng',
     totalAmount: total,
@@ -82,7 +82,7 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
         ws2.addRow({
           advanceNo: v.advanceNo,
           type: v.type,
-          amount: Number(it.amount),
+          amount: Number(it.amount) / 100,
           note: it.note ?? '',
         });
       }

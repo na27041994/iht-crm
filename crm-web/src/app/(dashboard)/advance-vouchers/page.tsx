@@ -27,10 +27,10 @@ interface ListResponse {
   totalPages: number;
 }
 
-// Định dạng số tiền/số lượng theo chuẩn vi-VN
+const MONEY_SCALE = 100;
 function fmtMoney(v: number | null | undefined) {
   if (v == null) return '-';
-  return new Intl.NumberFormat('vi-VN').format(v);
+  return new Intl.NumberFormat('vi-VN').format(v / MONEY_SCALE);
 }
 
 export default function AdvanceVouchersPage() {

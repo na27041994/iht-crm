@@ -26,10 +26,10 @@ interface AdvanceVoucher {
   items: AdvanceItem[];
 }
 
-// Định dạng số tiền/số lượng theo chuẩn vi-VN
+const MONEY_SCALE = 100;
 function fmtMoney(v: number | string | null | undefined) {
   if (v == null) return '-';
-  return new Intl.NumberFormat('vi-VN').format(Number(v));
+  return new Intl.NumberFormat('vi-VN').format(Number(v) / MONEY_SCALE);
 }
 
 export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{ id: string }> }) {
