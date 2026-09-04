@@ -33,6 +33,8 @@ export async function login(input: LoginInput) {
 export async function createUser(input: CreateUserInput) {
   const exists = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
   if (exists) throw new AppError('Email đã tồn tại', 409);
+  const roleRec = await prisma.role.findUnique({ where: { name: input.role } });
+  if (!roleRec) throw new AppError(`Vai trò ${input.role} không tồn tại`, 400);
 
   const user = await prisma.user.create({
     data: {
@@ -133,7 +135,11 @@ export async function updateUser(id: number, input: UpdateUserInput, actorId: nu
   if (input.phone !== undefined) data.phone = input.phone;
   if (input.address !== undefined) data.address = input.address;
   if (input.avatarUrl !== undefined) data.avatarUrl = input.avatarUrl;
-  if (input.role !== undefined) data.role = input.role;
+  if (input.role !== undefined) {
+    const roleRec = await prisma.role.findUnique({ where: { name: input.role } });
+    if (!roleRec) throw new AppError(`Vai trò ${input.role} không tồn tại`, 400);
+    data.role = input.role;
+  }
   if (input.isActive !== undefined) data.isActive = input.isActive;
   if (input.password !== undefined) {
     data.passwordHash = await bcrypt.hash(input.password, 10);

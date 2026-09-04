@@ -77,9 +77,8 @@ export async function setUserPermissions(
   return getUserPermissions(userId);
 }
 
-// Kiểm quyền user có đủ quyền resource+action không (admin bypass, fallback cha->con)
+// Kiểm quyền user có đủ quyền resource+action không (admin bypass, user -> role -> fallback cha->con -> defaults)
 export async function hasPermission(userId: number, resource: Resource, action: Action): Promise<boolean> {
-  // admin always allow (even if no record, allow)
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
   if (user?.role === 'admin') return true;
 
@@ -93,7 +92,39 @@ export async function hasPermission(userId: number, resource: Resource, action: 
     if (action === 'delete') return perm.canDelete;
     return false;
   }
-  // Fallback for report/tracking children: if child row missing, inherit from parent
+  // Fallback theo vai trò (RolePermission)
+  if (user?.role) {
+    const roleRec = await prisma.role.findUnique({ where: { name: user.role } });
+    if (roleRec) {
+      const rp = await prisma.rolePermission.findUnique({ where: { roleId_resource: { roleId: roleRec.id, resource } } });
+      if (rp) {
+        if (action === 'view') return rp.canView;
+        if (action === 'create') return rp.canCreate;
+        if (action === 'edit') return rp.canEdit;
+        if (action === 'delete') return rp.canDelete;
+      }
+      // parent fallback cho role
+      if ((REPORT_SUB_RESOURCES as readonly string[]).includes(resource)) {
+        const pr = await prisma.rolePermission.findUnique({ where: { roleId_resource: { roleId: roleRec.id, resource: 'report' } } });
+        if (pr) {
+          if (action === 'view') return pr.canView;
+          if (action === 'create') return pr.canCreate;
+          if (action === 'edit') return pr.canEdit;
+          if (action === 'delete') return pr.canDelete;
+        }
+      }
+      if ((TRACKING_SHEET_SUB_RESOURCES as readonly string[]).includes(resource)) {
+        const pr = await prisma.rolePermission.findUnique({ where: { roleId_resource: { roleId: roleRec.id, resource: 'tracking_sheet' } } });
+        if (pr) {
+          if (action === 'view') return pr.canView;
+          if (action === 'create') return pr.canCreate;
+          if (action === 'edit') return pr.canEdit;
+          if (action === 'delete') return pr.canDelete;
+        }
+      }
+    }
+  }
+  // Fallback parent cho user
   if ((REPORT_SUB_RESOURCES as readonly string[]).includes(resource)) {
     const parent = await prisma.userPermission.findUnique({ where: { userId_resource: { userId, resource: 'report' } } });
     if (parent) {
@@ -112,30 +143,41 @@ export async function hasPermission(userId: number, resource: Resource, action: 
       if (action === 'delete') return parent.canDelete;
     }
   }
-  // fallback to role defaults if no explicit permission row
   const role = user?.role ?? 'viewer';
   const defaults = defaultPermissionsForRole(role);
   return defaults[resource]?.[action] ?? false;
 }
 
-// Lấy map quyền hiệu lực (DB + defaults + kế thừa)
+// Lấy map quyền hiệu lực (user -> role -> parent -> defaults)
 export async function getEffectivePermissions(userId: number): Promise<Record<Resource, Record<Action, boolean>>> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
-  const role = user?.role ?? 'viewer';
-  const defaults = defaultPermissionsForRole(role);
+  const roleName = user?.role ?? 'viewer';
+  const defaults = defaultPermissionsForRole(roleName);
   const rows = await prisma.userPermission.findMany({ where: { userId } });
   const map: Record<string, PermissionRow> = {};
   for (const r of rows) map[r.resource] = r;
+  // role permissions
+  let roleMap: Record<string, any> = {};
+  if (roleName) {
+    const roleRec = await prisma.role.findUnique({ where: { name: roleName } });
+    if (roleRec) {
+      const rps = await prisma.rolePermission.findMany({ where: { roleId: roleRec.id } });
+      for (const rp of rps) roleMap[rp.resource] = rp;
+    }
+  }
   const result: Record<string, Record<Action, boolean>> = {};
   for (const res of RESOURCES) {
     const row = map[res];
     if (row) {
       result[res] = { view: row.canView, create: row.canCreate, edit: row.canEdit, delete: row.canDelete };
-    } else if ((REPORT_SUB_RESOURCES as readonly string[]).includes(res) && map['report']) {
-      const parent = map['report'];
+    } else if (roleMap[res]) {
+      const rp = roleMap[res];
+      result[res] = { view: rp.canView, create: rp.canCreate, edit: rp.canEdit, delete: rp.canDelete };
+    } else if ((REPORT_SUB_RESOURCES as readonly string[]).includes(res) && (map['report'] || roleMap['report'])) {
+      const parent = map['report'] ?? roleMap['report'];
       result[res] = { view: parent.canView, create: parent.canCreate, edit: parent.canEdit, delete: parent.canDelete };
-    } else if ((TRACKING_SHEET_SUB_RESOURCES as readonly string[]).includes(res) && map['tracking_sheet']) {
-      const parent = map['tracking_sheet'];
+    } else if ((TRACKING_SHEET_SUB_RESOURCES as readonly string[]).includes(res) && (map['tracking_sheet'] || roleMap['tracking_sheet'])) {
+      const parent = map['tracking_sheet'] ?? roleMap['tracking_sheet'];
       result[res] = { view: parent.canView, create: parent.canCreate, edit: parent.canEdit, delete: parent.canDelete };
     } else {
       result[res] = { ...defaults[res] };

@@ -31,6 +31,7 @@ import {
   HistoryOutlined,
   MoonOutlined,
   SunOutlined,
+  SafetyOutlined,
 } from '@ant-design/icons';
 import { usePathname, useRouter } from 'next/navigation';
 import { clearToken } from '@/lib/auth';
@@ -81,6 +82,7 @@ const NAV: NavItem[] = [
     children: [
       { key: '/customers', href: '/customers', label: 'Khách hàng', icon: <TeamOutlined /> },
       { key: '/users', href: '/users', label: 'Nhân viên', icon: <RocketOutlined /> },
+      { key: '/roles', href: '/roles', label: 'Vai trò', icon: <SafetyOutlined /> },
       { key: '/carriers', href: '/carriers', label: 'Hãng tàu', icon: <DingdingOutlined /> },
       { key: '/truckers', href: '/truckers', label: 'Nhà xe', icon: <TruckOutlined /> },
       { key: '/agents', href: '/agents', label: 'Đại lý', icon: <IdcardOutlined /> },
@@ -97,6 +99,7 @@ function getResourceForHref(href: string): Resource | null {
   if (href.startsWith('/carriers')) return 'carrier';
   if (href.startsWith('/truckers')) return 'trucker';
   if (href.startsWith('/agents')) return 'agent';
+  if (href.startsWith('/roles')) return 'role';
   if (href.startsWith('/tracking-sheets/import-history')) return 'tracking_sheet_import_history';
   if (href.startsWith('/tracking-sheets')) return 'tracking_sheet_list';
   if (href.startsWith('/advance-vouchers')) return 'advance_voucher';

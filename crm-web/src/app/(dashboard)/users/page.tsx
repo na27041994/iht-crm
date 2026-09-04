@@ -46,7 +46,7 @@ interface User {
   createdAt: string;
 }
 
-const ROLES = ['admin', 'sales', 'ops', 'accountant', 'viewer'] as const;
+const FALLBACK_ROLES = ['admin', 'sales', 'ops', 'accountant', 'viewer'] as const;
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Quản trị',
@@ -97,6 +97,13 @@ export default function UsersPage() {
 
   const isAdmin = me?.role === 'admin';
   const canDeleteUser = can('user', 'delete');
+  const [availableRoles, setAvailableRoles] = useState<Array<{ name: string; displayName: string }>>([]);
+
+  useEffect(() => {
+    apiFetch<Array<{ name: string; displayName: string }>>('/roles')
+      .then((rs) => setAvailableRoles(rs.map((r) => ({ name: r.name, displayName: r.displayName }))))
+      .catch(() => setAvailableRoles(FALLBACK_ROLES.map((r) => ({ name: r, displayName: ROLE_LABEL[r] ?? r }))));
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -320,9 +327,9 @@ export default function UsersPage() {
           <Select
             size="small"
             value={u.role}
-            style={{ width: 110 }}
+            style={{ width: 130 }}
             onChange={(value) => handleRoleChange(u.id, value)}
-            options={ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+            options={availableRoles.length ? availableRoles.map((r) => ({ value: r.name, label: r.displayName })) : FALLBACK_ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
           />
         ),
     },
@@ -630,7 +637,7 @@ export default function UsersPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <Form.Item label="Vai trò" name="role" rules={[{ required: true }]}>
-              <Select options={ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }))} />
+              <Select options={availableRoles.length ? availableRoles.map((r) => ({ value: r.name, label: r.displayName })) : FALLBACK_ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }))} />
             </Form.Item>
             {editing && (
               <Form.Item label="Trạng thái" name="isActive" valuePropName="checked">

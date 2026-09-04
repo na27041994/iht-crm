@@ -17,6 +17,7 @@ import { reportRouter } from './modules/reports/report.routes.js';
 import { uploadRouter } from './modules/upload/upload.routes.js';
 import { auditLogRouter } from './modules/audit-logs/auditLog.routes.js';
 import { permissionsRouter } from './modules/permissions/permissions.routes.js';
+import { roleRouter } from './modules/roles/role.routes.js';
 import { ensureUploadDirs } from './modules/upload/upload.service.js';
 
 const app = express();
@@ -43,6 +44,7 @@ app.use('/api/reports', reportRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/audit-logs', auditLogRouter);
 app.use('/api/permissions', permissionsRouter);
+app.use('/api/roles', roleRouter);
 
 app.use(errorHandler);
 

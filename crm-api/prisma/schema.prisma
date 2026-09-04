@@ -41,7 +41,7 @@ model User {
   phone        String?
   address      String?
   avatarUrl    String?
-  role         UserRole   @default(viewer)
+  role         String     @default("viewer")
   isActive     Boolean    @default(true)
   lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())
@@ -57,6 +57,37 @@ model User {
   permissions      UserPermission[]
 
   @@map("users")
+}
+
+// Quản lý vai trò động
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  displayName String
+  description String?
+  isSystem    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id        Int      @id @default(autoincrement())
+  roleId    Int
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  resource  String
+  canView   Boolean  @default(false)
+  canCreate Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roleId, resource])
+  @@index([roleId])
+  @@map("role_permissions")
 }
 
 model Customer {

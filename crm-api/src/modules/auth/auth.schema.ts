@@ -21,7 +21,7 @@ export const createUserSchema = z.object({
   phone: optionalText,
   address: optionalText,
   avatarUrl: optionalText,
-  role: z.enum(userRoles),
+  role: z.string().min(2).max(30).regex(/^[a-z0-9_]+$/, 'Tên vai trò không hợp lệ'),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
@@ -34,7 +34,7 @@ export const updateUserSchema = z
     phone: optionalText,
     address: optionalText,
     avatarUrl: optionalText,
-    role: z.enum(userRoles).optional(),
+    role: z.string().min(2).max(30).regex(/^[a-z0-9_]+$/, 'Tên vai trò không hợp lệ').optional(),
     isActive: z.boolean().optional(),
     password: z
       .string()

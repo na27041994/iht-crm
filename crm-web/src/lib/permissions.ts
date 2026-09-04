@@ -25,6 +25,7 @@ export const RESOURCES = [
   'advance_voucher',
   'report',
   ...REPORT_SUB_RESOURCES,
+  'role',
   'user',
   'audit_log',
 ] as const;
@@ -50,6 +51,7 @@ export const RESOURCE_LABELS: Record<Resource, string> = {
   report_sheet_creation: 'Báo cáo - Phiếu theo dõi',
   report_lifting: 'Báo cáo - Nâng hạ',
   report_debit: 'Báo cáo - Debit Note',
+  role: 'Vai trò',
   user: 'Nhân viên',
   audit_log: 'Nhật ký hệ thống',
 };
@@ -84,6 +86,7 @@ export function defaultPermissionsForRole(role: string): PermissionMap {
       report_sheet_creation: { ...allTrue },
       report_lifting: { ...allTrue },
       report_debit: { ...allTrue },
+      role: { ...allTrue },
       user: { ...allTrue },
       audit_log: { ...allTrue },
     };
@@ -105,12 +108,13 @@ export function defaultPermissionsForRole(role: string): PermissionMap {
       report_sheet_creation: { ...viewOnly },
       report_lifting: { ...viewOnly },
       report_debit: { ...viewOnly },
+      role: { ...none },
       user: { ...none },
       audit_log: { ...none },
     };
   }
 
-  // sales / ops / accountant: default allow all except user/audit management
+  // sales / ops / accountant: default allow all except user/audit/role management
   return {
     customer: { ...allTrue },
     carrier: { ...allTrue },
@@ -126,6 +130,7 @@ export function defaultPermissionsForRole(role: string): PermissionMap {
     report_sheet_creation: { ...allTrue },
     report_lifting: { ...allTrue },
     report_debit: { ...allTrue },
+    role: { ...none },
     user: { ...none },
     audit_log: { ...none },
   };
