@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { App, DatePicker, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { useEffect, useRef, useState } from 'react';
+import { App, DatePicker, Form, Input, InputNumber, Modal, Select, Spin } from 'antd';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
 
@@ -69,8 +69,28 @@ export default function TrackingSheetFormModal({
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [fetchingCustomers, setFetchingCustomers] = useState(false);
+  const customerSearchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [carriers, setCarriers] = useState<CarrierOption[]>([]);
   const [agents, setAgents] = useState<AgentOption[]>([]);
+
+  async function fetchCustomers(search: string) {
+    setFetchingCustomers(true);
+    try {
+      const params = new URLSearchParams({ pageSize: '50' });
+      if (search) params.set('search', search);
+      const res = await apiFetch<{ items: CustomerOption[] }>(`/customers?${params}`);
+      setCustomers(res.items);
+    } catch {
+      // ignore
+    } finally {
+      setFetchingCustomers(false);
+    }
+  }
+  function handleCustomerSearch(value: string) {
+    if (customerSearchTimeout.current) clearTimeout(customerSearchTimeout.current);
+    customerSearchTimeout.current = setTimeout(() => fetchCustomers(value), 300);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -189,12 +209,14 @@ export default function TrackingSheetFormModal({
           )}
           <Form.Item label="Mã khách hàng" name="customerId">
             <Select
-              placeholder="Chọn khách hàng"
+              placeholder="Gõ để tìm khách hàng (theo tên, công ty)..."
               showSearch
-              optionFilterProp="label"
+              filterOption={false}
+              onSearch={handleCustomerSearch}
+              notFoundContent={fetchingCustomers ? <Spin size="small" /> : null}
               options={customers.map((c) => ({
                 value: c.id,
-                label: `#${c.id} - ${c.customerName}`,
+                label: `#${c.id} - ${c.customerName} (${c.companyName})`,
               }))}
             />
           </Form.Item>
