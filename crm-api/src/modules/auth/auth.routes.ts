@@ -11,6 +11,7 @@ import {
   getUser,
   updateUser,
   deactivateUser,
+  deleteUser,
 } from './auth.service.js';
 
 export const authRouter = Router();
@@ -53,7 +54,7 @@ authRouter.patch(
 );
 
 authRouter.delete('/users/:id', requireAuth, requirePermission('user', 'delete'), asyncHandler(async (req: AuthedRequest, res) => {
-  await deactivateUser(Number(req.params.id), req.user!.sub);
+  await deleteUser(Number(req.params.id), req.user!.sub);
   res.json({ success: true });
 }));
 

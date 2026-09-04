@@ -8,7 +8,7 @@ import type { LoginInput, CreateUserInput, UpdateUserInput } from './auth.schema
 // Hàm login: xử lý login
 export async function login(input: LoginInput) {
   const user = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
-  if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
+  if (!user || user.isDelete !== 1 || !(await bcrypt.compare(input.password, user.passwordHash))) {
     throw new AppError('Email hoặc mật khẩu không đúng', 401);
   }
   if (!user.isActive) {
@@ -32,7 +32,7 @@ export async function login(input: LoginInput) {
 // Hàm createUser: xử lý createUser
 export async function createUser(input: CreateUserInput) {
   const exists = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
-  if (exists) throw new AppError('Email đã tồn tại', 409);
+  if (exists && exists.isDelete === 1) throw new AppError('Email đã tồn tại', 409);
   const roleRec = await prisma.role.findUnique({ where: { name: input.role } });
   if (!roleRec) throw new AppError(`Vai trò ${input.role} không tồn tại`, 400);
 
@@ -70,6 +70,7 @@ export async function createUser(input: CreateUserInput) {
 // Hàm listUsers: xử lý listUsers
 export async function listUsers() {
   return prisma.user.findMany({
+    where: { isDelete: 1 },
     select: {
       id: true,
       email: true,
@@ -103,6 +104,7 @@ export async function getUser(id: number) {
       avatarUrl: true,
       role: true,
       isActive: true,
+      isDelete: true,
       lastLoginAt: true,
       createdAt: true,
       _count: {
@@ -112,14 +114,14 @@ export async function getUser(id: number) {
       },
     },
   });
-  if (!user) throw new AppError('Không tìm thấy nhân viên', 404);
+  if (!user || (user as any).isDelete !== 1) throw new AppError('Không tìm thấy nhân viên', 404);
   return user;
 }
 
 // Hàm updateUser: xử lý updateUser
 export async function updateUser(id: number, input: UpdateUserInput, actorId: number) {
   const user = await prisma.user.findUnique({ where: { id } });
-  if (!user) throw new AppError('Không tìm thấy nhân viên', 404);
+  if (!user || (user as any).isDelete !== 1) throw new AppError('Không tìm thấy nhân viên', 404);
 
   if (id === actorId && input.role !== undefined && input.role !== user.role) {
     throw new AppError('Không thể tự thay đổi vai trò của chính mình', 400);
@@ -164,14 +166,35 @@ export async function updateUser(id: number, input: UpdateUserInput, actorId: nu
   });
 }
 
-// Hàm deactivateUser: xử lý deactivateUser
+// Hàm deactivateUser: xử lý deactivateUser (đổi trạng thái isActive - khóa/mở, không xóa)
 export async function deactivateUser(id: number, actorId: number) {
   if (id === actorId) throw new AppError('Không thể tự vô hiệu hóa tài khoản của chính mình', 400);
   const user = await prisma.user.findUnique({ where: { id } });
-  if (!user) throw new AppError('Không tìm thấy nhân viên', 404);
+  if (!user || (user as any).isDelete !== 1) throw new AppError('Không tìm thấy nhân viên', 404);
   return prisma.user.update({
     where: { id },
     data: { isActive: false },
     select: { id: true, email: true, isActive: true },
   });
+}
+
+// Hàm deleteUser: xóa nhân viên (soft delete isDelete=-1, khác với đổi trạng thái)
+export async function deleteUser(id: number, actorId: number) {
+  if (id === actorId) throw new AppError('Không thể tự xóa chính mình', 400);
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user || (user as any).isDelete !== 1) throw new AppError('Không tìm thấy nhân viên', 404);
+  if (user.role === 'admin') {
+    const adminCount = await prisma.user.count({ where: { role: 'admin', isDelete: 1, isActive: true } });
+    if (adminCount <= 1) throw new AppError('Không thể xóa admin cuối cùng', 400);
+  }
+  // soft delete: isDelete=-1, isActive=false, đổi email để tránh trùng unique
+  const deletedEmail = `deleted_${id}_${user.email}`;
+  return prisma.$transaction([
+    prisma.userPermission.deleteMany({ where: { userId: id } }),
+    prisma.user.update({
+      where: { id },
+      data: { isDelete: -1, isActive: false, email: deletedEmail },
+      select: { id: true, email: true, isDelete: true },
+    }),
+  ]);
 }
