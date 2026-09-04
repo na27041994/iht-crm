@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -22,7 +22,7 @@ async function main() {
       phone: '0901111222',
       address: 'Q. Tân Bình, TP.HCM',
       avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=admin',
-      role: UserRole.admin,
+      role: 'admin',
     },
   });
 
@@ -44,7 +44,7 @@ async function main() {
       phone: '0903334444',
       address: 'Q. 7, TP.HCM',
       avatarUrl: 'https://api.dicebear.com/9.x/initials/svg?seed=sales',
-      role: UserRole.sales,
+      role: 'sales',
     },
   });
 
