@@ -24,6 +24,7 @@ import {
   LockOutlined,
   PlusOutlined,
   SafetyOutlined,
+  SearchOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
 import { apiFetch, apiUpload } from '@/lib/api';
@@ -98,12 +99,25 @@ export default function UsersPage() {
   const isAdmin = me?.role === 'admin';
   const canDeleteUser = can('user', 'delete');
   const [availableRoles, setAvailableRoles] = useState<Array<{ name: string; displayName: string }>>([]);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     apiFetch<Array<{ name: string; displayName: string }>>('/roles')
       .then((rs) => setAvailableRoles(rs.map((r) => ({ name: r.name, displayName: r.displayName }))))
       .catch(() => setAvailableRoles(FALLBACK_ROLES.map((r) => ({ name: r, displayName: ROLE_LABEL[r] ?? r }))));
   }, []);
+
+  const filteredUsers = users.filter((u) => {
+    if (!search.trim()) return true;
+    const kw = search.trim().toLowerCase();
+    return (
+      u.fullName.toLowerCase().includes(kw) ||
+      u.email.toLowerCase().includes(kw) ||
+      (u.chineseName ?? '').toLowerCase().includes(kw) ||
+      (u.phone ?? '').toLowerCase().includes(kw) ||
+      (u.cccd ?? '').toLowerCase().includes(kw)
+    );
+  });
 
   const load = useCallback(async () => {
     try {
@@ -527,11 +541,21 @@ export default function UsersPage() {
         )}
       </div>
 
+      <Input.Search
+        placeholder="Tìm theo tên, email, SĐT, CCCD..."
+        allowClear
+        enterButton={<SearchOutlined />}
+        style={{ width: '100%', maxWidth: 420, marginBottom: 16 }}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        onSearch={(v) => setSearch(v)}
+      />
+
       <Table<User>
         size="small"
         rowKey="id"
         loading={loading}
-        dataSource={users}
+        dataSource={filteredUsers}
         columns={columns}
         pagination={false}
         scroll={{ x: 900 }}
