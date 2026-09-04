@@ -97,6 +97,7 @@ export default function UsersPage() {
   const { can } = usePermissions();
 
   const isAdmin = me?.role === 'admin';
+  const canCreate = can('user', 'create');
   const canDeleteUser = can('user', 'delete');
   const [availableRoles, setAvailableRoles] = useState<Array<{ name: string; displayName: string }>>([]);
   const [search, setSearch] = useState('');
@@ -534,7 +535,7 @@ export default function UsersPage() {
             {isAdmin ? 'Quản lý tài khoản và phân quyền' : 'Danh sách nhân viên trong hệ thống'}
           </Typography.Text>
         </div>
-        {isAdmin && (
+        {(isAdmin || canCreate) && (
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} block className="sm:!w-auto">
             Thêm nhân viên
           </Button>
