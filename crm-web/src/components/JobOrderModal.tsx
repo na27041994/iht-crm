@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
@@ -70,23 +70,47 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
     }
   }, [open, editing, form]);
 
-  // Tính 2 chiều: nhập trước thuế -> ra sau thuế, nhập sau thuế -> suy ngược trước thuế
+  // Tính 2 chiều, nhớ ô giá nhập cuối để đổi thuế không ghi đè sai:
+  // - nhập Trước thuế -> Port = trước*(1+thuế)
+  // - nhập Port (sau thuế) -> Trước = port/(1+thuế)
+  // - đổi Thuế: giữ nguyên ô nhập cuối, tính lại ô còn lại
+  const lastPriceEdit = useRef<'pretax' | 'port' | null>(null);
+
+  useEffect(() => {
+    if (!open) lastPriceEdit.current = null;
+  }, [open ]);
+
   function handleValuesChange(changed: Partial<JobOrderFormValues>, all: JobOrderFormValues) {
     const r = Number(all.taxRate ?? 0);
     const factor = 1 + r / 100;
-    if ('pretaxAmount' in changed || 'taxRate' in changed) {
-      const p = Number(all.pretaxAmount ?? 0);
-      if (p > 0 || r > 0) {
-        const total = Math.round(p * factor * 100) / 100;
-        if (Math.abs(total - Number(all.portAmt ?? 0)) > 0.005) {
-          form.setFieldsValue({ portAmt: total });
-        }
+    if ('pretaxAmount' in changed) {
+      lastPriceEdit.current = 'pretax';
+      const p = Number(changed.pretaxAmount ?? 0);
+      const total = Math.round(p * factor * 100) / 100;
+      if (Math.abs(total - Number(all.portAmt ?? 0)) > 0.005) {
+        form.setFieldsValue({ portAmt: total });
       }
     } else if ('portAmt' in changed) {
+      lastPriceEdit.current = 'port';
       const port = Number(changed.portAmt ?? 0);
       const pre = factor > 0 ? Math.round((port / factor) * 100) / 100 : port;
       if (Math.abs(pre - Number(all.pretaxAmount ?? 0)) > 0.005) {
         form.setFieldsValue({ pretaxAmount: pre });
+      }
+    } else if ('taxRate' in changed) {
+      // đổi thuế: giữ ô nhập cuối, tính lại ô kia
+      if (lastPriceEdit.current === 'port') {
+        const port = Number(all.portAmt ?? 0);
+        const pre = factor > 0 ? Math.round((port / factor) * 100) / 100 : port;
+        if (Math.abs(pre - Number(all.pretaxAmount ?? 0)) > 0.005) {
+          form.setFieldsValue({ pretaxAmount: pre });
+        }
+      } else {
+        const p = Number(all.pretaxAmount ?? 0);
+        const total = Math.round(p * factor * 100) / 100;
+        if (Math.abs(total - Number(all.portAmt ?? 0)) > 0.005) {
+          form.setFieldsValue({ portAmt: total });
+        }
       }
     }
   }
