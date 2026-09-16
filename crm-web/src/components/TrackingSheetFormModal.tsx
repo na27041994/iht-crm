@@ -260,7 +260,7 @@ export default function TrackingSheetFormModal({
             <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Ngày ETA/ETD" name="etaDate">
-            <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" format="DD/MM/YYYY" />
+            <DatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />
           </Form.Item>
           <Form.Item label="Phân Luồng" name="phanLuong">
             <Input placeholder="VD: Xanh, Vàng, Đỏ" />
@@ -269,7 +269,7 @@ export default function TrackingSheetFormModal({
             <Input placeholder="Số tờ khai hải quan" />
           </Form.Item>
           <Form.Item label="Ngày tờ khai" name="declarationDate">
-            <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" format="DD/MM/YYYY" />
+            <DatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />
           </Form.Item>
           <Form.Item label="Số bill" name="billNumber">
             <Input placeholder="VD: MSK1234567890" />
