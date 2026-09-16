@@ -250,18 +250,23 @@ export default function TrackingSheetFormModal({
           <Form.Item label="Ngày ETA/ETD" name="etaDate">
             <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" format="DD/MM/YYYY" />
           </Form.Item>
-          <Form.Item label="Từ (From)" name="fromLocation">
-            <Input placeholder="VD: Cat Lai Port, HCM" />
-          </Form.Item>
-          <Form.Item label="Đến (To)" name="toLocation">
-            <Input placeholder="VD: Shanghai Port" />
-          </Form.Item>
-          <Form.Item label="NW (kg)" name="nw">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Net weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
-          </Form.Item>
-          <Form.Item label="GW (kg)" name="gw">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
-          </Form.Item>
+          <div className="sm:col-span-2 grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
+            <Form.Item label="Từ (From)" name="fromLocation" style={{ marginBottom: 0 }}>
+              <Input placeholder="VD: Cat Lai Port, HCM" />
+            </Form.Item>
+            <span style={{ paddingBottom: 24, fontWeight: 700, fontSize: 16 }}>→</span>
+            <Form.Item label="Đến (To)" name="toLocation" style={{ marginBottom: 0 }}>
+              <Input placeholder="VD: Shanghai Port" />
+            </Form.Item>
+          </div>
+          <div className="sm:col-span-2 grid grid-cols-2 gap-4">
+            <Form.Item label="NW (kg)" name="nw">
+              <InputNumber min={0} style={{ width: '100%' }} placeholder="Net weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+            </Form.Item>
+            <Form.Item label="GW (kg)" name="gw">
+              <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+            </Form.Item>
+          </div>
           <Form.Item label="Phân Luồng" name="phanLuong">
             <Input placeholder="VD: Xanh, Vàng, Đỏ" />
           </Form.Item>
