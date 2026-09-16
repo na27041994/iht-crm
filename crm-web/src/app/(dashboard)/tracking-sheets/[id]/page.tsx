@@ -5,6 +5,7 @@ import { App, Button, Card, Descriptions, Popconfirm, Space, Table, Tag, Typogra
 import { ArrowLeftOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
+import { usePermissions } from '@/hooks/usePermission';
 import JobOrderModal, { JobOrderItem } from '@/components/JobOrderModal';
 import JobBookingModal, { JobBookingItem } from '@/components/JobBookingModal';
 import DebitNoteModal, { DebitNoteItem } from '@/components/DebitNoteModal';
@@ -86,6 +87,19 @@ function sortByType<T extends { id: number; type: string }>(items: T[]) {
 
 export default function TrackingSheetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { message } = App.useApp();
+  const { can } = usePermissions();
+  const canViewOrder = can('job_order', 'view');
+  const canCreateOrder = can('job_order', 'create');
+  const canEditOrder = can('job_order', 'edit');
+  const canDeleteOrder = can('job_order', 'delete');
+  const canViewBooking = can('job_booking', 'view');
+  const canCreateBooking = can('job_booking', 'create');
+  const canEditBooking = can('job_booking', 'edit');
+  const canDeleteBooking = can('job_booking', 'delete');
+  const canViewDebit = can('debit_note', 'view');
+  const canCreateDebit = can('debit_note', 'create');
+  const canEditDebit = can('debit_note', 'edit');
+  const canDeleteDebit = can('debit_note', 'delete');
   const [sheet, setSheet] = useState<TrackingSheetDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
@@ -255,6 +269,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         )}
       </Card>
 
+      {canViewOrder && (
       <Card
         title="Job Order"
         extra={
@@ -262,9 +277,11 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('order')}>
               Xuất Excel
             </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openAddOrder} size="small">
-              Thêm mục
-            </Button>
+            {canCreateOrder && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={openAddOrder} size="small">
+                Thêm mục
+              </Button>
+            )}
           </Space>
         }
         style={{ marginBottom: 16 }}
@@ -300,17 +317,21 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               width: 110,
               render: (_: unknown, item: JobOrderItem) => (
                 <Space>
-                  <Button size="small" icon={<EditOutlined />} onClick={() => openEditOrder(item)} />
-                  <Popconfirm title="Xóa mục này?" onConfirm={() => deleteOrder(item)} okText="Xóa" cancelText="Hủy">
-                    <Button size="small" danger icon={<DeleteOutlined />} />
-                  </Popconfirm>
+                  {canEditOrder && <Button size="small" icon={<EditOutlined />} onClick={() => openEditOrder(item)} />}
+                  {canDeleteOrder && (
+                    <Popconfirm title="Xóa mục này?" onConfirm={() => deleteOrder(item)} okText="Xóa" cancelText="Hủy">
+                      <Button size="small" danger icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  )}
                 </Space>
               ),
             },
           ]}
         />
       </Card>
+      )}
 
+      {canViewBooking && (
       <Card
         title="Job Book tàu"
         extra={
@@ -318,9 +339,11 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('booking')}>
               Xuất Excel
             </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openAddBooking} size="small">
-              Thêm mục
-            </Button>
+            {canCreateBooking && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={openAddBooking} size="small">
+                Thêm mục
+              </Button>
+            )}
           </Space>
         }
       >
@@ -357,17 +380,21 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               width: 110,
               render: (_: unknown, item: JobBookingItem) => (
                 <Space>
-                  <Button size="small" icon={<EditOutlined />} onClick={() => openEditBooking(item)} />
-                  <Popconfirm title="Xóa mục này?" onConfirm={() => deleteBooking(item)} okText="Xóa" cancelText="Hủy">
-                    <Button size="small" danger icon={<DeleteOutlined />} />
-                  </Popconfirm>
+                  {canEditBooking && <Button size="small" icon={<EditOutlined />} onClick={() => openEditBooking(item)} />}
+                  {canDeleteBooking && (
+                    <Popconfirm title="Xóa mục này?" onConfirm={() => deleteBooking(item)} okText="Xóa" cancelText="Hủy">
+                      <Button size="small" danger icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  )}
                 </Space>
               ),
             },
           ]}
         />
       </Card>
+      )}
 
+      {canViewDebit && (
       <Card
         title="Debit Note"
         extra={
@@ -375,9 +402,11 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('debit')}>
               Xuất Excel
             </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openAddDebit} size="small">
-              Thêm mục
-            </Button>
+            {canCreateDebit && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={openAddDebit} size="small">
+                Thêm mục
+              </Button>
+            )}
           </Space>
         }
         style={{ marginTop: 16 }}
@@ -417,16 +446,19 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               width: 110,
               render: (_: unknown, item: DebitNoteItem) => (
                 <Space>
-                  <Button size="small" icon={<EditOutlined />} onClick={() => openEditDebit(item)} />
-                  <Popconfirm title="Xóa mục này?" onConfirm={() => deleteDebit(item)} okText="Xóa" cancelText="Hủy">
-                    <Button size="small" danger icon={<DeleteOutlined />} />
-                  </Popconfirm>
+                  {canEditDebit && <Button size="small" icon={<EditOutlined />} onClick={() => openEditDebit(item)} />}
+                  {canDeleteDebit && (
+                    <Popconfirm title="Xóa mục này?" onConfirm={() => deleteDebit(item)} okText="Xóa" cancelText="Hủy">
+                      <Button size="small" danger icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  )}
                 </Space>
               ),
             },
           ]}
         />
       </Card>
+      )}
 
       <JobOrderModal
         open={orderModalOpen}

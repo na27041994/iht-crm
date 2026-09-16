@@ -208,7 +208,17 @@ trackingSheetRouter.get(
 trackingSheetRouter.get(
   '/:id/export',
   validateQuery(exportJobsQuery),
-  requirePermission('tracking_sheet_list', 'view'),
+  asyncHandler(async (req: AuthedRequest, res, next) => {
+    const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' };
+    const resource = type === 'order' ? 'job_order' : type === 'booking' ? 'job_booking' : 'debit_note';
+    const { hasPermission } = await import('../../modules/permissions/permissions.service.js');
+    const ok = await hasPermission(req.user!.sub, resource as any, 'view');
+    if (!ok) {
+      res.status(403).json({ error: `Bạn không có quyền view ${resource}` });
+      return;
+    }
+    next();
+  }),
   asyncHandler(async (req, res) => {
     const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' };
     const sheet = await getTrackingSheet(Number(req.params.id));
@@ -246,41 +256,41 @@ trackingSheetRouter.delete('/:id', requirePermission('tracking_sheet_list', 'del
   res.json({ success: true });
 }));
 
-trackingSheetRouter.post('/:sheetId/job-orders', validate(jobOrderSchema), requirePermission('tracking_sheet_list', 'create'), asyncHandler(async (req, res) => {
+trackingSheetRouter.post('/:sheetId/job-orders', validate(jobOrderSchema), requirePermission('job_order', 'create'), asyncHandler(async (req, res) => {
   res.status(201).json(await createJobOrder(Number(req.params.sheetId), req.body));
 }));
 
-trackingSheetRouter.put('/:sheetId/job-orders/:id', validate(jobOrderSchema), requirePermission('tracking_sheet_list', 'edit'), asyncHandler(async (req, res) => {
+trackingSheetRouter.put('/:sheetId/job-orders/:id', validate(jobOrderSchema), requirePermission('job_order', 'edit'), asyncHandler(async (req, res) => {
   res.json(await updateJobOrder(Number(req.params.sheetId), Number(req.params.id), req.body));
 }));
 
-trackingSheetRouter.delete('/:sheetId/job-orders/:id', requirePermission('tracking_sheet_list', 'delete'), asyncHandler(async (req, res) => {
+trackingSheetRouter.delete('/:sheetId/job-orders/:id', requirePermission('job_order', 'delete'), asyncHandler(async (req, res) => {
   await deleteJobOrder(Number(req.params.sheetId), Number(req.params.id));
   res.json({ success: true });
 }));
 
-trackingSheetRouter.post('/:sheetId/job-bookings', validate(jobBookingSchema), requirePermission('tracking_sheet_list', 'create'), asyncHandler(async (req, res) => {
+trackingSheetRouter.post('/:sheetId/job-bookings', validate(jobBookingSchema), requirePermission('job_booking', 'create'), asyncHandler(async (req, res) => {
   res.status(201).json(await createJobBooking(Number(req.params.sheetId), req.body));
 }));
 
-trackingSheetRouter.put('/:sheetId/job-bookings/:id', validate(jobBookingSchema), requirePermission('tracking_sheet_list', 'edit'), asyncHandler(async (req, res) => {
+trackingSheetRouter.put('/:sheetId/job-bookings/:id', validate(jobBookingSchema), requirePermission('job_booking', 'edit'), asyncHandler(async (req, res) => {
   res.json(await updateJobBooking(Number(req.params.sheetId), Number(req.params.id), req.body));
 }));
 
-trackingSheetRouter.delete('/:sheetId/job-bookings/:id', requirePermission('tracking_sheet_list', 'delete'), asyncHandler(async (req, res) => {
+trackingSheetRouter.delete('/:sheetId/job-bookings/:id', requirePermission('job_booking', 'delete'), asyncHandler(async (req, res) => {
   await deleteJobBooking(Number(req.params.sheetId), Number(req.params.id));
   res.json({ success: true });
 }));
 
-trackingSheetRouter.post('/:sheetId/debit-notes', validate(debitNoteSchema), requirePermission('tracking_sheet_list', 'create'), asyncHandler(async (req, res) => {
+trackingSheetRouter.post('/:sheetId/debit-notes', validate(debitNoteSchema), requirePermission('debit_note', 'create'), asyncHandler(async (req, res) => {
   res.status(201).json(await createDebitNote(Number(req.params.sheetId), req.body));
 }));
 
-trackingSheetRouter.put('/:sheetId/debit-notes/:id', validate(debitNoteSchema), requirePermission('tracking_sheet_list', 'edit'), asyncHandler(async (req, res) => {
+trackingSheetRouter.put('/:sheetId/debit-notes/:id', validate(debitNoteSchema), requirePermission('debit_note', 'edit'), asyncHandler(async (req, res) => {
   res.json(await updateDebitNote(Number(req.params.sheetId), Number(req.params.id), req.body));
 }));
 
-trackingSheetRouter.delete('/:sheetId/debit-notes/:id', requirePermission('tracking_sheet_list', 'delete'), asyncHandler(async (req, res) => {
+trackingSheetRouter.delete('/:sheetId/debit-notes/:id', requirePermission('debit_note', 'delete'), asyncHandler(async (req, res) => {
   await deleteDebitNote(Number(req.params.sheetId), Number(req.params.id));
   res.json({ success: true });
 }));
