@@ -3,13 +3,17 @@
 import { useEffect, useState } from 'react';
 import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
-import { JOB_TYPES } from '@/lib/jobTypes';
+import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
 
 export interface JobOrderItem {
   id: number;
   type: string;
   description: string | null;
   portAmt: string | null;
+  pretaxAmount: string | null;
+  taxRate: string | null;
+  deliveryStaffId: number | null;
+  deliveryStaff?: { id: number; fullName: string } | null;
   industry: string | null;
   note: string | null;
 }
@@ -18,7 +22,9 @@ export interface JobOrderFormValues {
   type: string;
   description?: string;
   portAmt?: number;
-  industry?: string;
+  pretaxAmount?: number;
+  taxRate?: number;
+  deliveryStaffId?: number;
   note?: string;
 }
 
@@ -30,10 +36,21 @@ interface JobOrderModalProps {
   onSaved: () => void;
 }
 
+interface UserOption {
+  id: number;
+  fullName: string;
+}
+
 export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved }: JobOrderModalProps) {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
+  const [users, setUsers] = useState<UserOption[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    apiFetch<UserOption[]>('/auth/users').then(setUsers).catch(() => setUsers([]));
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -43,13 +60,30 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
         type: editing.type,
         description: editing.description ?? '',
         portAmt: editing.portAmt == null ? undefined : Number(editing.portAmt) / 100,
-        industry: editing.industry ?? '',
+        pretaxAmount: (editing as any).pretaxAmount == null ? undefined : Number((editing as any).pretaxAmount) / 100,
+        taxRate: (editing as any).taxRate == null ? 0 : Number((editing as any).taxRate),
+        deliveryStaffId: (editing as any).deliveryStaffId ?? (editing as any).deliveryStaff?.id ?? undefined,
         note: editing.note ?? '',
       });
+    } else {
+      form.setFieldsValue({ taxRate: 0 });
     }
   }, [open, editing, form]);
 
-  // Hàm handleSubmit: xử lý handleSubmit
+  const pretax = Form.useWatch('pretaxAmount', form);
+  const taxRate = Form.useWatch('taxRate', form);
+
+  useEffect(() => {
+    if (!open) return;
+    const p = Number(pretax ?? 0);
+    const r = Number(taxRate ?? 0);
+    const total = Math.round(p * (1 + r / 100) * 100) / 100;
+    // chỉ tự điền portAmt khi user chưa sửa tay? luôn đồng bộ để khớp trước thuế + thuế
+    if (p > 0 || r > 0) {
+      form.setFieldsValue({ portAmt: total });
+    }
+  }, [open, pretax, taxRate, form]);
+
   async function handleSubmit(values: JobOrderFormValues) {
     setSaving(true);
     try {
@@ -57,7 +91,9 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
         type: values.type,
         description: values.description && String(values.description).trim() !== '' ? String(values.description).trim() : null,
         portAmt: values.portAmt ?? null,
-        industry: values.industry && String(values.industry).trim() !== '' ? String(values.industry).trim() : null,
+        pretaxAmount: values.pretaxAmount ?? null,
+        taxRate: values.taxRate ?? null,
+        deliveryStaffId: values.deliveryStaffId ?? null,
         note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
       };
       if (editing) {
@@ -90,21 +126,33 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
       <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
           <Form.Item
-            label="Loại"
+            label="Phân loại"
             name="type"
-            rules={[{ required: true, message: 'Chọn loại' }]}
+            rules={[{ required: true, message: 'Chọn phân loại' }]}
             className="sm:col-span-2"
           >
-            <Select placeholder="Chọn loại" options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />
+            <Select placeholder="Chọn phân loại" options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />
           </Form.Item>
           <Form.Item label="Mô tả" name="description" className="sm:col-span-2">
             <Input placeholder="Mô tả nội dung" />
           </Form.Item>
-          <Form.Item label="Port Amt" name="portAmt">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+          <Form.Item label="Nhân viên giao nhận" name="deliveryStaffId" className="sm:col-span-2">
+            <Select
+              placeholder="Chọn nhân viên giao nhận"
+              showSearch
+              optionFilterProp="label"
+              allowClear
+              options={users.map((u) => ({ value: u.id, label: u.fullName }))}
+            />
           </Form.Item>
-          <Form.Item label="Industry" name="industry">
-            <Input placeholder="Ngành hàng" />
+          <Form.Item label="Trước thuế" name="pretaxAmount">
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền trước thuế" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+          </Form.Item>
+          <Form.Item label="Thuế (%)" name="taxRate">
+            <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
+          </Form.Item>
+          <Form.Item label="Port Amt (sau thuế)" name="portAmt" className="sm:col-span-2">
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Tự tính = trước thuế + thuế" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú" />

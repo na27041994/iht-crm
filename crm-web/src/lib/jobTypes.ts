@@ -1,6 +1,7 @@
 export const JOB_TYPES = [
   'Our Company Pay',
   'Pay In Advance',
+  'Chi Trực Tiếp',
   'Trucking Fee',
   'Cược Cont',
   'Cược sửa chữa cont',

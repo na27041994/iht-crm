@@ -6,7 +6,11 @@ import type { TrackingSheetInput, JobOrderInput, JobBookingInput, DebitNoteInput
 
 // Scale tiền *100 để lưu nguyên (VD: 100.50 -> 10050), hiển thị chia 100
 function scaleJobOrder(input: JobOrderInput): JobOrderInput {
-  return { ...input, portAmt: toScaled(input.portAmt) as unknown as number ?? input.portAmt };
+  return {
+    ...input,
+    portAmt: toScaled(input.portAmt) as unknown as number ?? input.portAmt,
+    pretaxAmount: toScaled((input as any).pretaxAmount) as unknown as number ?? (input as any).pretaxAmount,
+  };
 }
 function scaleJobBooking(input: JobBookingInput): JobBookingInput {
   return {
@@ -36,6 +40,7 @@ export const trackingSheetInclude = {
   jobOrders: {
     where: { isDelete: 1 },
     orderBy: { id: 'asc' },
+    include: { deliveryStaff: { select: { id: true, fullName: true } } },
   },
   jobBookings: {
     where: { isDelete: 1 },

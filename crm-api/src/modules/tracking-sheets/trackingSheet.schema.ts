@@ -26,9 +26,12 @@ export const trackingSheetSchema = z.object({
 export type TrackingSheetInput = z.infer<typeof trackingSheetSchema>;
 
 export const jobOrderSchema = z.object({
-  type: z.string().min(1, 'Chọn loại'),
+  type: z.string().min(1, 'Chọn phân loại'),
   description: z.string().optional().nullable(),
   portAmt: z.coerce.number().optional().nullable(),
+  pretaxAmount: z.coerce.number().optional().nullable(),
+  taxRate: z.coerce.number().optional().nullable(),
+  deliveryStaffId: z.number().int().positive().optional().nullable(),
   industry: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
 });

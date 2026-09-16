@@ -50,10 +50,12 @@ function setupSheet(ws: ExcelJS.Worksheet, columns: Partial<ExcelJS.Column>[]) {
 const JOB_ORDER_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
   { header: 'Khách hàng', key: 'customer', width: 30 },
-  { header: 'Loại', key: 'type', width: 18 },
+  { header: 'Phân loại', key: 'type', width: 18 },
   { header: 'Mô tả', key: 'description', width: 28 },
+  { header: 'NV giao nhận', key: 'deliveryStaff', width: 18 },
+  { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Thuế (%)', key: 'taxRate', width: 10 },
   { header: 'Port Amt', key: 'portAmt', width: 15, style: { numFmt: '#,##0.00' } },
-  { header: 'Industry', key: 'industry', width: 14 },
   { header: 'Ghi chú', key: 'note', width: 26 },
 ];
 
@@ -94,8 +96,10 @@ function jobOrderRow(s: TrackingSheetWithRelations, o: TrackingSheetWithRelation
     customer: s.customer?.companyName ?? '',
     type: o.type,
     description: o.description ?? '',
+    deliveryStaff: (o as any).deliveryStaff?.fullName ?? '',
+    pretaxAmount: numMoney((o as any).pretaxAmount),
+    taxRate: num((o as any).taxRate),
     portAmt: numMoney(o.portAmt),
-    industry: o.industry ?? '',
     note: o.note ?? '',
   };
 }
@@ -271,15 +275,17 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
     { header: 'sheetId*', key: 'sheetId', width: 10 },
     { header: 'type*', key: 'type', width: 20 },
     { header: 'description', key: 'description', width: 22 },
+    { header: 'pretaxAmount', key: 'pretaxAmount', width: 14 },
+    { header: 'taxRate', key: 'taxRate', width: 10 },
     { header: 'portAmt', key: 'portAmt', width: 14 },
-    { header: 'industry', key: 'industry', width: 14 },
+    { header: 'deliveryStaffId', key: 'deliveryStaffId', width: 14 },
     { header: 'carrierId', key: 'carrierId', width: 10 },
     { header: 'agentId', key: 'agentId', width: 10 },
     { header: 'note', key: 'note', width: 20 },
   ];
   const wsOrder = wb.addWorksheet('Job Order');
   setup(wsOrder, ORDER_COLS);
-  wsOrder.addRow({ sheetId: 1, type: 'Cược Cont', description: 'Cước tàu', portAmt: 5000000, industry: 'Nông sản', carrierId: 1, agentId: '', note: 'Mẫu job order' });
+  wsOrder.addRow({ sheetId: 1, type: 'Chi Trực Tiếp', description: 'Cước tàu', pretaxAmount: 5000000, taxRate: 10, portAmt: 5500000, deliveryStaffId: '', carrierId: 1, agentId: '', note: 'Mẫu job order' });
 
   const BOOKING_COLS: Partial<ExcelJS.Column>[] = [
     { header: 'sheetId*', key: 'sheetId', width: 10 },
@@ -379,11 +385,13 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
     setup(ws, [
       { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
       { header: 'Khách hàng', key: 'customer', width: 30 },
-      { header: 'Loại', key: 'type', width: 18 },
+      { header: 'Phân loại', key: 'type', width: 18 },
       { header: 'Mô tả', key: 'description', width: 28 },
       { header: 'Hãng tàu / Đại lý', key: 'partner', width: 22 },
+      { header: 'NV giao nhận', key: 'deliveryStaff', width: 18 },
+      { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
+      { header: 'Thuế (%)', key: 'taxRate', width: 10 },
       { header: 'Port Amt', key: 'portAmt', width: 15, style: { numFmt: '#,##0.00' } },
-      { header: 'Industry', key: 'industry', width: 14 },
       { header: 'Ghi chú', key: 'note', width: 26 },
     ]);
     for (const o of sheet.jobOrders) {
@@ -393,8 +401,10 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
         type: o.type,
         description: o.description ?? '',
         partner: o.carrier?.carrierName ?? o.agent?.agentName ?? '',
+        deliveryStaff: (o as any).deliveryStaff?.fullName ?? '',
+        pretaxAmount: numMoney((o as any).pretaxAmount),
+        taxRate: num((o as any).taxRate),
         portAmt: numMoney(o.portAmt),
-        industry: o.industry ?? '',
         note: o.note ?? '',
       });
     }

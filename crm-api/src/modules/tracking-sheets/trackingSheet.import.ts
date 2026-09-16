@@ -25,6 +25,9 @@ interface ImportOrderRow {
   type: string;
   description?: string | null;
   portAmt?: number | null;
+  pretaxAmount?: number | null;
+  taxRate?: number | null;
+  deliveryStaffId?: number | null;
   industry?: string | null;
   note?: string | null;
 }
@@ -106,8 +109,9 @@ const SHEET_COLS: Record<string, number> = {
 };
 
 const ORDER_COLS: Record<string, number> = {
-  sheetId: 1, type: 2, description: 3, portAmt: 4, industry: 5,
-  note: 6,
+  sheetId: 1, type: 2, description: 3, pretaxAmount: 4, taxRate: 5,
+  portAmt: 6, deliveryStaffId: 7, industry: 8,
+  note: 9,
 };
 
 const BOOKING_COLS: Record<string, number> = {
@@ -244,6 +248,9 @@ export async function parseImportExcel(buffer: Buffer): Promise<ParsedImportData
         type,
         description: String(getCellValue(row, ORDER_COLS, 'description') ?? '').trim() || null,
         portAmt: toNumber(getCellValue(row, ORDER_COLS, 'portAmt')),
+        pretaxAmount: toNumber(getCellValue(row, ORDER_COLS, 'pretaxAmount')),
+        taxRate: toNumber(getCellValue(row, ORDER_COLS, 'taxRate')),
+        deliveryStaffId: toInt(getCellValue(row, ORDER_COLS, 'deliveryStaffId')),
         industry: String(getCellValue(row, ORDER_COLS, 'industry') ?? '').trim() || null,
         note: String(getCellValue(row, ORDER_COLS, 'note') ?? '').trim() || null,
       });
@@ -397,6 +404,9 @@ async function upsertJobOrder(
     type: row.type,
     description: row.description,
     portAmt: row.portAmt != null ? toScaled(row.portAmt) as unknown as number : 0,
+    pretaxAmount: row.pretaxAmount != null ? toScaled(row.pretaxAmount) as unknown as number : null,
+    taxRate: row.taxRate ?? null,
+    deliveryStaffId: row.deliveryStaffId ?? null,
     industry: row.industry,
     note: row.note,
     isDelete: 1,

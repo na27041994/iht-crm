@@ -285,12 +285,14 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             showTotal: (t) => `${t} mục`,
           }}
           locale={{ emptyText: 'Chưa có mục Job Order' }}
-          scroll={{ x: 800 }}
+          scroll={{ x: 1000 }}
           columns={[
-            { title: 'Loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
+            { title: 'Phân loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
             { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
+            { title: 'NV giao nhận', key: 'deliveryStaff', render: (_: unknown, r: JobOrderItem) => (r as any).deliveryStaff?.fullName ?? '-' },
+            { title: 'Trước thuế', dataIndex: 'pretaxAmount', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : fmtMoney(v)) },
+            { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
             { title: 'Port Amt', dataIndex: 'portAmt', align: 'right' as const, render: fmtMoney },
-            { title: 'Industry', dataIndex: 'industry', render: (v: string | null) => v ?? '-' },
             { title: 'Ghi chú', dataIndex: 'note', render: (v: string | null) => v ?? '-', ellipsis: true },
             {
               title: 'Thao tác',

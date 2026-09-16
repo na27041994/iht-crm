@@ -22,6 +22,10 @@ interface JobOrderItem {
   type: string;
   description: string | null;
   portAmt: string | null;
+  pretaxAmount: string | null;
+  taxRate: string | null;
+  deliveryStaff?: { id: number; fullName: string } | null;
+  deliveryStaffId?: number | null;
   industry: string | null;
   note: string | null;
 }
@@ -202,13 +206,15 @@ function SheetDocument({
         <table className="p-table">
           <thead>
             <tr>
-              <th colSpan={5} className="section-title">JOB ORDER</th>
+              <th colSpan={7} className="section-title">JOB ORDER</th>
             </tr>
             <tr>
-              <th>Loại</th>
+              <th>Phân loại</th>
               <th>Mô tả</th>
+              <th>NV giao nhận</th>
+              <th className="right">Trước thuế</th>
+              <th className="right">Thuế</th>
               <th className="right">Port Amt</th>
-              <th>Industry</th>
               <th>Ghi chú</th>
             </tr>
           </thead>
@@ -217,8 +223,10 @@ function SheetDocument({
               <tr key={o.id} className={groupClass(orders, i)}>
                 <td>{o.type}</td>
                 <td>{o.description ?? '-'}</td>
+                <td>{(o as any).deliveryStaff?.fullName ?? '-'}</td>
+                <td className="right">{fmtMoney((o as any).pretaxAmount)}</td>
+                <td className="right">{(o as any).taxRate == null ? '-' : `${Number((o as any).taxRate)}%`}</td>
                 <td className="right">{fmtMoney(o.portAmt)}</td>
-                <td>{o.industry ?? '-'}</td>
                 <td>{o.note ?? '-'}</td>
               </tr>
             ))}
