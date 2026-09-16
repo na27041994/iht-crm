@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
@@ -62,24 +62,38 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
     }
   }, [open, editing, form]);
 
-  const pretax = Form.useWatch('pretaxAmount', form);
   const rate = Form.useWatch('taxRate', form);
-  const quantity = Form.useWatch('quantity', form);
+  const isFivePercent = Number(rate ?? 0) === 5;
 
+  // Chỉ thuế 5% mới tính ngược từ Tổng tiền (5/105): Tổng -> Trước thuế + Thuế
+  // Các mức % khác chỉ tính xuôi: Trước thuế -> Tổng
+  const lastEdit = useRef<'pretax' | 'total' | null>(null);
   useEffect(() => {
-    if (!open) return;
-    const p = Number(pretax ?? 0);
-    const r = Number(rate ?? 0);
-    const q = Number(quantity ?? 1);
-    const tax = (p * r) / 100;
-    const after = p + tax;
-    const total = after * q;
-    form.setFieldsValue({
-      taxAmount: tax,
-      afterTaxAmount: after,
-      total,
-    });
-  }, [open, pretax, rate, quantity, form]);
+    if (!open) lastEdit.current = null;
+  }, [open ]);
+
+  function handleValuesChange(changed: Partial<JobBookingFormValues>, all: JobBookingFormValues) {
+    const r = Number(all.taxRate ?? 0);
+    const q = Number(all.quantity ?? 1) || 1;
+    if ('total' in changed && r === 5) {
+      lastEdit.current = 'total';
+      const total = Number(changed.total ?? 0);
+      const after = q > 0 ? total / q : total;
+      const pre = Math.round((after / (1 + r / 100)) * 100) / 100;
+      const tax = Math.round((after - pre) * 100) / 100;
+      form.setFieldsValue({ pretaxAmount: pre, taxAmount: tax, afterTaxAmount: Math.round(after * 100) / 100 });
+    } else if ('pretaxAmount' in changed || 'taxRate' in changed || 'quantity' in changed) {
+      lastEdit.current = 'pretax';
+      const p = Number(all.pretaxAmount ?? 0);
+      const tax = (p * r) / 100;
+      const after = p + tax;
+      const total = after * q;
+      const cur = form.getFieldsValue(['taxAmount', 'afterTaxAmount', 'total']);
+      if (Math.abs(Number(cur.taxAmount ?? 0) - tax) > 0.005 || Math.abs(Number(cur.afterTaxAmount ?? 0) - after) > 0.005 || Math.abs(Number(cur.total ?? 0) - total) > 0.005) {
+        form.setFieldsValue({ taxAmount: tax, afterTaxAmount: after, total });
+      }
+    }
+  }
 
   // Hàm handleSubmit: xử lý handleSubmit
   async function handleSubmit(values: JobBookingFormValues) {
@@ -123,7 +137,7 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
       width={720}
       destroyOnHidden
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
+      <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={handleValuesChange} style={{ marginTop: 16 }}>
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
           <Form.Item
             label="Loại"
@@ -154,8 +168,18 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
           <Form.Item label="Sau thuế" name="afterTaxAmount">
             <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
-          <Form.Item label="Tổng tiền" name="total" className="sm:col-span-2">
-            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+          <Form.Item
+            label={isFivePercent ? 'Tổng tiền (nhập để suy ngược Trước thuế + Thuế 5%)' : 'Tổng tiền'}
+            name="total"
+            className="sm:col-span-2"
+          >
+            <InputNumber
+              min={0}
+              style={{ width: '100%' }}
+              disabled={!isFivePercent}
+              placeholder={isFivePercent ? 'Nhập tổng để tự tính ngược' : 'Tự tính = (trước thuế + thuế) x SL'}
+              formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''}
+            />
           </Form.Item>
         </div>
       </Form>
