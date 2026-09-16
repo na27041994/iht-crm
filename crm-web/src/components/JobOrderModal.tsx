@@ -70,19 +70,26 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
     }
   }, [open, editing, form]);
 
-  const pretax = Form.useWatch('pretaxAmount', form);
-  const taxRate = Form.useWatch('taxRate', form);
-
-  useEffect(() => {
-    if (!open) return;
-    const p = Number(pretax ?? 0);
-    const r = Number(taxRate ?? 0);
-    const total = Math.round(p * (1 + r / 100) * 100) / 100;
-    // chỉ tự điền portAmt khi user chưa sửa tay? luôn đồng bộ để khớp trước thuế + thuế
-    if (p > 0 || r > 0) {
-      form.setFieldsValue({ portAmt: total });
+  // Tính 2 chiều: nhập trước thuế -> ra sau thuế, nhập sau thuế -> suy ngược trước thuế
+  function handleValuesChange(changed: Partial<JobOrderFormValues>, all: JobOrderFormValues) {
+    const r = Number(all.taxRate ?? 0);
+    const factor = 1 + r / 100;
+    if ('pretaxAmount' in changed || 'taxRate' in changed) {
+      const p = Number(all.pretaxAmount ?? 0);
+      if (p > 0 || r > 0) {
+        const total = Math.round(p * factor * 100) / 100;
+        if (Math.abs(total - Number(all.portAmt ?? 0)) > 0.005) {
+          form.setFieldsValue({ portAmt: total });
+        }
+      }
+    } else if ('portAmt' in changed) {
+      const port = Number(changed.portAmt ?? 0);
+      const pre = factor > 0 ? Math.round((port / factor) * 100) / 100 : port;
+      if (Math.abs(pre - Number(all.pretaxAmount ?? 0)) > 0.005) {
+        form.setFieldsValue({ pretaxAmount: pre });
+      }
     }
-  }, [open, pretax, taxRate, form]);
+  }
 
   async function handleSubmit(values: JobOrderFormValues) {
     setSaving(true);
@@ -123,7 +130,7 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
       width={640}
       destroyOnHidden
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
+      <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={handleValuesChange} style={{ marginTop: 16 }}>
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
           <Form.Item
             label="Phân loại"
@@ -151,8 +158,8 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
           </Form.Item>
-          <Form.Item label="Port Amt (sau thuế)" name="portAmt" className="sm:col-span-2">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Tự tính = trước thuế + thuế" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+          <Form.Item label="Port Amt (sau thuế, nhập để suy ngược trước thuế)" name="portAmt" className="sm:col-span-2">
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Nhập sau thuế để tự tính ngược, hoặc để trống tự tính" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú" />
