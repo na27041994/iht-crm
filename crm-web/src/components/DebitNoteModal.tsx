@@ -202,7 +202,7 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
           <Form.Item label="Loại" name="type" rules={[{ required: true, message: 'Chọn loại' }]} className="sm:col-span-2">
             <Select placeholder="Chọn loại" options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />
           </Form.Item>
-          <Form.Item label="Số hóa đơn" name="invoiceNumber">
+          <Form.Item label="Invoice No" name="invoiceNumber">
             <Input placeholder="VD: HD-2026-0088" />
           </Form.Item>
           <Form.Item label="Unit" name="unit">
