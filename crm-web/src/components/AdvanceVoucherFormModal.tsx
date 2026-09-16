@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { App, DatePicker, Form, Input, InputNumber, Modal, Select } from 'antd';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
+import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { ADVANCE_TYPES } from '@/lib/advanceTypes';
 
 interface SheetOption {
@@ -183,7 +184,7 @@ export default function AdvanceVoucherFormModal({
             <InputNumber min={1} precision={0} style={{ width: '100%' }} placeholder="Số container" />
           </Form.Item>
           <Form.Item label="Qty" name="qty">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />

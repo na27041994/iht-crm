@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
+import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
 
 export interface JobBookingItem {
@@ -154,19 +155,19 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
             <Input placeholder="VD: Cont, Kg, Chuyến..." />
           </Form.Item>
           <Form.Item label="Số lượng" name="quantity">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
           </Form.Item>
           <Form.Item label="Trước thuế" name="pretaxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền trước thuế" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền trước thuế" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
           </Form.Item>
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
           </Form.Item>
           <Form.Item label="Tiền thuế" name="taxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
           </Form.Item>
           <Form.Item label="Sau thuế" name="afterTaxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
           </Form.Item>
           <Form.Item
             label={isFivePercent ? 'Tổng tiền (nhập để suy ngược Trước thuế + Thuế 5%)' : 'Tổng tiền'}
@@ -178,7 +179,7 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
               style={{ width: '100%' }}
               disabled={!isFivePercent}
               placeholder={isFivePercent ? 'Nhập tổng để tự tính ngược' : 'Tự tính = (trước thuế + thuế) x SL'}
-              formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''}
+              formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput}
             />
           </Form.Item>
         </div>

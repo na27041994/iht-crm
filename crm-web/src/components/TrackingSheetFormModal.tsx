@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { App, DatePicker, Form, Input, InputNumber, Modal, Select, Spin } from 'antd';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
+import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 
 interface UserOption {
   id: number;
@@ -254,10 +255,10 @@ export default function TrackingSheetFormModal({
             <Input placeholder="VD: Shanghai Port" />
           </Form.Item>
           <Form.Item label="NW (kg)" name="nw">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Net weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Net weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
           </Form.Item>
           <Form.Item label="GW (kg)" name="gw">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
           </Form.Item>
           <Form.Item label="Ngày ETA/ETD" name="etaDate">
             <DatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />
