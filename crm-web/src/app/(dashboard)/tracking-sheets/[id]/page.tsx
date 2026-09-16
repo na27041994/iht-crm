@@ -44,7 +44,7 @@ interface TrackingSheetDetail {
   agent: AgentRef | null;
   fromLocation: string | null;
   toLocation: string | null;
-  containerQuantity: number | null;
+  containerQuantity: string | null;
   etaDate: string | null;
   gw: string | null;
   customNo: string | null;
@@ -53,6 +53,7 @@ interface TrackingSheetDetail {
   invoiceNumber: string | null;
   pol: string | null;
   pod: string | null;
+  phanLuong: string | null;
   note: string | null;
   jobOrders: JobOrderItem[];
   jobBookings: JobBookingItem[];
@@ -238,9 +239,8 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               { key: 'agent', label: 'Đại lý', children: sheet.agent ? `${sheet.agent.agentName} (#${sheet.agent.id})` : '-' },
               { key: 'container', label: 'Số container', children: sheet.containerNumber ?? '-' },
               { key: 'route', label: 'Tuyến', children: `${sheet.fromLocation ?? '?'} → ${sheet.toLocation ?? '?'}` },
-              { key: 'containerQty', label: 'Container Qty', children: sheet.containerQuantity ?? '-' },
-              { key: 'docStaff', label: 'NV chứng từ', children: sheet.docStaff?.fullName ?? '-' },
-              { key: 'deliveryStaff', label: 'NV giao nhận', children: sheet.deliveryStaff?.fullName ?? '-' },
+              { key: 'containerQty', label: 'Số lượng container', children: sheet.containerQuantity ?? '-' },
+              { key: 'phanLuong', label: 'Phân Luồng', children: (sheet as any).phanLuong ?? '-' },
               { key: 'createdBy', label: 'Người tạo', children: (sheet as { createdBy?: StaffRef | null }).createdBy?.fullName ?? '-' },
               { key: 'nw', label: 'NW', children: fmtWeight(sheet.nw) },
               { key: 'gw', label: 'GW', children: fmtWeight(sheet.gw) },
@@ -249,8 +249,6 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               { key: 'decl', label: 'Ngày tờ khai', children: fmtDate(sheet.declarationDate) },
               { key: 'bill', label: 'Số bill', children: sheet.billNumber ?? '-' },
               { key: 'invoice', label: 'Số hóa đơn', children: sheet.invoiceNumber ?? '-' },
-              { key: 'pol', label: 'POL', children: sheet.pol ?? '-' },
-              { key: 'pod', label: 'POD', children: sheet.pod ?? '-' },
               { key: 'note', label: 'Ghi chú', children: sheet.note ?? '-' },
             ]}
           />

@@ -64,7 +64,7 @@ interface TrackingSheet {
   customer: CustomerRef | null;
   fromLocation: string | null;
   toLocation: string | null;
-  containerQuantity: number | null;
+  containerQuantity: string | null;
   etaDate: string | null;
   gw: string | null;
   customNo: string | null;
@@ -73,6 +73,7 @@ interface TrackingSheet {
   invoiceNumber: string | null;
   pol: string | null;
   pod: string | null;
+  phanLuong: string | null;
   note: string | null;
   createdAt: string;
   jobOrders: JobOrderItem[];
@@ -157,10 +158,8 @@ function SheetDocument({
             <td colSpan={3}>{sheet.fromLocation || sheet.toLocation ? `${sheet.fromLocation ?? '?'} → ${sheet.toLocation ?? '?'}` : '-'}</td>
           </tr>
           <tr>
-            <td className="label">POL</td>
-            <td>{sheet.pol ?? '-'}</td>
-            <td className="label">POD</td>
-            <td>{sheet.pod ?? '-'}</td>
+            <td className="label">Phân Luồng</td>
+            <td colSpan={3}>{(sheet as any).phanLuong ?? '-'}</td>
           </tr>
           <tr>
             <td className="label">NW (kg)</td>

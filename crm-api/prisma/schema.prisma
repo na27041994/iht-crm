@@ -215,7 +215,7 @@ model TrackingSheet {
   agentId            Int?
   fromLocation       String?
   toLocation         String?
-  containerQuantity  Int?
+  containerQuantity  String?
   etaDate            DateTime? @db.Date
   gw                 Decimal?  @db.Decimal(12, 2)
   customNo           String?
@@ -224,6 +224,7 @@ model TrackingSheet {
   invoiceNumber      String?
   pol                String?
   pod                String?
+  phanLuong          String?
   note               String?
   isDelete           Int       @default(1)
   createdAt          DateTime  @default(now())

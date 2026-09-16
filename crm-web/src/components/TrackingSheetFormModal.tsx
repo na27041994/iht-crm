@@ -38,7 +38,7 @@ export interface TrackingSheetFormValues {
   agentId?: number;
   fromLocation?: string;
   toLocation?: string;
-  containerQuantity?: number;
+  containerQuantity?: string;
   etaDate?: string;
   gw?: number;
   customNo?: string;
@@ -47,6 +47,7 @@ export interface TrackingSheetFormValues {
   invoiceNumber?: string;
   pol?: string;
   pod?: string;
+  phanLuong?: string;
   note?: string;
 }
 
@@ -112,8 +113,6 @@ export default function TrackingSheetFormModal({
             `/tracking-sheets/${editingId}`,
           ).then((s) => {
             form.setFieldsValue({
-              docStaffId: s.docStaffId ?? undefined,
-              deliveryStaffId: s.deliveryStaffId ?? undefined,
               nw: s.nw == null ? undefined : Number(s.nw),
               containerNumber: s.containerNumber ?? '',
               customerId: s.customerId ?? undefined,
@@ -121,15 +120,14 @@ export default function TrackingSheetFormModal({
               agentId: s.agentId ?? undefined,
               fromLocation: s.fromLocation ?? '',
               toLocation: s.toLocation ?? '',
-              containerQuantity: s.containerQuantity ?? undefined,
+              containerQuantity: (s as any).containerQuantity ?? '',
               etaDate: s.etaDate ? dayjs(s.etaDate) : undefined,
               gw: s.gw == null ? undefined : Number(s.gw),
               customNo: s.customNo ?? '',
               declarationDate: s.declarationDate ? dayjs(s.declarationDate) : undefined,
               billNumber: s.billNumber ?? '',
               invoiceNumber: s.invoiceNumber ?? '',
-              pol: s.pol ?? '',
-              pod: s.pod ?? '',
+              phanLuong: (s as any).phanLuong ?? '',
               note: s.note ?? '',
             });
           });
@@ -146,8 +144,8 @@ export default function TrackingSheetFormModal({
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
-        docStaffId: values.docStaffId ?? null,
-        deliveryStaffId: values.deliveryStaffId ?? null,
+        docStaffId: null,
+        deliveryStaffId: null,
         nw: values.nw ?? null,
         containerNumber: values.containerNumber && String(values.containerNumber).trim() !== '' ? String(values.containerNumber).trim() : null,
         customerId: values.customerId ?? null,
@@ -155,15 +153,16 @@ export default function TrackingSheetFormModal({
         agentId: values.agentId ?? null,
         fromLocation: values.fromLocation && String(values.fromLocation).trim() !== '' ? String(values.fromLocation).trim() : null,
         toLocation: values.toLocation && String(values.toLocation).trim() !== '' ? String(values.toLocation).trim() : null,
-        containerQuantity: values.containerQuantity ?? null,
+        containerQuantity: values.containerQuantity && String(values.containerQuantity).trim() !== '' ? String(values.containerQuantity).trim() : null,
         etaDate: values.etaDate ? dayjs(values.etaDate).format('YYYY-MM-DD') : null,
         gw: values.gw ?? null,
         customNo: values.customNo && String(values.customNo).trim() !== '' ? String(values.customNo).trim() : null,
         declarationDate: values.declarationDate ? dayjs(values.declarationDate).format('YYYY-MM-DD') : null,
         billNumber: values.billNumber && String(values.billNumber).trim() !== '' ? String(values.billNumber).trim() : null,
         invoiceNumber: values.invoiceNumber && String(values.invoiceNumber).trim() !== '' ? String(values.invoiceNumber).trim() : null,
-        pol: values.pol && String(values.pol).trim() !== '' ? String(values.pol).trim() : null,
-        pod: values.pod && String(values.pod).trim() !== '' ? String(values.pod).trim() : null,
+        pol: null,
+        pod: null,
+        phanLuong: values.phanLuong && String(values.phanLuong).trim() !== '' ? String(values.phanLuong).trim() : null,
         note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
       };
 
@@ -242,27 +241,11 @@ export default function TrackingSheetFormModal({
               }))}
             />
           </Form.Item>
-          <Form.Item label="Nhân viên chứng từ" name="docStaffId">
-            <Select
-              placeholder="Chọn nhân viên"
-              showSearch
-              optionFilterProp="label"
-              options={users.map((u) => ({ value: u.id, label: u.fullName }))}
-            />
-          </Form.Item>
-          <Form.Item label="Nhân viên giao nhận" name="deliveryStaffId">
-            <Select
-              placeholder="Chọn nhân viên"
-              showSearch
-              optionFilterProp="label"
-              options={users.map((u) => ({ value: u.id, label: u.fullName }))}
-            />
-          </Form.Item>
           <Form.Item label="Số container" name="containerNumber">
             <Input placeholder="VD: MSKU1234567" />
           </Form.Item>
-          <Form.Item label="Container Quantity" name="containerQuantity">
-            <InputNumber min={1} precision={0} style={{ width: '100%' }} placeholder="VD: 1" />
+          <Form.Item label="Số lượng container" name="containerQuantity">
+            <Input placeholder="VD: 1 hoặc 2x40HC" />
           </Form.Item>
           <Form.Item label="Ngày ETA/ETD" name="etaDate">
             <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" />
@@ -279,11 +262,8 @@ export default function TrackingSheetFormModal({
           <Form.Item label="GW (kg)" name="gw">
             <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" />
           </Form.Item>
-          <Form.Item label="POL (Port of Loading)" name="pol">
-            <Input placeholder="VD: Cat Lai Port, HCM" />
-          </Form.Item>
-          <Form.Item label="POD (Port of Discharge)" name="pod">
-            <Input placeholder="VD: Shanghai Port" />
+          <Form.Item label="Phân Luồng" name="phanLuong">
+            <Input placeholder="VD: Xanh, Vàng, Đỏ" />
           </Form.Item>
           <Form.Item label="Custom No" name="customNo">
             <Input placeholder="Số tờ khai hải quan" />

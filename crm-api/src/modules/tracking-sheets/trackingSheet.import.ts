@@ -7,7 +7,7 @@ interface ImportSheetRow {
   customerId?: number | null;
   fromLocation?: string | null;
   toLocation?: string | null;
-  containerQuantity?: number | null;
+  containerQuantity?: string | null;
   etaDate?: Date | string | null;
   nw?: number | null;
   gw?: number | null;
@@ -15,11 +15,8 @@ interface ImportSheetRow {
   declarationDate?: Date | string | null;
   billNumber?: string | null;
   invoiceNumber?: string | null;
-  pol?: string | null;
-  pod?: string | null;
+  phanLuong?: string | null;
   note?: string | null;
-  docStaffId?: number | null;
-  deliveryStaffId?: number | null;
   createdById?: number | null;
 }
 
@@ -100,12 +97,12 @@ function toInt(v: unknown): number | null {
   return n == null ? null : Math.trunc(n);
 }
 
-// Column mappings (1-based index matching template column order)
+// Column mappings (1-based index matching template column order) - phanLuong thay POL/POD, containerQuantity cho phép chữ
 const SHEET_COLS: Record<string, number> = {
   containerNumber: 1, customerId: 2, fromLocation: 3, toLocation: 4,
   containerQuantity: 5, etaDate: 6, nw: 7, gw: 8, customNo: 9,
-  declarationDate: 10, billNumber: 11, invoiceNumber: 12, pol: 13,
-  pod: 14, note: 15, docStaffId: 16, deliveryStaffId: 17, createdById: 18,
+  declarationDate: 10, billNumber: 11, invoiceNumber: 12, phanLuong: 13,
+  note: 14, createdById: 15,
 };
 
 const ORDER_COLS: Record<string, number> = {
@@ -141,16 +138,6 @@ async function validateSheetRow(row: ImportSheetRow, rowNum: number): Promise<Va
     if (!customer) {
       errors.push({ row: rowNum, field: 'customerId', message: `Khách hàng ID ${row.customerId} không tồn tại` });
     }
-  }
-
-  if (row.docStaffId) {
-    const user = await prisma.user.findUnique({ where: { id: row.docStaffId, isActive: true } });
-    if (!user) errors.push({ row: rowNum, field: 'docStaffId', message: `Nhân viên chứng từ ID ${row.docStaffId} không tồn tại` });
-  }
-
-  if (row.deliveryStaffId) {
-    const user = await prisma.user.findUnique({ where: { id: row.deliveryStaffId, isActive: true } });
-    if (!user) errors.push({ row: rowNum, field: 'deliveryStaffId', message: `Nhân viên giao nhận ID ${row.deliveryStaffId} không tồn tại` });
   }
 
   if (row.createdById) {
@@ -223,14 +210,14 @@ export async function parseImportExcel(buffer: Buffer): Promise<ParsedImportData
       const containerNumberRaw = String(getCellValue(row, SHEET_COLS, 'containerNumber') ?? '').trim();
       const customerId = toInt(getCellValue(row, SHEET_COLS, 'customerId'));
       // containerNumber và customerId không bắt buộc nữa — bỏ qua dòng hoàn toàn trống
-      const hasAny = containerNumberRaw || customerId || String(getCellValue(row, SHEET_COLS, 'fromLocation') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'toLocation') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'note') ?? '').trim();
+      const hasAny = containerNumberRaw || customerId || String(getCellValue(row, SHEET_COLS, 'fromLocation') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'toLocation') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'phanLuong') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'note') ?? '').trim();
       if (!hasAny) return;
       sheets.push({
         containerNumber: containerNumberRaw || null,
         customerId: customerId ?? null,
         fromLocation: String(getCellValue(row, SHEET_COLS, 'fromLocation') ?? '').trim() || null,
         toLocation: String(getCellValue(row, SHEET_COLS, 'toLocation') ?? '').trim() || null,
-        containerQuantity: toInt(getCellValue(row, SHEET_COLS, 'containerQuantity')),
+        containerQuantity: String(getCellValue(row, SHEET_COLS, 'containerQuantity') ?? '').trim() || null,
         etaDate: toDate(getCellValue(row, SHEET_COLS, 'etaDate')),
         nw: toNumber(getCellValue(row, SHEET_COLS, 'nw')),
         gw: toNumber(getCellValue(row, SHEET_COLS, 'gw')),
@@ -238,11 +225,8 @@ export async function parseImportExcel(buffer: Buffer): Promise<ParsedImportData
         declarationDate: toDate(getCellValue(row, SHEET_COLS, 'declarationDate')),
         billNumber: String(getCellValue(row, SHEET_COLS, 'billNumber') ?? '').trim() || null,
         invoiceNumber: String(getCellValue(row, SHEET_COLS, 'invoiceNumber') ?? '').trim() || null,
-        pol: String(getCellValue(row, SHEET_COLS, 'pol') ?? '').trim() || null,
-        pod: String(getCellValue(row, SHEET_COLS, 'pod') ?? '').trim() || null,
+        phanLuong: String(getCellValue(row, SHEET_COLS, 'phanLuong') ?? '').trim() || null,
         note: String(getCellValue(row, SHEET_COLS, 'note') ?? '').trim() || null,
-        docStaffId: toInt(getCellValue(row, SHEET_COLS, 'docStaffId')),
-        deliveryStaffId: toInt(getCellValue(row, SHEET_COLS, 'deliveryStaffId')),
         createdById: toInt(getCellValue(row, SHEET_COLS, 'createdById')),
       });
     });
@@ -367,7 +351,7 @@ async function upsertTrackingSheet(
     customerId: row.customerId,
     fromLocation: row.fromLocation,
     toLocation: row.toLocation,
-    containerQuantity: row.containerQuantity ?? 1,
+    containerQuantity: row.containerQuantity ?? null,
     etaDate: row.etaDate,
     nw: row.nw,
     gw: row.gw,
@@ -375,11 +359,8 @@ async function upsertTrackingSheet(
     declarationDate: row.declarationDate,
     billNumber: row.billNumber,
     invoiceNumber: row.invoiceNumber,
-    pol: row.pol,
-    pod: row.pod,
+    phanLuong: row.phanLuong,
     note: row.note,
-    docStaffId: row.docStaffId,
-    deliveryStaffId: row.deliveryStaffId,
     createdById: row.createdById ?? defaultCreatedById,
     isDelete: 1,
   };

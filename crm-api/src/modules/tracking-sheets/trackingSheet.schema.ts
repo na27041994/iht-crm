@@ -10,7 +10,7 @@ export const trackingSheetSchema = z.object({
   agentId: z.coerce.number().int().positive().optional().nullable(),
   fromLocation: z.string().optional().nullable(),
   toLocation: z.string().optional().nullable(),
-  containerQuantity: z.number().int().positive().optional().nullable(),
+  containerQuantity: z.string().optional().nullable(),
   etaDate: z.coerce.date().optional().nullable(),
   gw: z.coerce.number().nonnegative().optional().nullable(),
   customNo: z.string().optional().nullable(),
@@ -19,6 +19,7 @@ export const trackingSheetSchema = z.object({
   invoiceNumber: z.string().optional().nullable(),
   pol: z.string().optional().nullable(),
   pod: z.string().optional().nullable(),
+  phanLuong: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
 });
 
