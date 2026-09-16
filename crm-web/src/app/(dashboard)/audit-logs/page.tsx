@@ -164,7 +164,7 @@ export default function AuditLogsPage() {
           options={Object.entries(ENTITY_LABELS).map(([value, label]) => ({ value, label }))}
         />
         <DatePicker.RangePicker
-          onChange={(_, strs) => setRange(strs[0] && strs[1] ? [strs[0], strs[1]] : null)}
+          onChange={(_, strs) => setRange(strs[0] && strs[1] ? [strs[0], strs[1]] : null)} format="DD/MM/YYYY"
         />
         <button
           type="button"

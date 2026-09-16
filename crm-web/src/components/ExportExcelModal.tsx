@@ -85,7 +85,7 @@ export default function ExportExcelModal({ open, onClose }: ExportExcelModalProp
           />
         </Form.Item>
         <Form.Item label="Khoảng ngày (ngày tạo)" name="range">
-          <DatePicker.RangePicker style={{ width: '100%' }} />
+          <DatePicker.RangePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
         </Form.Item>
       </Form>
     </Modal>

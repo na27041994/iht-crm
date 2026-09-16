@@ -150,7 +150,7 @@ export default function LiftingReportPage() {
               setTimeout(() => loadSheets(1), 0);
             }}
             allowClear
-            placeholder={['Từ ngày', 'Đến ngày']}
+            placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY"
           />
           <Button icon={<SearchOutlined />} onClick={handleSearchSheets}>
             Tìm

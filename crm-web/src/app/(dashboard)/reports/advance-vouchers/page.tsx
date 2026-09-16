@@ -211,7 +211,7 @@ export default function AdvanceVoucherReportPage() {
               else setRange(null);
             }}
             allowClear
-            placeholder={['Từ ngày', 'Đến ngày']}
+            placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY"
           />
           <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
             Lọc

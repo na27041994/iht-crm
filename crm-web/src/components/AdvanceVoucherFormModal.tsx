@@ -157,7 +157,7 @@ export default function AdvanceVoucherFormModal({
             <Input value={`${dayjs().format('YYMMDD')}xxx`} disabled />
           </Form.Item>
           <Form.Item label="Ngày tạo" name="advanceDate" rules={[{ required: true, message: 'Chọn ngày' }]}>
-            <DatePicker style={{ width: '100%' }} />
+            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
           </Form.Item>
           <Form.Item label="Current" name="currency">
             <Select options={[{ value: 'VND', label: 'VND' }, { value: 'USD', label: 'USD' }]} />
@@ -183,7 +183,7 @@ export default function AdvanceVoucherFormModal({
             <InputNumber min={1} precision={0} style={{ width: '100%' }} placeholder="Số container" />
           </Form.Item>
           <Form.Item label="Qty" name="qty">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />

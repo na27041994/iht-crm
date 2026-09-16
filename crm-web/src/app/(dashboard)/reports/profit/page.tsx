@@ -165,7 +165,7 @@ export default function ProfitReportPage() {
             }
           }}
           allowClear
-          placeholder={['Từ ngày', 'Đến ngày']}
+          placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY"
         />
         <Space>
           <Button type="primary" icon={<SearchOutlined />} onClick={applyFilter}>

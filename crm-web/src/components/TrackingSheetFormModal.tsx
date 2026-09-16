@@ -248,7 +248,7 @@ export default function TrackingSheetFormModal({
             <Input placeholder="VD: 1 hoặc 2x40HC" />
           </Form.Item>
           <Form.Item label="Ngày ETA/ETD" name="etaDate">
-            <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" />
+            <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" format="DD/MM/YYYY" />
           </Form.Item>
           <Form.Item label="Từ (From)" name="fromLocation">
             <Input placeholder="VD: Cat Lai Port, HCM" />
@@ -257,10 +257,10 @@ export default function TrackingSheetFormModal({
             <Input placeholder="VD: Shanghai Port" />
           </Form.Item>
           <Form.Item label="NW (kg)" name="nw">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Net weight" />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Net weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="GW (kg)" name="gw">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Phân Luồng" name="phanLuong">
             <Input placeholder="VD: Xanh, Vàng, Đỏ" />
@@ -269,7 +269,7 @@ export default function TrackingSheetFormModal({
             <Input placeholder="Số tờ khai hải quan" />
           </Form.Item>
           <Form.Item label="Ngày tờ khai" name="declarationDate">
-            <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" />
+            <DatePicker style={{ width: '100%' }} placeholder="Chọn ngày" format="DD/MM/YYYY" />
           </Form.Item>
           <Form.Item label="Số bill" name="billNumber">
             <Input placeholder="VD: MSK1234567890" />

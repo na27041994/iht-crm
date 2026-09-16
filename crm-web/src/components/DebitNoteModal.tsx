@@ -215,19 +215,19 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
             <Select options={[{ value: 'VND', label: 'VND' }, { value: 'USD', label: 'USD' }]} />
           </Form.Item>
           <Form.Item label="Số lượng" name="quantity">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           {currency === 'VND' ? (
             <Form.Item label="Giá VND" name="priceVnd">
-              <InputNumber min={0} style={{ width: '100%' }} placeholder="Giá theo VND" />
+              <InputNumber min={0} style={{ width: '100%' }} placeholder="Giá theo VND" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
             </Form.Item>
           ) : (
             <>
               <Form.Item label="Giá (USD)" name="priceUsd">
-                <InputNumber min={0} style={{ width: '100%' }} placeholder="Giá theo USD" />
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="Giá theo USD" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
               </Form.Item>
               <Form.Item label="Tỷ giá" name="exchangeRate">
-                <InputNumber min={0} style={{ width: '100%' }} placeholder="VD: 25400" />
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="VD: 25400" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
               </Form.Item>
             </>
           )}
@@ -235,7 +235,7 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
             <Select placeholder="Chọn thuế" options={[{ value: 0, label: '0%' }, { value: 8, label: '8%' }, { value: 10, label: '10%' }]} />
           </Form.Item>
           <Form.Item label="Tổng tiền" name="total" className="sm:col-span-2">
-            <InputNumber min={0} style={{ width: '100%' }} disabled />
+            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
         </div>
       </Form>
@@ -264,14 +264,14 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
                   <Input placeholder="VD: Cont, Chuyến..." />
                 </Form.Item>
                 <Form.Item label="Số lượng" name="quantity" initialValue={1}>
-                  <InputNumber min={0} style={{ width: '100%' }} />
+                  <InputNumber min={0} style={{ width: '100%' }} formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
                 </Form.Item>
                 <Form.Item
                   label="Trước thuế (tự điền từ Debit)"
                   name="pretaxAmount"
                   rules={[{ required: true, message: 'Nhập số tiền trước thuế' }]}
                 >
-                  <InputNumber min={0} style={{ width: '100%' }} />
+                  <InputNumber min={0} style={{ width: '100%' }} formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
                 </Form.Item>
                 <Form.Item label="Thuế (%)" name="taxRate" initialValue={0}>
                   <Select placeholder="Chọn thuế" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />

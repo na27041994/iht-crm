@@ -101,7 +101,7 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
             <Input placeholder="Mô tả nội dung" />
           </Form.Item>
           <Form.Item label="Port Amt" name="portAmt">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền" />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Industry" name="industry">
             <Input placeholder="Ngành hàng" />

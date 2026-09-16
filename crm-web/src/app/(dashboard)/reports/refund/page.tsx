@@ -226,7 +226,7 @@ export default function RefundReportPage() {
             }
           }}
           allowClear
-          placeholder={['Từ ngày', 'Đến ngày']}
+          placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY"
         />
         <Select
           value={typeFilter}

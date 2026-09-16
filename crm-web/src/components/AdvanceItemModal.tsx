@@ -69,7 +69,7 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
         <Form.Item label="Tiền" name="amount" rules={[{ required: true, message: 'Nhập số tiền' }]}>
-          <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền chi" />
+          <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền chi" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
         </Form.Item>
         <Form.Item label="Ghi chú" name="note">
           <Input placeholder="Ghi chú khoản chi" />

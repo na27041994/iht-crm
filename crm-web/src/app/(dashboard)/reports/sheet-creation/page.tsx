@@ -166,7 +166,7 @@ export default function SheetCreationReportPage() {
             }
           }}
           allowClear
-          placeholder={['Từ ngày', 'Đến ngày']}
+          placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY"
         />
         <Space>
           <Button type="primary" onClick={applyRange}>

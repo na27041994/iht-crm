@@ -140,22 +140,22 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
             <Input placeholder="VD: Cont, Kg, Chuyến..." />
           </Form.Item>
           <Form.Item label="Số lượng" name="quantity">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Trước thuế" name="pretaxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền trước thuế" />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền trước thuế" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
           </Form.Item>
           <Form.Item label="Tiền thuế" name="taxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} disabled />
+            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Sau thuế" name="afterTaxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} disabled />
+            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
           <Form.Item label="Tổng tiền" name="total" className="sm:col-span-2">
-            <InputNumber min={0} style={{ width: '100%' }} disabled />
+            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={(value: any) => value ? value.replace(/\./g, '').replace(/,/g, '') : ''} />
           </Form.Item>
         </div>
       </Form>
