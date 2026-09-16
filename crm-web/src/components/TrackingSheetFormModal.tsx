@@ -274,7 +274,7 @@ export default function TrackingSheetFormModal({
           <Form.Item label="Số bill" name="billNumber">
             <Input placeholder="VD: MSK1234567890" />
           </Form.Item>
-          <Form.Item label="Số hóa đơn" name="invoiceNumber">
+          <Form.Item label="Invoice No" name="invoiceNumber">
             <Input placeholder="VD: INV-2026-0001" />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
