@@ -5,7 +5,8 @@ import { toScaled } from '../../lib/money.js';
 import type { AdvanceVoucherInput, AdvanceItemInput } from './advanceVoucher.schema.js';
 
 function scaleAdvanceItem(input: AdvanceItemInput): AdvanceItemInput {
-  return { ...input, amount: toScaled(input.amount as unknown as number) as unknown as number ?? input.amount };
+  const { createJobOrder: _omit, ...rest } = input as any;
+  return { ...rest, amount: toScaled((rest as any).amount as unknown as number) as unknown as number ?? (rest as any).amount };
 }
 
 // Tổng net = SUM(Chi) - SUM(Giảm trừ), amount luôn dương
@@ -173,28 +174,73 @@ export async function deleteAdvanceVoucher(id: number) {
   await prisma.$transaction([
     prisma.advanceVoucher.update({ where: { id }, data: { isDelete: -1 } }),
     prisma.advanceVoucherItem.updateMany({ where: { voucherId: id }, data: { isDelete: -1 } }),
+    prisma.jobOrder.updateMany({ where: { sourceAdvanceVoucherId: id, isDelete: 1 }, data: { isDelete: -1 } }),
   ]);
   return { ...exists, isDelete: -1 };
+}
+
+// Đồng bộ 1 dòng Job Order tương đương Our Company Pay từ khoản Chi của phiếu Chi tạm ứng
+async function syncJobOrderFromItem(voucherId: number, itemId: number) {
+  const voucher = await prisma.advanceVoucher.findUnique({ where: { id: voucherId } });
+  const item: any = await prisma.advanceVoucherItem.findUnique({ where: { id: itemId } });
+  if (!voucher || !item || item.isDelete !== 1) return null;
+  if (voucher.type !== 'Chi tạm ứng' || (voucher as any).sheetId == null) return null;
+  if (item.kind === 'Giảm trừ') {
+    await prisma.jobOrder.updateMany({ where: { sourceAdvanceItemId: itemId, isDelete: 1 }, data: { isDelete: -1 } });
+    return null;
+  }
+  const amount = item.amount as unknown as number;
+  const data: any = {
+    sheetId: (voucher as any).sheetId,
+    type: 'Our Company Pay',
+    description: item.note || `Tạm ứng ${voucher.advanceNo}`,
+    portAmt: amount,
+    pretaxAmount: amount,
+    taxRate: 0,
+    note: `Từ phiếu tạm ứng ${voucher.advanceNo} - khoản #${item.id}`,
+    sourceAdvanceVoucherId: voucherId,
+    sourceAdvanceItemId: itemId,
+    isDelete: 1,
+  };
+  const existing = await prisma.jobOrder.findFirst({ where: { sourceAdvanceItemId: itemId, isDelete: 1 } });
+  if (existing) return prisma.jobOrder.update({ where: { id: existing.id }, data });
+  return prisma.jobOrder.create({ data });
 }
 
 // Thêm khoản chi vào phiếu
 export async function createAdvanceItem(voucherId: number, input: AdvanceItemInput) {
   await requireVoucher(voucherId);
-  return prisma.advanceVoucherItem.create({ data: { ...scaleAdvanceItem(input), voucherId } });
+  const { createJobOrder } = input as any;
+  const created: any = await prisma.advanceVoucherItem.create({ data: { ...scaleAdvanceItem(input), voucherId } });
+  if (createJobOrder && (created as any).kind !== 'Giảm trừ') {
+    await syncJobOrderFromItem(voucherId, created.id);
+  }
+  return created;
 }
 
 // Cập nhật khoản chi
 export async function updateAdvanceItem(voucherId: number, id: number, input: AdvanceItemInput) {
   const item = await prisma.advanceVoucherItem.findFirst({ where: { id, voucherId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy khoản chi', 404);
-  return prisma.advanceVoucherItem.update({ where: { id }, data: scaleAdvanceItem(input) });
+  const { createJobOrder } = input as any;
+  const updated: any = await prisma.advanceVoucherItem.update({ where: { id }, data: scaleAdvanceItem(input) });
+  if (createJobOrder) {
+    await syncJobOrderFromItem(voucherId, id);
+  } else {
+    // vẫn đồng bộ nếu đã từng liên kết (sửa tiền/mô tả -> cập nhật job)
+    const linked = await prisma.jobOrder.findFirst({ where: { sourceAdvanceItemId: id, isDelete: 1 }, select: { id: true } });
+    if (linked) await syncJobOrderFromItem(voucherId, id);
+  }
+  return updated;
 }
 
 // Xóa mềm khoản chi
 export async function deleteAdvanceItem(voucherId: number, id: number) {
   const item = await prisma.advanceVoucherItem.findFirst({ where: { id, voucherId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy khoản chi', 404);
-  return prisma.advanceVoucherItem.update({ where: { id }, data: { isDelete: -1 } });
+  const res = await prisma.advanceVoucherItem.update({ where: { id }, data: { isDelete: -1 } });
+  await prisma.jobOrder.updateMany({ where: { sourceAdvanceItemId: id, isDelete: 1 }, data: { isDelete: -1 } });
+  return res;
 }
 
 // Kiểm tra phiếu chi tồn tại, ném lỗi nếu không

@@ -47,6 +47,11 @@ export const trackingSheetInclude = {
     orderBy: { id: 'asc' },
   },
   debitNotes: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
+  advanceVouchers: {
+    where: { isDelete: 1 },
+    orderBy: { id: 'asc' },
+    include: { items: { where: { isDelete: 1 }, orderBy: { id: 'asc' } } },
+  },
 } satisfies Prisma.TrackingSheetInclude;
 
 export type TrackingSheetWithRelations = Prisma.TrackingSheetGetPayload<{

@@ -111,7 +111,15 @@ advanceVoucherRouter.post(
   '/:voucherId/items',
   requirePermission('advance_voucher', 'create'),
   validate(advanceItemSchema),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
+    if ((req.body as any)?.createJobOrder) {
+      const { hasPermission } = await import('../../modules/permissions/permissions.service.js');
+      const ok = await hasPermission(req.user!.sub, 'job_order' as any, 'create');
+      if (!ok) {
+        res.status(403).json({ error: 'Bạn không có quyền create job_order' });
+        return;
+      }
+    }
     res.status(201).json(await createAdvanceItem(Number(req.params.voucherId), req.body));
   }),
 );
@@ -120,7 +128,15 @@ advanceVoucherRouter.put(
   '/:voucherId/items/:id',
   requirePermission('advance_voucher', 'edit'),
   validate(advanceItemSchema),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: AuthedRequest, res) => {
+    if ((req.body as any)?.createJobOrder) {
+      const { hasPermission } = await import('../../modules/permissions/permissions.service.js');
+      const ok = await hasPermission(req.user!.sub, 'job_order' as any, 'edit');
+      if (!ok) {
+        res.status(403).json({ error: 'Bạn không có quyền edit job_order' });
+        return;
+      }
+    }
     res.json(await updateAdvanceItem(Number(req.params.voucherId), Number(req.params.id), req.body));
   }),
 );

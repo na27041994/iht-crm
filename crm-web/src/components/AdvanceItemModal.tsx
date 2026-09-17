@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { App, Checkbox, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
+import { usePermissions } from '@/hooks/usePermission';
 
 export const ADVANCE_ITEM_KINDS = ['Chi', 'Giảm trừ'] as const;
 
@@ -26,16 +27,29 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
+  const [createJobOrder, setCreateJobOrder] = useState(false);
+  const [voucherInfo, setVoucherInfo] = useState<{ type: string; sheetId?: number | null } | null>(null);
+  const { can } = usePermissions();
+  const canCreateJobOrder = can('job_order', 'create');
+
+  const kind = Form.useWatch('kind', form);
 
   useEffect(() => {
     if (!open) return;
     form.resetFields();
     form.setFieldsValue({ kind: 'Chi' });
+    setCreateJobOrder(false);
+    // lấy loại phiếu + job để quyết định hiện checkbox
+    apiFetch<{ type: string; sheetId?: number | null }>(`/advance-vouchers/${voucherId}`)
+      .then((v) => setVoucherInfo({ type: v.type, sheetId: v.sheetId }))
+      .catch(() => setVoucherInfo(null));
     if (editing) {
       // DB lưu *100, hiển thị chia 100, amount luôn dương
       form.setFieldsValue({ amount: Number(editing.amount) / 100, kind: (editing as any).kind ?? 'Chi', note: editing.note ?? '' });
     }
-  }, [open, editing, form]);
+  }, [open, editing, form, voucherId]);
+
+  const showJobCheckbox = !editing && (kind ?? 'Chi') === 'Chi' && voucherInfo?.type === 'Chi tạm ứng' && voucherInfo?.sheetId != null && canCreateJobOrder;
 
   async function handleSubmit(values: { amount: number; kind: string; note?: string }) {
     if (values.amount == null || Number(values.amount) <= 0) {
@@ -44,17 +58,18 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
     }
     setSaving(true);
     try {
-      const body = {
+      const body: Record<string, unknown> = {
         amount: values.amount,
         kind: values.kind ?? 'Chi',
         note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
       };
+      if (showJobCheckbox && createJobOrder) (body as any).createJobOrder = true;
       if (editing) {
         await apiFetch(`/advance-vouchers/${voucherId}/items/${editing.id}`, { method: 'PUT', body: JSON.stringify(body) });
         message.success('Đã cập nhật khoản chi');
       } else {
         await apiFetch(`/advance-vouchers/${voucherId}/items`, { method: 'POST', body: JSON.stringify(body) });
-        message.success('Đã thêm khoản chi');
+        message.success(showJobCheckbox && createJobOrder ? 'Đã thêm khoản chi + tạo Job Order' : 'Đã thêm khoản chi');
       }
       onSaved();
       onClose();
@@ -86,6 +101,13 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
         <Form.Item label="Ghi chú" name="note">
           <Input placeholder="Ghi chú khoản chi" />
         </Form.Item>
+        {showJobCheckbox && (
+          <Form.Item>
+            <Checkbox checked={createJobOrder} onChange={(e) => setCreateJobOrder(e.target.checked)}>
+              Đồng thời tạo <strong>Job Order (Our Company Pay)</strong>
+            </Checkbox>
+          </Form.Item>
+        )}
       </Form>
     </Modal>
   );
