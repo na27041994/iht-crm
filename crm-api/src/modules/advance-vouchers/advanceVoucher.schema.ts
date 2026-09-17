@@ -14,8 +14,8 @@ export const advanceVoucherSchema = z.object({
   qty: z.coerce.number().optional().nullable(),
   note: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
-  // Chi tạm ứng bắt buộc phải chọn Job
-  if (data.type.toLowerCase().includes('tạm ứng') && (data.sheetId == null)) {
+  // Chỉ "Chi tạm ứng" bắt buộc chọn Job, "Phiếu tạm ứng" không bắt buộc
+  if (data.type === 'Chi tạm ứng' && (data.sheetId == null)) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['sheetId'], message: 'Chi tạm ứng bắt buộc phải chọn Job' });
   }
 });

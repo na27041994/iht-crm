@@ -131,7 +131,7 @@ export default function AdvanceVoucherFormModal({
   const watchedSheetId = Form.useWatch('sheetId', form);
   const watchedType = Form.useWatch('type', form);
   const selectedSheet = sheets.find((s) => s.id === watchedSheetId);
-  const isTamUng = ((watchedType ?? form.getFieldValue('type') ?? '') as string).toLowerCase().includes('tạm ứng');
+  const isChiTamUng = (watchedType ?? form.getFieldValue('type') ?? '') === 'Chi tạm ứng';
 
   // Chọn Job -> lấy thông tin job qua (khách hàng, tuyến, số cont)
   async function handleSheetChange(sheetId?: number) {
@@ -173,10 +173,10 @@ export default function AdvanceVoucherFormModal({
           <Form.Item
             label="Chọn Job"
             name="sheetId"
-            rules={isTamUng ? [{ required: true, message: 'Chi tạm ứng bắt buộc phải chọn Job' }] : undefined}
+            rules={isChiTamUng ? [{ required: true, message: 'Chi tạm ứng bắt buộc phải chọn Job' }] : undefined}
           >
             <Select
-              placeholder={isTamUng ? 'Bắt buộc chọn Job cho Chi tạm ứng' : 'Chọn phiếu theo dõi'}
+              placeholder={isChiTamUng ? 'Bắt buộc chọn Job cho Chi tạm ứng' : 'Chọn phiếu theo dõi'}
               showSearch
               optionFilterProp="label"
               onChange={(v) => handleSheetChange(v)}
