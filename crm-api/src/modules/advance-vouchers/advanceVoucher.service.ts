@@ -5,8 +5,7 @@ import { toScaled } from '../../lib/money.js';
 import type { AdvanceVoucherInput, AdvanceItemInput } from './advanceVoucher.schema.js';
 
 function scaleAdvanceItem(input: AdvanceItemInput): AdvanceItemInput {
-  const { createJobOrder: _omit, ...rest } = input as any;
-  return { ...rest, amount: toScaled((rest as any).amount as unknown as number) as unknown as number ?? (rest as any).amount };
+  return { ...input, amount: toScaled(input.amount as unknown as number) as unknown as number ?? input.amount };
 }
 
 // Tổng net = SUM(Chi) - SUM(Giảm trừ), amount luôn dương
@@ -210,27 +209,17 @@ async function syncJobOrderFromItem(voucherId: number, itemId: number) {
 // Thêm khoản chi vào phiếu
 export async function createAdvanceItem(voucherId: number, input: AdvanceItemInput) {
   await requireVoucher(voucherId);
-  const { createJobOrder } = input as any;
-  const created: any = await prisma.advanceVoucherItem.create({ data: { ...scaleAdvanceItem(input), voucherId } });
-  if (createJobOrder && (created as any).kind !== 'Giảm trừ') {
-    await syncJobOrderFromItem(voucherId, created.id);
-  }
-  return created;
+  return prisma.advanceVoucherItem.create({ data: { ...scaleAdvanceItem(input), voucherId } });
 }
 
 // Cập nhật khoản chi
 export async function updateAdvanceItem(voucherId: number, id: number, input: AdvanceItemInput) {
   const item = await prisma.advanceVoucherItem.findFirst({ where: { id, voucherId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy khoản chi', 404);
-  const { createJobOrder } = input as any;
   const updated: any = await prisma.advanceVoucherItem.update({ where: { id }, data: scaleAdvanceItem(input) });
-  if (createJobOrder) {
-    await syncJobOrderFromItem(voucherId, id);
-  } else {
-    // vẫn đồng bộ nếu đã từng liên kết (sửa tiền/mô tả -> cập nhật job)
-    const linked = await prisma.jobOrder.findFirst({ where: { sourceAdvanceItemId: id, isDelete: 1 }, select: { id: true } });
-    if (linked) await syncJobOrderFromItem(voucherId, id);
-  }
+  // vẫn đồng bộ nếu đã từng liên kết (sửa tiền/mô tả -> cập nhật job cũ)
+  const linked = await prisma.jobOrder.findFirst({ where: { sourceAdvanceItemId: id, isDelete: 1 }, select: { id: true } });
+  if (linked) await syncJobOrderFromItem(voucherId, id);
   return updated;
 }
 

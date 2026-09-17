@@ -29,7 +29,6 @@ export const advanceItemSchema = z.object({
   kind: z.enum(advanceItemKinds).default('Chi'),
   description: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
-  createJobOrder: z.boolean().optional().default(false),
 });
 
 export type AdvanceItemInput = z.infer<typeof advanceItemSchema>;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { App, Button, Checkbox, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Spin } from 'antd';
+import { App, Button, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Spin } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
@@ -9,7 +9,6 @@ import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { ADVANCE_TYPES } from '@/lib/advanceTypes';
 import { ADVANCE_ITEM_KINDS } from '@/components/AdvanceItemModal';
 import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
-import { usePermissions } from '@/hooks/usePermission';
 
 interface SheetOption {
   id: number;
@@ -60,9 +59,6 @@ export default function AdvanceVoucherFormModal({
   const [sheets, setSheets] = useState<SheetOption[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [items, setItems] = useState<Array<{ amount?: number; kind?: string; description?: string; note?: string }>>([]);
-  const [createJobOrders, setCreateJobOrders] = useState(false);
-  const { can } = usePermissions();
-  const canCreateJobOrder = can('job_order', 'create');
   const [fetchingSheets, setFetchingSheets] = useState(false);
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const sheetSearchTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -203,13 +199,9 @@ export default function AdvanceVoucherFormModal({
         message.success('Đã cập nhật phiếu chi tạm ứng');
       } else {
         const created = await apiFetch<{ id: number }>(`/advance-vouchers`, { method: 'POST', body: JSON.stringify(body) });
-        // gộp các khoản chi ngay khi tạo phiếu (kèm tạo Job Order nếu tick)
-        const onlyChiTamUng = values.type === 'Chi tạm ứng';
-        let jobCount = 0;
+        // gộp các khoản chi ngay khi tạo phiếu
         for (const it of items) {
           if (it.amount == null) continue;
-          const isChi = (it.kind ?? 'Chi') !== 'Giảm trừ';
-          const withJob = onlyChiTamUng && isChi && createJobOrders && canCreateJobOrder;
           await apiFetch(`/advance-vouchers/${created.id}/items`, {
             method: 'POST',
             body: JSON.stringify({
@@ -217,12 +209,10 @@ export default function AdvanceVoucherFormModal({
               kind: it.kind ?? 'Chi',
               description: it.description?.trim() ? it.description.trim() : null,
               note: it.note?.trim() ? it.note.trim() : null,
-              ...(withJob ? { createJobOrder: true } : {}),
             }),
           });
-          if (withJob) jobCount++;
         }
-        if (items.length) message.success(`Đã tạo phiếu + ${items.length} khoản${jobCount ? ` + ${jobCount} Job Order` : ''}`);
+        if (items.length) message.success(`Đã tạo phiếu + ${items.length} khoản`);
         else message.success('Đã tạo phiếu chi tạm ứng');
       }
       onSaved();
@@ -348,13 +338,6 @@ export default function AdvanceVoucherFormModal({
               <strong>Các khoản ({items.length}){` - Chi: ${totalChi.toLocaleString('vi-VN')}`}{totalGiam > 0 ? ` - Giảm trừ: ${totalGiam.toLocaleString('vi-VN')}` : ''}{` - Còn lại: ${itemsTotal.toLocaleString('vi-VN')}`}</strong>
               <Button size="small" icon={<PlusOutlined />} onClick={addItem}>Thêm khoản</Button>
             </div>
-            {isChiTamUng && watchedSheetId != null && canCreateJobOrder && (
-              <div style={{ marginBottom: 8 }}>
-                <Checkbox checked={createJobOrders} onChange={(e) => setCreateJobOrders(e.target.checked)}>
-                  Đồng thời tạo <strong>Job Order (Our Company Pay)</strong> cho các khoản <strong>Chi</strong>
-                </Checkbox>
-              </div>
-            )}
             {items.map((it, idx) => (
               <Space key={idx} style={{ display: 'flex', marginBottom: 8 }} align="start" wrap>
                 <Select
