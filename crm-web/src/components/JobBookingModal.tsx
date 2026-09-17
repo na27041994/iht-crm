@@ -5,6 +5,7 @@ import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
+import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 
 export interface JobBookingItem {
   id: number;
@@ -149,7 +150,7 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
             <Select placeholder="Chọn loại" options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />
           </Form.Item>
           <Form.Item label="Mô tả" name="description" className="sm:col-span-2">
-            <Input placeholder="Mô tả nội dung" />
+            <DescriptionAutocomplete type="booking" placeholder="Gõ để tìm mô tả đã từng nhập..." />
           </Form.Item>
           <Form.Item label="Đơn vị tính" name="unit">
             <Input placeholder="VD: Cont, Kg, Chuyến..." />

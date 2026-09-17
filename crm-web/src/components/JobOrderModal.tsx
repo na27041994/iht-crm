@@ -5,6 +5,7 @@ import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
+import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 
 export interface JobOrderItem {
   id: number;
@@ -166,7 +167,7 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
             <Select placeholder="Chọn phân loại" options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />
           </Form.Item>
           <Form.Item label="Mô tả" name="description" className="sm:col-span-2">
-            <Input placeholder="Mô tả nội dung" />
+            <DescriptionAutocomplete type="order" placeholder="Gõ để tìm mô tả đã từng nhập..." />
           </Form.Item>
           <Form.Item label="Nhân viên giao nhận" name="deliveryStaffId" className="sm:col-span-2">
             <Select

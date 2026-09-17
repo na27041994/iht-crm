@@ -5,6 +5,7 @@ import { App, Checkbox, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
+import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 
 export interface DebitNoteItem {
   id: number;
@@ -210,7 +211,7 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
             <Input placeholder="VD: Cont, Kg..." />
           </Form.Item>
           <Form.Item label="Mô tả" name="description" className="sm:col-span-2">
-            <Input placeholder="Mô tả nội dung" />
+            <DescriptionAutocomplete type="debit" placeholder="Gõ để tìm mô tả đã từng nhập..." />
           </Form.Item>
           <Form.Item label="Current" name="currency">
             <Select options={[{ value: 'VND', label: 'VND' }, { value: 'USD', label: 'USD' }]} />
