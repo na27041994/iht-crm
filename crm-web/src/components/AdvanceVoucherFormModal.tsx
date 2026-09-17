@@ -10,7 +10,11 @@ import { ADVANCE_TYPES } from '@/lib/advanceTypes';
 interface SheetOption {
   id: number;
   sheetNumber: string;
+  customerId?: number | null;
   customer: { id: number; companyName: string } | null;
+  fromLocation?: string | null;
+  toLocation?: string | null;
+  containerQuantity?: string | number | null;
 }
 
 interface CustomerOption {
@@ -125,7 +129,33 @@ export default function AdvanceVoucherFormModal({
   }
 
   const watchedSheetId = Form.useWatch('sheetId', form);
+  const watchedType = Form.useWatch('type', form);
   const selectedSheet = sheets.find((s) => s.id === watchedSheetId);
+  const isTamUng = ((watchedType ?? form.getFieldValue('type') ?? '') as string).toLowerCase().includes('tạm ứng');
+
+  // Chọn Job -> lấy thông tin job qua (khách hàng, tuyến, số cont)
+  async function handleSheetChange(sheetId?: number) {
+    if (!sheetId) return;
+    try {
+      const detail = await apiFetch<{
+        customerId?: number | null;
+        customer?: { id: number; companyName: string } | null;
+        fromLocation?: string | null;
+        toLocation?: string | null;
+        containerQuantity?: string | number | null;
+      }>(`/tracking-sheets/${sheetId}`);
+      form.setFieldsValue({
+        customerId: detail.customerId ?? detail.customer?.id ?? undefined,
+        orderFrom: detail.fromLocation ?? '',
+        orderTo: detail.toLocation ?? '',
+        containerQty: detail.containerQuantity != null && String(detail.containerQuantity).trim() !== '' && !Number.isNaN(Number(detail.containerQuantity)) ? Number(detail.containerQuantity) : undefined,
+      });
+      // đồng bộ list sheets để hint khách hàng đúng
+      setSheets((prev) => prev.map((s) => (s.id === sheetId ? { ...s, customerId: detail.customerId ?? s.customerId, fromLocation: detail.fromLocation ?? s.fromLocation, toLocation: detail.toLocation ?? s.toLocation, containerQuantity: detail.containerQuantity ?? s.containerQuantity } : s)));
+    } catch {
+      // ignore, user vẫn nhập tay được
+    }
+  }
 
   return (
     <Modal
@@ -140,11 +170,16 @@ export default function AdvanceVoucherFormModal({
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-          <Form.Item label="Chọn Job" name="sheetId">
+          <Form.Item
+            label="Chọn Job"
+            name="sheetId"
+            rules={isTamUng ? [{ required: true, message: 'Chi tạm ứng bắt buộc phải chọn Job' }] : undefined}
+          >
             <Select
-              placeholder="Chọn phiếu theo dõi"
+              placeholder={isTamUng ? 'Bắt buộc chọn Job cho Chi tạm ứng' : 'Chọn phiếu theo dõi'}
               showSearch
               optionFilterProp="label"
+              onChange={(v) => handleSheetChange(v)}
               options={sheets.map((s) => ({
                 value: s.id,
                 label: `${s.sheetNumber}${s.customer ? ` - ${s.customer.companyName}` : ''}`,
