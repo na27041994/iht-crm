@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { App, Button, Empty, Input, Popconfirm, Table, Typography } from 'antd';
+import { App, Button, Empty, Input, Popconfirm, Table, Tooltip, Typography } from 'antd';
 import { DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -239,6 +239,7 @@ function TrackingSheetsContent() {
             size="small"
             rowKey="id"
             loading={loading}
+            tableLayout="fixed"
             dataSource={data?.items ?? []}
             rowSelection={{
               selectedRowKeys: selectedIds,
@@ -256,23 +257,29 @@ function TrackingSheetsContent() {
             }}
             scroll={{ x: 800 }}
             columns={[
-              { title: 'Mã phiếu', dataIndex: 'sheetNumber', render: (v: string, s: TrackingSheet) => <Link href={`/tracking-sheets/${s.id}`}><Typography.Text code className="cursor-pointer text-blue-600">{v}</Typography.Text></Link> },
+              { title: 'Mã phiếu', dataIndex: 'sheetNumber', width: 130, render: (v: string, s: TrackingSheet) => <Link href={`/tracking-sheets/${s.id}`}><Typography.Text code className="cursor-pointer text-blue-600">{v}</Typography.Text></Link> },
               {
                 title: 'Khách hàng',
                 key: 'customer',
+                width: 220,
+                ellipsis: true,
                 render: (_: unknown, s: TrackingSheet) =>
                   s.customer ? (
-                    <div className="font-medium">{s.customer.companyName}</div>
+                    <Tooltip title={s.customer.companyName}><span>{s.customer.companyName}</span></Tooltip>
                   ) : (
                     '-'
                   ),
               },
-              { title: 'Số container', dataIndex: 'containerNumber', render: (v: string | null) => v ?? '-' },
+              { title: 'Số container', dataIndex: 'containerNumber', width: 180, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
               {
                 title: 'Tuyến',
                 key: 'route',
-                render: (_: unknown, s: TrackingSheet) =>
-                  s.fromLocation || s.toLocation ? `${s.fromLocation ?? '?'} → ${s.toLocation ?? '?'}` : '-',
+                width: 220,
+                ellipsis: true,
+                render: (_: unknown, s: TrackingSheet) => {
+                  const route = s.fromLocation || s.toLocation ? `${s.fromLocation ?? '?'} → ${s.toLocation ?? '?'}` : '-';
+                  return route === '-' ? '-' : <Tooltip title={route}><span>{route}</span></Tooltip>;
+                },
               },
               {
                 title: 'Thao tác',
