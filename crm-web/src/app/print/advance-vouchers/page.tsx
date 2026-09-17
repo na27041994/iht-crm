@@ -50,11 +50,16 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
   const personShort = staffShort || 'NV';
   const sheetNo = v.sheet?.sheetNumber ?? '';
 
+  const typeUpper = (v.type || '').toUpperCase();
+  const isTrucTiep = typeUpper.includes('TRỰC TIẾP');
+  const title = isTrucTiep ? 'PHIẾU CHI TRỰC TIẾP' : typeUpper.includes('TẠM ỨNG') ? (v.type === 'Phiếu tạm ứng' ? 'PHIẾU TẠM ỨNG' : 'PHIẾU CHI TẠM ỨNG') : `PHIẾU ${typeUpper || 'CHI'}`;
+  const subtitle = isTrucTiep ? 'APPLICANT' : 'ADVANCE PAYMENT';
+
   return (
     <div className="print-sheet">
       <div className="old-header">
-        <div className="old-title">PHIẾU CHI TRỰC TIẾP</div>
-        <div className="old-subtitle">APPLICANT</div>
+        <div className="old-title">{title}</div>
+        <div className="old-subtitle">{subtitle}</div>
       </div>
 
       {/* Info grid */}
@@ -132,16 +137,16 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
         </tbody>
       </table>
 
-      {/* Signatures */}
+      {/* Signatures: Người xin chi, Chủ quản đơn vị, Kế toán, Duyệt, Thủ quỹ, Người nhận tiền */}
       <table className="old-table" style={{ marginTop: 0 }}>
         <thead>
           <tr>
-            <th className="old-th" style={{ width: '14%' }}>Tài vụ/<br />Finance</th>
-            <th className="old-th" style={{ width: '14%' }}>Thủ Quỹ/<br />Cashier</th>
-            <th className="old-th" style={{ width: '14%' }}>Người Nhận Tiền/<br />Receiver</th>
-            <th className="old-th" style={{ width: '14%' }}>Duyệt/<br />Approved by</th>
-            <th className="old-th" style={{ width: '18%' }}>Chủ Quản Đơn Vị/<br />Department Manager</th>
-            <th className="old-th">Người Xin Chi Trực Tiếp/<br />Applicant</th>
+            <th className="old-th" style={{ width: '17%' }}>Người Xin Chi/<br />Applicant</th>
+            <th className="old-th" style={{ width: '17%' }}>Chủ Quản Đơn Vị/<br />Department Manager</th>
+            <th className="old-th" style={{ width: '16%' }}>Kế Toán/<br />Accountant</th>
+            <th className="old-th" style={{ width: '16%' }}>Duyệt/<br />Approved by</th>
+            <th className="old-th" style={{ width: '17%' }}>Thủ Quỹ/<br />Cashier</th>
+            <th className="old-th">Người Nhận Tiền/<br />Receiver</th>
           </tr>
         </thead>
         <tbody>
