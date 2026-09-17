@@ -74,6 +74,7 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
     setupSheet(ws2, [
       { header: 'Số phiếu', key: 'advanceNo', width: 14 },
       { header: 'Loại', key: 'type', width: 16 },
+      { header: 'Khoản', key: 'kind', width: 12 },
       { header: 'Số tiền', key: 'amount', width: 16, style: { numFmt: '#,##0.00' } },
       { header: 'Ghi chú', key: 'note', width: 30 },
     ]);
@@ -82,6 +83,7 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
         ws2.addRow({
           advanceNo: v.advanceNo,
           type: v.type,
+          kind: (it as any).kind ?? 'Chi',
           amount: Number(it.amount) / 100,
           note: it.note ?? '',
         });

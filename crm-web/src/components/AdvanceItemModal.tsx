@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { App, Form, Input, InputNumber, Modal } from 'antd';
+import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
+
+export const ADVANCE_ITEM_KINDS = ['Chi', 'Giảm trừ'] as const;
 
 export interface AdvanceItem {
   id: number;
   amount: string;
+  kind?: string | null;
   note: string | null;
 }
 
@@ -27,18 +30,23 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
   useEffect(() => {
     if (!open) return;
     form.resetFields();
+    form.setFieldsValue({ kind: 'Chi' });
     if (editing) {
-      // DB lưu *100, hiển thị chia 100
-      form.setFieldsValue({ amount: Number(editing.amount) / 100, note: editing.note ?? '' });
+      // DB lưu *100, hiển thị chia 100, amount luôn dương
+      form.setFieldsValue({ amount: Number(editing.amount) / 100, kind: (editing as any).kind ?? 'Chi', note: editing.note ?? '' });
     }
   }, [open, editing, form]);
 
-  // Hàm handleSubmit: xử lý handleSubmit
-  async function handleSubmit(values: { amount: number; note?: string }) {
+  async function handleSubmit(values: { amount: number; kind: string; note?: string }) {
+    if (values.amount == null || Number(values.amount) <= 0) {
+      message.error('Số tiền phải > 0');
+      return;
+    }
     setSaving(true);
     try {
       const body = {
         amount: values.amount,
+        kind: values.kind ?? 'Chi',
         note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
       };
       if (editing) {
@@ -69,8 +77,11 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
       destroyOnHidden
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
-        <Form.Item label="Tiền" name="amount" rules={[{ required: true, message: 'Nhập số tiền' }]}>
-          <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền chi" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+        <Form.Item label="Loại khoản" name="kind" rules={[{ required: true, message: 'Chọn loại khoản' }]}>
+          <Select options={ADVANCE_ITEM_KINDS.map((k) => ({ value: k, label: k === 'Giảm trừ' ? 'Giảm trừ (trừ vào tổng)' : 'Chi' }))} />
+        </Form.Item>
+        <Form.Item label="Tiền (luôn nhập dương)" name="amount" rules={[{ required: true, message: 'Nhập số tiền' }]}>
+          <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền chi" formatter={formatMoneyInput} parser={parseMoneyInput} />
         </Form.Item>
         <Form.Item label="Ghi chú" name="note">
           <Input placeholder="Ghi chú khoản chi" />

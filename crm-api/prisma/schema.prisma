@@ -350,6 +350,7 @@ model AdvanceVoucherItem {
   voucher   AdvanceVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
   voucherId Int
   amount    Decimal        @db.Decimal(15, 2)
+  kind      String         @default("Chi")
   note      String?
   isDelete  Int            @default(1)
   createdAt DateTime       @default(now())

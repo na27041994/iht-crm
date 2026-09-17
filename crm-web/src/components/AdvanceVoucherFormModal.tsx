@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { ADVANCE_TYPES } from '@/lib/advanceTypes';
+import { ADVANCE_ITEM_KINDS } from '@/components/AdvanceItemModal';
 
 interface SheetOption {
   id: number;
@@ -56,7 +57,7 @@ export default function AdvanceVoucherFormModal({
   const [loading, setLoading] = useState(false);
   const [sheets, setSheets] = useState<SheetOption[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
-  const [items, setItems] = useState<Array<{ amount?: number; note?: string }>>([]);
+  const [items, setItems] = useState<Array<{ amount?: number; kind?: string; note?: string }>>([]);
   const [fetchingSheets, setFetchingSheets] = useState(false);
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const sheetSearchTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -158,15 +159,18 @@ export default function AdvanceVoucherFormModal({
   }, [open, editingId, form, message]);
 
   function addItem() {
-    setItems((prev) => [...prev, { amount: undefined, note: '' }]);
+    setItems((prev) => [...prev, { amount: undefined, kind: 'Chi', note: '' }]);
   }
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
   }
-  function updateItem(idx: number, patch: Partial<{ amount?: number; note?: string }>) {
+  function updateItem(idx: number, patch: Partial<{ amount?: number; kind?: string; note?: string }>) {
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   }
-  const itemsTotal = items.reduce((s, it) => s + Number(it.amount ?? 0), 0);
+  const signed = (it: { amount?: number; kind?: string }) => (it.kind === 'Giảm trừ' ? -Number(it.amount ?? 0) : Number(it.amount ?? 0));
+  const itemsTotal = items.reduce((s, it) => s + signed(it), 0);
+  const totalChi = items.filter((it) => it.kind !== 'Giảm trừ').reduce((s, it) => s + Number(it.amount ?? 0), 0);
+  const totalGiam = items.filter((it) => it.kind === 'Giảm trừ').reduce((s, it) => s + Number(it.amount ?? 0), 0);
 
   // Hàm handleSubmit: xử lý handleSubmit (tạo phiếu + gộp các khoản chi luôn)
   async function handleSubmit(values: AdvanceVoucherFormValues) {
@@ -199,7 +203,7 @@ export default function AdvanceVoucherFormModal({
           if (it.amount == null) continue;
           await apiFetch(`/advance-vouchers/${created.id}/items`, {
             method: 'POST',
-            body: JSON.stringify({ amount: it.amount, note: it.note?.trim() ? it.note.trim() : null }),
+            body: JSON.stringify({ amount: it.amount, kind: it.kind ?? 'Chi', note: it.note?.trim() ? it.note.trim() : null }),
           });
         }
         if (items.length) message.success(`Đã tạo phiếu + ${items.length} khoản chi`);
@@ -325,30 +329,36 @@ export default function AdvanceVoucherFormModal({
         {!editingId && (
           <div className="border-t pt-3 mt-3">
             <div className="flex items-center justify-between mb-2">
-              <strong>Các khoản chi ({items.length}){itemsTotal > 0 ? ` - Tổng: ${itemsTotal.toLocaleString('vi-VN')}` : ''}</strong>
-              <Button size="small" icon={<PlusOutlined />} onClick={addItem}>Thêm khoản chi</Button>
+              <strong>Các khoản ({items.length}){` - Chi: ${totalChi.toLocaleString('vi-VN')}`}{totalGiam > 0 ? ` - Giảm trừ: ${totalGiam.toLocaleString('vi-VN')}` : ''}{` - Còn lại: ${itemsTotal.toLocaleString('vi-VN')}`}</strong>
+              <Button size="small" icon={<PlusOutlined />} onClick={addItem}>Thêm khoản</Button>
             </div>
             {items.map((it, idx) => (
               <Space key={idx} style={{ display: 'flex', marginBottom: 8 }} align="start">
+                <Select
+                  style={{ width: 110 }}
+                  value={it.kind ?? 'Chi'}
+                  onChange={(v) => updateItem(idx, { kind: v })}
+                  options={ADVANCE_ITEM_KINDS.map((k) => ({ value: k, label: k }))}
+                />
                 <InputNumber
                   min={0}
-                  style={{ width: 180 }}
-                  placeholder="Số tiền"
+                  style={{ width: 160 }}
+                  placeholder="Số tiền dương"
                   value={it.amount}
                   onChange={(v) => updateItem(idx, { amount: v == null ? undefined : Number(v) })}
-                  formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                  formatter={formatMoneyInput}
                   parser={parseMoneyInput}
                 />
                 <Input
-                  style={{ width: 280 }}
-                  placeholder="Ghi chú khoản chi"
+                  style={{ width: 240 }}
+                  placeholder="Ghi chú khoản"
                   value={it.note}
                   onChange={(e) => updateItem(idx, { note: e.target.value })}
                 />
                 <Button size="small" danger icon={<DeleteOutlined />} onClick={() => removeItem(idx)} />
               </Space>
             ))}
-            {!items.length && <div style={{ fontSize: 13, color: '#999' }}>Chưa có khoản chi nào — có thể thêm sau ở chi tiết phiếu.</div>}
+            {!items.length && <div style={{ fontSize: 13, color: '#999' }}>Chưa có khoản nào — có thể thêm sau ở chi tiết phiếu.</div>}
           </div>
         )}
         {selectedSheet?.customer && (

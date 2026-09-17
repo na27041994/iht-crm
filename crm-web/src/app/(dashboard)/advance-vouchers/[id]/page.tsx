@@ -176,7 +176,8 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
           pagination={false}
           locale={{ emptyText: 'Chưa có khoản chi' }}
           columns={[
-            { title: 'Tiền', dataIndex: 'amount', align: 'right' as const, render: (v: string) => <span className="font-medium">{fmtMoney(v)}</span> },
+            { title: 'Loại', dataIndex: 'kind', width: 110, render: (v: string | null) => <Tag color={v === 'Giảm trừ' ? 'red' : 'blue'}>{v ?? 'Chi'}</Tag> },
+            { title: 'Tiền', dataIndex: 'amount', align: 'right' as const, render: (v: string, r: AdvanceItem) => <span className="font-medium" style={(r as any).kind === 'Giảm trừ' ? { color: '#cf1322' } : undefined}>{(r as any).kind === 'Giảm trừ' ? `- ${fmtMoney(v)}` : fmtMoney(v)}</span> },
             { title: 'Ghi chú', dataIndex: 'note', ellipsis: true, render: (v: string | null) => v ?? '-' },
             {
               title: 'Thao tác',
@@ -192,15 +193,22 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
               ),
             },
           ]}
-          summary={(rows) => (
-            <Table.Summary.Row>
-              <Table.Summary.Cell index={0} align="right">
-                <Tag color="blue">Tổng: {fmtMoney(voucher.totalAmount)} {voucher.currency}</Tag>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={1} />
-              <Table.Summary.Cell index={2} />
-            </Table.Summary.Row>
-          )}
+          summary={() => {
+            const chi = voucher.items.filter((i: any) => i.kind !== 'Giảm trừ').reduce((s, i: any) => s + Number(i.amount ?? 0), 0);
+            const giam = voucher.items.filter((i: any) => i.kind === 'Giảm trừ').reduce((s, i: any) => s + Number(i.amount ?? 0), 0);
+            return (
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0} align="right">
+                  <Tag color="blue">Tổng: {fmtMoney(voucher.totalAmount)} {voucher.currency}</Tag>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={1} align="right">
+                  <span style={{ fontSize: 12, color: '#888' }}>Chi: {fmtMoney(String(chi))} - Giảm trừ: {fmtMoney(String(giam))}</span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={2} />
+                <Table.Summary.Cell index={3} />
+              </Table.Summary.Row>
+            );
+          }}
         />
       </Card>
 

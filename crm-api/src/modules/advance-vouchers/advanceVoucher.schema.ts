@@ -22,8 +22,11 @@ export const advanceVoucherSchema = z.object({
 
 export type AdvanceVoucherInput = z.infer<typeof advanceVoucherSchema>;
 
+export const advanceItemKinds = ['Chi', 'Giảm trừ'] as const;
+
 export const advanceItemSchema = z.object({
-  amount: z.coerce.number(),
+  amount: z.coerce.number().gt(0, 'Số tiền phải > 0'),
+  kind: z.enum(advanceItemKinds).default('Chi'),
   note: z.string().optional().nullable(),
 });
 

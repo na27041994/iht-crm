@@ -104,7 +104,8 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
       <table className="old-table">
         <thead>
           <tr>
-            <th className="old-th" style={{ width: 60 }}>STT</th>
+            <th className="old-th" style={{ width: 50 }}>STT</th>
+            <th className="old-th" style={{ width: 90 }}>Loại/Type</th>
             <th className="old-th">Số tiền/Amount</th>
             <th className="old-th">Nhân viên/Person</th>
             <th className="old-th">Ngày/Date</th>
@@ -113,10 +114,11 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
         </thead>
         <tbody>
           {v.items.length ? (
-            v.items.map((it, idx) => (
+            v.items.map((it: any, idx) => (
               <tr key={it.id}>
                 <td className="old-td-center">{String(idx + 1).padStart(2, '0')}</td>
-                <td className="old-td-right">{fmtMoney(it.amount)}</td>
+                <td className="old-td-center">{it.kind ?? 'Chi'}</td>
+                <td className="old-td-right">{it.kind === 'Giảm trừ' ? `- ${fmtMoney(it.amount)}` : fmtMoney(it.amount)}</td>
                 <td className="old-td-center">{personShort}</td>
                 <td className="old-td-center">{fmtDateSlash(v.advanceDate)}</td>
                 <td className="old-td">{it.note ?? ''}</td>
@@ -125,6 +127,7 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
           ) : (
             <tr>
               <td className="old-td-center">01</td>
+              <td className="old-td-center">Chi</td>
               <td className="old-td-right">{fmtMoney(total)}</td>
               <td className="old-td-center">{personShort}</td>
               <td className="old-td-center">{fmtDateSlash(v.advanceDate)}</td>
@@ -132,7 +135,7 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
             </tr>
           )}
           <tr className="old-total-row">
-            <td colSpan={5} className="old-td-center old-bold">TỔNG TIỀN / TOTAL AMOUNT: {fmtMoney(total)}</td>
+            <td colSpan={6} className="old-td-center old-bold">TỔNG TIỀN / TOTAL AMOUNT: {fmtMoney(total)}{(() => { const chi = v.items.filter((x: any) => x.kind !== 'Giảm trừ').reduce((s: number, x: any) => s + Number(x.amount ?? 0), 0); const giam = v.items.filter((x: any) => x.kind === 'Giảm trừ').reduce((s: number, x: any) => s + Number(x.amount ?? 0), 0); return giam > 0 ? ` (Chi: ${fmtMoney(String(chi))} - Giảm trừ: ${fmtMoney(String(giam))})` : ''; })()}</td>
           </tr>
         </tbody>
       </table>

@@ -8,6 +8,12 @@ function scaleAdvanceItem(input: AdvanceItemInput): AdvanceItemInput {
   return { ...input, amount: toScaled(input.amount as unknown as number) as unknown as number ?? input.amount };
 }
 
+// Tổng net = SUM(Chi) - SUM(Giảm trừ), amount luôn dương
+function netAmount(item: { amount: unknown; kind?: unknown }): number {
+  const v = Number((item as any).amount ?? 0);
+  return (item as any).kind === 'Giảm trừ' ? -v : v;
+}
+
 const include = {
   sheet: { select: { id: true, sheetNumber: true } },
   customer: { select: { id: true, customerName: true, companyName: true } },
@@ -73,7 +79,7 @@ export async function listAdvanceVouchers(opts: {
 
   const items = rows.map((row) => ({
     ...row,
-    totalAmount: row.items.reduce((sum, item) => sum + Number(item.amount), 0),
+    totalAmount: row.items.reduce((sum, item) => sum + netAmount(item), 0),
   }));
 
   return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
@@ -130,16 +136,18 @@ export async function getAdvanceVouchersForExport(opts: {
   const rows = await prisma.advanceVoucher.findMany({ where, orderBy: { id: 'asc' }, include });
   return rows.map((row) => ({
     ...row,
-    totalAmount: row.items.reduce((sum, item) => sum + Number(item.amount), 0),
+    totalAmount: row.items.reduce((sum, item) => sum + netAmount(item), 0),
   }));
 }
 
-// Lấy chi tiết một phiếu chi và tính tổng tiền
+// Lấy chi tiết một phiếu chi và tính tổng tiền (net = Chi - Giảm trừ)
 export async function getAdvanceVoucher(id: number) {
   const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 }, include });
   if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
-  const totalAmount = voucher.items.reduce((sum, item) => sum + Number(item.amount), 0);
-  return { ...voucher, totalAmount };
+  const totalAmount = voucher.items.reduce((sum, item) => sum + netAmount(item), 0);
+  const totalChi = voucher.items.filter((i: any) => i.kind !== 'Giảm trừ').reduce((sum, item) => sum + Number((item as any).amount ?? 0), 0);
+  const totalGiam = voucher.items.filter((i: any) => i.kind === 'Giảm trừ').reduce((sum, item) => sum + Number((item as any).amount ?? 0), 0);
+  return { ...voucher, totalAmount, totalChi, totalGiam };
 }
 
 // Tạo phiếu chi mới, sinh mã advanceNo
