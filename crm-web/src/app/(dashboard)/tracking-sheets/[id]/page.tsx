@@ -303,6 +303,16 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           }}
           locale={{ emptyText: 'Chưa có mục Job Order' }}
           scroll={{ x: 1000 }}
+          summary={() => {
+            const total = (sheet?.jobOrders ?? []).reduce((s, r) => s + Number((r as any).portAmt ?? 0), 0);
+            return (
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0} colSpan={5} align="right"><strong>Tổng tiền cả bảng:</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={5} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={6} colSpan={2} />
+              </Table.Summary.Row>
+            );
+          }}
           columns={[
             { title: 'Phân loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
             { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
@@ -364,6 +374,16 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           }}
           locale={{ emptyText: 'Chưa có mục Job Book' }}
           scroll={{ x: 1200 }}
+          summary={() => {
+            const total = (sheet?.jobBookings ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0);
+            return (
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0} colSpan={8} align="right"><strong>Tổng tiền cả bảng:</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={8} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={9} />
+              </Table.Summary.Row>
+            );
+          }}
           columns={[
             { title: 'Loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
             { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
@@ -428,6 +448,16 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           }}
           locale={{ emptyText: 'Chưa có mục Debit Note' }}
           scroll={{ x: 1200 }}
+          summary={() => {
+            const total = (sheet?.debitNotes ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0);
+            return (
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0} colSpan={10} align="right"><strong>Tổng tiền cả bảng:</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={10} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={11} />
+              </Table.Summary.Row>
+            );
+          }}
           columns={[
             { title: 'Loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
             { title: 'Số hóa đơn', dataIndex: 'invoiceNumber', render: (v: string | null) => v ?? '-' },
