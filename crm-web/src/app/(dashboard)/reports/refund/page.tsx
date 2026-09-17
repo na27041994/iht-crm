@@ -46,7 +46,7 @@ interface RefundReport {
 
 // Định dạng số tiền/số lượng theo chuẩn vi-VN
 const fmtMoney = (v: string | number | null | undefined) =>
-  v == null ? '-' : Number(v).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+  v == null ? '-' : (Number(v) / MONEY_SCALE).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
 
 // Định dạng ngày YYYY/MM/DD
 const fmtDate = (iso: string) =>

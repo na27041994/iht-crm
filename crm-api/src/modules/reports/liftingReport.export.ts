@@ -45,15 +45,16 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#,##0.00' } },
 ];
 
+const MONEY_SCALE = 100;
 // Hàm addSummarySheet: xử lý addSummarySheet
 function addSummarySheet(wb: ExcelJS.Workbook, title: string, entityLabel: string, groups: RefundGroup[]) {
   const ws = wb.addWorksheet(title);
   setupSheet(ws, SUMMARY_COLUMNS);
   ws.getColumn('name').header = entityLabel;
   groups.forEach((g, i) => {
-    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: g.totalAmount });
+    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: g.totalAmount / MONEY_SCALE });
   });
-  const total = groups.reduce((s, g) => s + g.totalAmount, 0);
+  const total = groups.reduce((s, g) => s + g.totalAmount / MONEY_SCALE, 0);
   const sumRow = ws.addRow({
     name: 'Tổng cộng',
     rowCount: groups.reduce((s, g) => s + g.rowCount, 0),
@@ -89,7 +90,7 @@ export async function buildLiftingReportWorkbook(
       description: it.description ?? '',
       customerName: it.customerName,
       date: new Date(it.date),
-      amount: it.amount,
+      amount: it.amount / MONEY_SCALE,
     });
   }
 
@@ -117,7 +118,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
       ...(s.jobOrders || []).map((o: any) => ({ ...o, source: 'order' })),
       ...(s.jobBookings || []).map((b: any) => ({ ...b, source: 'booking' })),
     ];
-    const total = all.reduce((sum, r) => sum + Number(r.total ?? r.portAmt ?? 0), 0);
+    const total = all.reduce((sum, r) => sum + Number(r.total ?? r.portAmt ?? 0) / MONEY_SCALE, 0);
     ws.addRow({
       stt: i + 1,
       sheetNumber: s.sheetNumber,
@@ -133,7 +134,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
         ...(s.jobOrders || []),
         ...(s.jobBookings || []),
       ];
-      return sum + all.reduce((a, r) => a + Number(r.total ?? r.portAmt ?? 0), 0);
+      return sum + all.reduce((a, r) => a + Number(r.total ?? r.portAmt ?? 0) / MONEY_SCALE, 0);
     }, 0);
     const sumRow = ws.addRow({ customer: 'Tổng cộng', total });
     sumRow.font = { bold: true };
@@ -159,7 +160,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
         description: o.description ?? '',
         customerName: s.customer ? s.customer.companyName || s.customer.customerName : '',
         date: s.etaDate ? new Date(s.etaDate) : s.createdAt ? new Date(s.createdAt) : new Date(),
-        amount: Number(o.portAmt ?? 0),
+        amount: Number(o.portAmt ?? 0) / MONEY_SCALE,
       });
     }
     for (const b of s.jobBookings || []) {
@@ -170,7 +171,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
         description: b.description ?? '',
         customerName: s.customer ? s.customer.companyName || s.customer.customerName : '',
         date: s.etaDate ? new Date(s.etaDate) : s.createdAt ? new Date(s.createdAt) : new Date(),
-        amount: Number(b.total ?? b.afterTaxAmount ?? b.pretaxAmount ?? 0),
+        amount: Number(b.total ?? b.afterTaxAmount ?? b.pretaxAmount ?? 0) / MONEY_SCALE,
       });
     }
   }

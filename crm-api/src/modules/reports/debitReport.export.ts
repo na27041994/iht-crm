@@ -48,15 +48,16 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#,##0.00' } },
 ];
 
+const MONEY_SCALE = 100;
 // Hàm addSummarySheet: xử lý addSummarySheet
 function addSummarySheet(wb: ExcelJS.Workbook, title: string, entityLabel: string, groups: DebitGroup[]) {
   const ws = wb.addWorksheet(title);
   setupSheet(ws, SUMMARY_COLUMNS);
   ws.getColumn('name').header = entityLabel;
   groups.forEach((g, i) => {
-    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: g.totalAmount });
+    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: g.totalAmount / MONEY_SCALE });
   });
-  const total = groups.reduce((s, g) => s + g.totalAmount, 0);
+  const total = groups.reduce((s, g) => s + g.totalAmount / MONEY_SCALE, 0);
   const sumRow = ws.addRow({
     name: 'Tổng cộng',
     rowCount: groups.reduce((s, g) => s + g.rowCount, 0),
@@ -94,7 +95,7 @@ export async function buildDebitReportWorkbook(
       quantity: it.quantity ?? '',
       currency: it.currency ?? '',
       date: new Date(it.date),
-      amount: it.amount,
+      amount: it.amount / MONEY_SCALE,
     });
   }
 
@@ -119,7 +120,7 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
 
   sheets.forEach((s: any, i: number) => {
     // Hàm total: xử lý total
-    const total = (s.debitNotes || []).reduce((sum: number, d: any) => sum + Number(d.total ?? 0), 0);
+    const total = (s.debitNotes || []).reduce((sum: number, d: any) => sum + Number(d.total ?? 0) / MONEY_SCALE, 0);
     ws.addRow({
       stt: i + 1,
       sheetNumber: s.sheetNumber,
@@ -130,7 +131,7 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
   });
 
   if (sheets.length) {
-    const total = sheets.reduce((sum: number, s: any) => sum + (s.debitNotes || []).reduce((a: number, d: any) => a + Number(d.total ?? 0), 0), 0);
+    const total = sheets.reduce((sum: number, s: any) => sum + (s.debitNotes || []).reduce((a: number, d: any) => a + Number(d.total ?? 0) / MONEY_SCALE, 0), 0);
     const sumRow = ws.addRow({ customer: 'Tổng cộng', total });
     sumRow.font = { bold: true };
   }
@@ -149,7 +150,7 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
         quantity: d.quantity ? Number(d.quantity) : '',
         currency: d.currency ?? '',
         date: d.createdAt ? new Date(d.createdAt) : new Date(),
-        amount: Number(d.total ?? 0),
+        amount: Number(d.total ?? 0) / MONEY_SCALE,
       });
     }
   }

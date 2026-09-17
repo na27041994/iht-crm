@@ -45,15 +45,17 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#,##0.00' } },
 ];
 
+// Chuẩn tiền x100: DB lưu *100, xuất chia 100
+const MONEY_SCALE = 100;
 // Hàm addSummarySheet: xử lý addSummarySheet
 function addSummarySheet(wb: ExcelJS.Workbook, title: string, entityLabel: string, groups: RefundGroup[]) {
   const ws = wb.addWorksheet(title);
   setupSheet(ws, SUMMARY_COLUMNS);
   ws.getColumn('name').header = entityLabel;
   groups.forEach((g, i) => {
-    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: g.totalAmount });
+    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: g.totalAmount / MONEY_SCALE });
   });
-  const total = groups.reduce((s, g) => s + g.totalAmount, 0);
+  const total = groups.reduce((s, g) => s + g.totalAmount / MONEY_SCALE, 0);
   const sumRow = ws.addRow({
     name: 'Tổng cộng',
     rowCount: groups.reduce((s, g) => s + g.rowCount, 0),
@@ -90,7 +92,7 @@ export async function buildRefundReportWorkbook(
       description: it.description ?? '',
       customerName: it.customerName,
       date: new Date(it.date),
-      amount: it.amount,
+      amount: it.amount / MONEY_SCALE,
     });
   }
 

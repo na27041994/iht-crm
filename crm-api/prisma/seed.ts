@@ -134,13 +134,16 @@ async function main() {
     },
   });
 
+  // Chuẩn tiền x100: DB lưu *100 (VD: 3.500.000 -> 350000000)
   await prisma.jobOrder.upsert({
     where: { id: 1 },
     update: {
       sheetId: sheet.id,
       type: 'Trucking Fee',
       description: 'Vận chuyển nội địa HCM - Cat Lai',
-      portAmt: 3500000,
+      portAmt: 350000000,
+      pretaxAmount: 350000000,
+      taxRate: 0,
       industry: 'Gỗ',
       note: 'Thanh toán sau khi giao hàng',
     },
@@ -149,7 +152,9 @@ async function main() {
       sheetId: sheet.id,
       type: 'Trucking Fee',
       description: 'Vận chuyển nội địa HCM - Cat Lai',
-      portAmt: 3500000,
+      portAmt: 350000000,
+      pretaxAmount: 350000000,
+      taxRate: 0,
       industry: 'Gỗ',
       note: 'Thanh toán sau khi giao hàng',
     },
@@ -163,11 +168,11 @@ async function main() {
       description: 'Cược container 40HC',
       unit: 'Cont',
       quantity: 1,
-      pretaxAmount: 4000000,
+      pretaxAmount: 400000000,
       taxRate: 8,
-      taxAmount: 320000,
-      afterTaxAmount: 4320000,
-      total: 4320000,
+      taxAmount: 32000000,
+      afterTaxAmount: 432000000,
+      total: 432000000,
     },
     create: {
       id: 1,
@@ -176,11 +181,11 @@ async function main() {
       description: 'Cược container 40HC',
       unit: 'Cont',
       quantity: 1,
-      pretaxAmount: 4000000,
+      pretaxAmount: 400000000,
       taxRate: 8,
-      taxAmount: 320000,
-      afterTaxAmount: 4320000,
-      total: 4320000,
+      taxAmount: 32000000,
+      afterTaxAmount: 432000000,
+      total: 432000000,
     },
   });
 
@@ -196,9 +201,9 @@ async function main() {
       quantity: 1,
       priceVnd: null,
       taxRate: 8,
-      priceUsd: 850,
+      priceUsd: 85000,
       exchangeRate: 25400,
-      total: 23317200,
+      total: 2331720000,
     },
     create: {
       id: 1,
@@ -211,9 +216,9 @@ async function main() {
       quantity: 1,
       priceVnd: null,
       taxRate: 8,
-      priceUsd: 850,
+      priceUsd: 85000,
       exchangeRate: 25400,
-      total: 23317200,
+      total: 2331720000,
     },
   });
 
@@ -250,14 +255,14 @@ async function main() {
 
   await prisma.advanceVoucherItem.upsert({
     where: { id: 1 },
-    update: { amount: 2000000, note: 'Đặt cọc xe' },
-    create: { id: 1, voucherId: 1, amount: 2000000, note: 'Đặt cọc xe' },
+    update: { amount: 200000000, note: 'Đặt cọc xe' },
+    create: { id: 1, voucherId: 1, amount: 200000000, note: 'Đặt cọc xe' },
   });
 
   await prisma.advanceVoucherItem.upsert({
     where: { id: 2 },
-    update: { amount: 1500000, note: 'Chi phí nâng cont' },
-    create: { id: 2, voucherId: 1, amount: 1500000, note: 'Chi phí nâng cont' },
+    update: { amount: 150000000, note: 'Chi phí nâng cont' },
+    create: { id: 2, voucherId: 1, amount: 150000000, note: 'Chi phí nâng cont' },
   });
 
   const tables = [

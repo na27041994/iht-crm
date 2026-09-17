@@ -19,6 +19,7 @@ function styleHeader(row: ExcelJS.Row) {
   row.height = 20;
 }
 
+const MONEY_SCALE = 100;
 // Hàm buildProfitWorkbook: xử lý buildProfitWorkbook
 export async function buildProfitWorkbook(
   items: ProfitRow[],
@@ -51,21 +52,21 @@ export async function buildProfitWorkbook(
       sheetNumber: r.sheetNumber,
       customerName: r.customerName,
       date: new Date(r.date),
-      revenue: r.revenue,
-      totalFees: r.totalFees,
-      cuocFees: r.cuocFees,
-      serviceFees: r.serviceFees,
-      profit: r.profit,
+      revenue: r.revenue / MONEY_SCALE,
+      totalFees: r.totalFees / MONEY_SCALE,
+      cuocFees: r.cuocFees / MONEY_SCALE,
+      serviceFees: r.serviceFees / MONEY_SCALE,
+      profit: r.profit / MONEY_SCALE,
     });
   });
 
   const sumRow = ws.addRow({
     sheetNumber: 'TỔNG CỘNG',
-    revenue: totals.totalRevenue,
-    totalFees: totals.totalServiceFees + totals.totalCuocFees,
-    cuocFees: totals.totalCuocFees,
-    serviceFees: totals.totalServiceFees,
-    profit: totals.totalProfit,
+    revenue: totals.totalRevenue / MONEY_SCALE,
+    totalFees: (totals.totalServiceFees + totals.totalCuocFees) / MONEY_SCALE,
+    cuocFees: totals.totalCuocFees / MONEY_SCALE,
+    serviceFees: totals.totalServiceFees / MONEY_SCALE,
+    profit: totals.totalProfit / MONEY_SCALE,
   });
   sumRow.font = { bold: true };
 

@@ -1,4 +1,5 @@
 'use client';
+const MONEY_SCALE = 100;
 
 import { useCallback, useEffect, useState } from 'react';
 import { App, Button, Card, DatePicker, Input, Select, Space, Table, Tag, Typography } from 'antd';
@@ -238,7 +239,7 @@ export default function AdvanceVoucherReportPage() {
           <div className="text-sm">
             <span className="text-gray-500">Đã chọn:</span> <strong>{totalSelected}</strong> phiếu
             {totalSelected > 0 && <span className="ml-3 text-gray-500">Tổng tiền:</span>}
-            {totalSelected > 0 && <strong className="ml-1">{selectedAmount.toLocaleString('vi-VN')}</strong>}
+            {totalSelected > 0 && <strong className="ml-1">{(selectedAmount / MONEY_SCALE).toLocaleString('vi-VN')}</strong>}
           </div>
         </div>
       </Card>
