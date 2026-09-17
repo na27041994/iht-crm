@@ -206,9 +206,6 @@ function SheetDocument({
         <table className="p-table">
           <thead>
             <tr>
-              <th colSpan={7} className="section-title">JOB ORDER</th>
-            </tr>
-            <tr>
               <th>Phân loại</th>
               <th>Mô tả</th>
               <th>NV giao nhận</th>
@@ -237,9 +234,6 @@ function SheetDocument({
       {bookings.length > 0 && (
         <table className="p-table">
           <thead>
-            <tr>
-              <th colSpan={9} className="section-title">JOB BOOK TÀU</th>
-            </tr>
             <tr>
               <th>Loại</th>
               <th>Mô tả</th>
@@ -273,9 +267,6 @@ function SheetDocument({
       {debits.length > 0 && (
         <table className="p-table">
           <thead>
-            <tr>
-              <th colSpan={11} className="section-title">DEBIT NOTE</th>
-            </tr>
             <tr>
               <th>Loại</th>
               <th>Số hóa đơn</th>
