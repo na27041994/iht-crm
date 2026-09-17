@@ -307,7 +307,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             const total = (sheet?.jobOrders ?? []).reduce((s, r) => s + Number((r as any).portAmt ?? 0), 0);
             return (
               <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={5} align="right"><strong>Tổng tiền cả bảng:</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={0} colSpan={5} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={5} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={6} colSpan={2} />
               </Table.Summary.Row>
@@ -378,7 +378,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             const total = (sheet?.jobBookings ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0);
             return (
               <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={8} align="right"><strong>Tổng tiền cả bảng:</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={0} colSpan={8} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={8} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={9} />
               </Table.Summary.Row>
@@ -452,7 +452,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             const total = (sheet?.debitNotes ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0);
             return (
               <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={10} align="right"><strong>Tổng tiền cả bảng:</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={0} colSpan={10} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={10} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={11} />
               </Table.Summary.Row>
