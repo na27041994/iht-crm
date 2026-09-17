@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { App, DatePicker, Form, Input, InputNumber, Modal, Select, Spin } from 'antd';
+import { App, Button, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Spin } from 'antd';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
@@ -55,6 +56,7 @@ export default function AdvanceVoucherFormModal({
   const [loading, setLoading] = useState(false);
   const [sheets, setSheets] = useState<SheetOption[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [items, setItems] = useState<Array<{ amount?: number; note?: string }>>([]);
   const [fetchingSheets, setFetchingSheets] = useState(false);
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const sheetSearchTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -118,6 +120,7 @@ export default function AdvanceVoucherFormModal({
         setSheets(sh.items);
         setCustomers(cs.items);
         form.resetFields();
+        setItems([]);
         form.setFieldsValue({ currency: 'VND', advanceDate: dayjs(), type: 'Chi tạm ứng' });
         if (editingId) {
           return apiFetch<
@@ -154,8 +157,24 @@ export default function AdvanceVoucherFormModal({
       .finally(() => setLoading(false));
   }, [open, editingId, form, message]);
 
-  // Hàm handleSubmit: xử lý handleSubmit
+  function addItem() {
+    setItems((prev) => [...prev, { amount: undefined, note: '' }]);
+  }
+  function removeItem(idx: number) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+  function updateItem(idx: number, patch: Partial<{ amount?: number; note?: string }>) {
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  }
+  const itemsTotal = items.reduce((s, it) => s + Number(it.amount ?? 0), 0);
+
+  // Hàm handleSubmit: xử lý handleSubmit (tạo phiếu + gộp các khoản chi luôn)
   async function handleSubmit(values: AdvanceVoucherFormValues) {
+    // validate khoản chi khi tạo mới
+    if (!editingId && items.some((it) => it.amount == null || Number(it.amount) <= 0)) {
+      message.error('Mỗi khoản chi phải nhập số tiền > 0');
+      return;
+    }
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
@@ -174,8 +193,17 @@ export default function AdvanceVoucherFormModal({
         await apiFetch(`/advance-vouchers/${editingId}`, { method: 'PUT', body: JSON.stringify(body) });
         message.success('Đã cập nhật phiếu chi tạm ứng');
       } else {
-        await apiFetch('/advance-vouchers', { method: 'POST', body: JSON.stringify(body) });
-        message.success('Đã tạo phiếu chi tạm ứng');
+        const created = await apiFetch<{ id: number }>(`/advance-vouchers`, { method: 'POST', body: JSON.stringify(body) });
+        // gộp các khoản chi ngay khi tạo phiếu
+        for (const it of items) {
+          if (it.amount == null) continue;
+          await apiFetch(`/advance-vouchers/${created.id}/items`, {
+            method: 'POST',
+            body: JSON.stringify({ amount: it.amount, note: it.note?.trim() ? it.note.trim() : null }),
+          });
+        }
+        if (items.length) message.success(`Đã tạo phiếu + ${items.length} khoản chi`);
+        else message.success('Đã tạo phiếu chi tạm ứng');
       }
       onSaved();
       onClose();
@@ -294,6 +322,35 @@ export default function AdvanceVoucherFormModal({
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />
           </Form.Item>
         </div>
+        {!editingId && (
+          <div className="border-t pt-3 mt-3">
+            <div className="flex items-center justify-between mb-2">
+              <strong>Các khoản chi ({items.length}){itemsTotal > 0 ? ` - Tổng: ${itemsTotal.toLocaleString('vi-VN')}` : ''}</strong>
+              <Button size="small" icon={<PlusOutlined />} onClick={addItem}>Thêm khoản chi</Button>
+            </div>
+            {items.map((it, idx) => (
+              <Space key={idx} style={{ display: 'flex', marginBottom: 8 }} align="start">
+                <InputNumber
+                  min={0}
+                  style={{ width: 180 }}
+                  placeholder="Số tiền"
+                  value={it.amount}
+                  onChange={(v) => updateItem(idx, { amount: v == null ? undefined : Number(v) })}
+                  formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                  parser={parseMoneyInput}
+                />
+                <Input
+                  style={{ width: 280 }}
+                  placeholder="Ghi chú khoản chi"
+                  value={it.note}
+                  onChange={(e) => updateItem(idx, { note: e.target.value })}
+                />
+                <Button size="small" danger icon={<DeleteOutlined />} onClick={() => removeItem(idx)} />
+              </Space>
+            ))}
+            {!items.length && <div style={{ fontSize: 13, color: '#999' }}>Chưa có khoản chi nào — có thể thêm sau ở chi tiết phiếu.</div>}
+          </div>
+        )}
         {selectedSheet?.customer && (
           <div style={{ fontSize: 13, color: '#999', marginTop: -8 }}>
             Khách hàng của Job: {selectedSheet.customer.companyName}
