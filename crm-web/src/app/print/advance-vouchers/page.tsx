@@ -231,7 +231,7 @@ function PrintAdvanceVouchersContent() {
         .old-total-row td { font-weight: 700; text-align: center; }
         .old-bold { font-weight: 700; }
         @media print {
-          @page { size: A5 portrait; margin: 6mm 7mm; }
+          @page { size: A5 landscape; margin: 6mm 7mm; }
           .no-print { display: none !important; }
           .page-break { page-break-after: always; break-after: page; }
           .print-sheet { max-width: 100% !important; }
