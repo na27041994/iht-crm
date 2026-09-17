@@ -138,7 +138,7 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
       </table>
 
       {/* Signatures: Người xin chi, Chủ quản đơn vị, Kế toán, Duyệt, Thủ quỹ, Người nhận tiền */}
-      <table className="old-table sig-table" style={{ marginTop: 8 }}>
+      <table className="old-table" style={{ marginTop: 0 }}>
         <thead>
           <tr>
             <th className="old-th" style={{ width: '17%' }}>Người Xin Chi/<br />Applicant</th>
@@ -150,13 +150,13 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
           </tr>
         </thead>
         <tbody>
-          <tr style={{ height: 90 }}>
-            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
-            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
-            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
-            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
-            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
-            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
+          <tr>
+            <td className="old-td" style={{ height: 90 }}></td>
+            <td className="old-td"></td>
+            <td className="old-td"></td>
+            <td className="old-td"></td>
+            <td className="old-td"></td>
+            <td className="old-td"></td>
           </tr>
         </tbody>
       </table>
@@ -218,9 +218,8 @@ function PrintAdvanceVouchersContent() {
         .old-header { text-align: center; margin-bottom: 8px; }
         .old-title { font-size: 18px; font-weight: 700; }
         .old-subtitle { font-size: 14px; font-weight: 700; }
-        .old-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; margin-bottom: 0; border: 1px solid #000; }
+        .old-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 0; }
         .old-table th, .old-table td { border: 1px solid #000; padding: 3px 6px; vertical-align: top; }
-        .sig-table { break-inside: avoid; page-break-inside: avoid; margin-top: 8px; }
         .old-th { text-align: center; font-weight: 700; font-size: 11px; background: #fff; }
         .old-label { font-weight: 700; white-space: nowrap; font-size: 11px; width: 85px; }
         .old-label-en { font-weight: 400; font-size: 10px; }
@@ -235,10 +234,6 @@ function PrintAdvanceVouchersContent() {
           @page { margin: 8mm 10mm; }
           .no-print { display: none !important; }
           .page-break { page-break-after: always; break-after: page; }
-          .print-sheet { max-width: 100% !important; }
-          .old-table { empty-cells: show; -webkit-print-color-adjust: exact; print-color-adjust: exact; border: 1px solid #000 !important; }
-          .old-table th, .old-table td { border: 1px solid #000 !important; }
-          .sig-table { break-inside: avoid !important; page-break-inside: avoid !important; }
         }
       `}</style>
     </div>
