@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { App, DatePicker, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { useEffect, useRef, useState } from 'react';
+import { App, DatePicker, Form, Input, InputNumber, Modal, Select, Spin } from 'antd';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
@@ -55,6 +55,57 @@ export default function AdvanceVoucherFormModal({
   const [loading, setLoading] = useState(false);
   const [sheets, setSheets] = useState<SheetOption[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [fetchingSheets, setFetchingSheets] = useState(false);
+  const [fetchingCustomers, setFetchingCustomers] = useState(false);
+  const sheetSearchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const customerSearchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  async function fetchSheets(search: string) {
+    setFetchingSheets(true);
+    try {
+      const params = new URLSearchParams({ pageSize: '50' });
+      if (search) params.set('search', search);
+      const res = await apiFetch<{ items: SheetOption[] }>(`/tracking-sheets?${params}`);
+      setSheets(res.items);
+    } catch {
+      // ignore
+    } finally {
+      setFetchingSheets(false);
+    }
+  }
+  function handleSheetSearch(value: string) {
+    if (sheetSearchTimeout.current) clearTimeout(sheetSearchTimeout.current);
+    sheetSearchTimeout.current = setTimeout(() => fetchSheets(value), 300);
+  }
+  async function fetchCustomers(search: string) {
+    setFetchingCustomers(true);
+    try {
+      const params = new URLSearchParams({ pageSize: '50' });
+      if (search) params.set('search', search);
+      const res = await apiFetch<{ items: CustomerOption[] }>(`/customers?${params}`);
+      setCustomers(res.items);
+    } catch {
+      // ignore
+    } finally {
+      setFetchingCustomers(false);
+    }
+  }
+  function handleCustomerSearch(value: string) {
+    if (customerSearchTimeout.current) clearTimeout(customerSearchTimeout.current);
+    customerSearchTimeout.current = setTimeout(() => fetchCustomers(value), 300);
+  }
+  // Đảm bảo option đã chọn luôn có trong list để hiện tên thay vì ID
+  async function ensureCustomerOption(customerId?: number | null) {
+    if (customerId == null) return;
+    setCustomers((prev) => {
+      if (prev.some((c) => c.id === customerId)) return prev;
+      // fetch riêng khách này rồi append
+      apiFetch<CustomerOption>(`/customers/${customerId}`)
+        .then((c) => setCustomers((p) => (p.some((x) => x.id === c.id) ? p : [...p, c])))
+        .catch(() => {});
+      return prev;
+    });
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -88,6 +139,13 @@ export default function AdvanceVoucherFormModal({
               qty: v.qty == null ? undefined : Number(v.qty),
               note: v.note ?? '',
             });
+            // nạp option cho job/khách đã lưu để hiện tên
+            if (v.sheetId) {
+              apiFetch<SheetOption>(`/tracking-sheets/${v.sheetId}`).then((s: any) => {
+                setSheets((prev) => (prev.some((x) => x.id === s.id) ? prev : [...prev, { id: s.id, sheetNumber: s.sheetNumber, customerId: s.customerId, customer: s.customer, fromLocation: s.fromLocation, toLocation: s.toLocation, containerQuantity: s.containerQuantity }]));
+              }).catch(() => {});
+            }
+            ensureCustomerOption(v.customerId);
           });
         }
         return Promise.resolve();
@@ -144,12 +202,19 @@ export default function AdvanceVoucherFormModal({
         toLocation?: string | null;
         containerQuantity?: string | number | null;
       }>(`/tracking-sheets/${sheetId}`);
+      const custId = detail.customerId ?? detail.customer?.id ?? undefined;
       form.setFieldsValue({
-        customerId: detail.customerId ?? detail.customer?.id ?? undefined,
+        customerId: custId,
         orderFrom: detail.fromLocation ?? '',
         orderTo: detail.toLocation ?? '',
         containerQty: detail.containerQuantity != null && String(detail.containerQuantity).trim() !== '' && !Number.isNaN(Number(detail.containerQuantity)) ? Number(detail.containerQuantity) : undefined,
       });
+      // đảm bảo khách của Job có trong list để hiện tên, không hiện ID
+      if (custId != null) {
+        const cName = detail.customer?.companyName ?? '';
+        setCustomers((prev) => (prev.some((c) => c.id === custId) ? prev : [...prev, { id: custId, customerName: cName, companyName: cName }]));
+        ensureCustomerOption(custId);
+      }
       // đồng bộ list sheets để hint khách hàng đúng
       setSheets((prev) => prev.map((s) => (s.id === sheetId ? { ...s, customerId: detail.customerId ?? s.customerId, fromLocation: detail.fromLocation ?? s.fromLocation, toLocation: detail.toLocation ?? s.toLocation, containerQuantity: detail.containerQuantity ?? s.containerQuantity } : s)));
     } catch {
@@ -176,9 +241,11 @@ export default function AdvanceVoucherFormModal({
             rules={isChiTamUng ? [{ required: true, message: 'Chi tạm ứng bắt buộc phải chọn Job' }] : undefined}
           >
             <Select
-              placeholder={isChiTamUng ? 'Bắt buộc chọn Job cho Chi tạm ứng' : 'Chọn phiếu theo dõi'}
+              placeholder={isChiTamUng ? 'Bắt buộc chọn Job cho Chi tạm ứng' : 'Gõ để tìm Job...'}
               showSearch
-              optionFilterProp="label"
+              filterOption={false}
+              onSearch={handleSheetSearch}
+              notFoundContent={fetchingSheets ? <Spin size="small" /> : null}
               onChange={(v) => handleSheetChange(v)}
               options={sheets.map((s) => ({
                 value: s.id,
@@ -200,12 +267,14 @@ export default function AdvanceVoucherFormModal({
           </Form.Item>
           <Form.Item label="Chọn khách hàng" name="customerId">
             <Select
-              placeholder="Chọn khách hàng"
+              placeholder="Gõ để tìm khách hàng..."
               showSearch
-              optionFilterProp="label"
+              filterOption={false}
+              onSearch={handleCustomerSearch}
+              notFoundContent={fetchingCustomers ? <Spin size="small" /> : null}
               options={customers.map((c) => ({
                 value: c.id,
-                label: c.companyName || c.customerName,
+                label: `#${c.id} - ${c.companyName || c.customerName}`,
               }))}
             />
           </Form.Item>
