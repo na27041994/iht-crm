@@ -150,13 +150,13 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td className="old-td" style={{ height: 90 }}></td>
-            <td className="old-td"></td>
-            <td className="old-td"></td>
-            <td className="old-td"></td>
-            <td className="old-td"></td>
-            <td className="old-td"></td>
+          <tr style={{ height: 90 }}>
+            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
+            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
+            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
+            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
+            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
+            <td className="old-td" style={{ height: 90 }}>&nbsp;</td>
           </tr>
         </tbody>
       </table>
@@ -234,6 +234,8 @@ function PrintAdvanceVouchersContent() {
           @page { margin: 8mm 10mm; }
           .no-print { display: none !important; }
           .page-break { page-break-after: always; break-after: page; }
+          .old-table { empty-cells: show; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .old-table th, .old-table td { border: 1px solid #000 !important; }
         }
       `}</style>
     </div>
