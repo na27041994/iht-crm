@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { App, Button, Card, Descriptions, Popconfirm, Space, Table, Tag, Typography } from 'antd';
+import { App, Button, Card, Descriptions, Popconfirm, Space, Table, Tag, Tooltip, Typography } from 'antd';
 import { ArrowLeftOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -325,14 +325,15 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               </Table.Summary.Row>
             );
           }}
+          tableLayout="fixed"
           columns={[
-            { title: 'Phân loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
-            { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
-            { title: 'NV giao nhận', key: 'deliveryStaff', render: (_: unknown, r: JobOrderItem) => (r as any).deliveryStaff?.fullName ?? '-' },
+            { title: 'Phân loại', dataIndex: 'type', width: 140, render: (v: string) => <Tag color="blue">{v}</Tag> },
+            { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
+            { title: 'NV giao nhận', key: 'deliveryStaff', width: 140, ellipsis: true, render: (_: unknown, r: JobOrderItem) => (r as any).deliveryStaff?.fullName ?? '-' },
             { title: 'Trước thuế', dataIndex: 'pretaxAmount', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : fmtMoney(v)) },
             { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
             { title: 'Port Amt', dataIndex: 'portAmt', align: 'right' as const, render: fmtMoney },
-            { title: 'Ghi chú', dataIndex: 'note', render: (v: string | null) => v ?? '-', ellipsis: true },
+            { title: 'Ghi chú', dataIndex: 'note', width: 200, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             {
               title: 'Thao tác',
               key: 'actions',
@@ -396,9 +397,10 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               </Table.Summary.Row>
             );
           }}
+          tableLayout="fixed"
           columns={[
-            { title: 'Loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
-            { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
+            { title: 'Loại', dataIndex: 'type', width: 140, render: (v: string) => <Tag color="blue">{v}</Tag> },
+            { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Đơn vị tính', dataIndex: 'unit', render: (v: string | null) => v ?? '-' },
             { title: 'Số lượng', dataIndex: 'quantity', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
             { title: 'Trước thuế', dataIndex: 'pretaxAmount', align: 'right' as const, render: fmtMoney },
@@ -470,10 +472,11 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               </Table.Summary.Row>
             );
           }}
+          tableLayout="fixed"
           columns={[
-            { title: 'Loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
-            { title: 'Số hóa đơn', dataIndex: 'invoiceNumber', render: (v: string | null) => v ?? '-' },
-            { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
+            { title: 'Loại', dataIndex: 'type', width: 140, render: (v: string) => <Tag color="blue">{v}</Tag> },
+            { title: 'Số hóa đơn', dataIndex: 'invoiceNumber', width: 140, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
+            { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Unit', dataIndex: 'unit', render: (v: string | null) => v ?? '-' },
             { title: 'Current', dataIndex: 'currency', align: 'center' as const, render: (v: string) => <Tag color={v === 'USD' ? 'green' : 'default'}>{v}</Tag> },
             { title: 'Số lượng', dataIndex: 'quantity', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },

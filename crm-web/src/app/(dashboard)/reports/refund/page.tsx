@@ -106,7 +106,7 @@ function DetailTable({ dim, groupId, from, to, typeFilter }: { dim: RefundDim; g
         { title: 'Phiếu', dataIndex: 'sheetNumber', width: 140 },
         { title: 'Nguồn', dataIndex: 'source', width: 120, render: (v: string) => <Tag>{SOURCE_LABEL[v] ?? v}</Tag> },
         { title: 'Loại', dataIndex: 'type', width: 160, render: (v: string) => <Tag color="orange">{v}</Tag> },
-        { title: 'Mô tả', dataIndex: 'description', render: (v: string | null) => v ?? '-' },
+        { title: 'Mô tả', dataIndex: 'description', ellipsis: true, render: (v: string | null) => v ?? '-' },
         { title: 'Ngày', dataIndex: 'date', width: 110, render: (v: string) => fmtDate(v) },
         { title: 'Số tiền', dataIndex: 'amount', align: 'right' as const, width: 130, render: (v: number) => fmtMoney(v) },
       ]}

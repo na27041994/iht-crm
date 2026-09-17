@@ -177,7 +177,7 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
           locale={{ emptyText: 'Chưa có khoản chi' }}
           columns={[
             { title: 'Tiền', dataIndex: 'amount', align: 'right' as const, render: (v: string) => <span className="font-medium">{fmtMoney(v)}</span> },
-            { title: 'Ghi chú', dataIndex: 'note', render: (v: string | null) => v ?? '-' },
+            { title: 'Ghi chú', dataIndex: 'note', ellipsis: true, render: (v: string | null) => v ?? '-' },
             {
               title: 'Thao tác',
               key: 'actions',
