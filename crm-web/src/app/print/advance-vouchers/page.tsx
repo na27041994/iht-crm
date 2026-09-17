@@ -67,7 +67,7 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
         <tbody>
           <tr>
             <td className="old-label">Số Job:<br /><span className="old-label-en">Job No:</span></td>
-            <td className="old-val">{sheetNo}</td>
+            <td className="old-val-bold" style={{ fontSize: 15 }}>{sheetNo}</td>
             <td className="old-label">Loại:<br /><span className="old-label-en">Type:</span></td>
             <td className="old-val-bold">{v.type}</td>
             <td className="old-label">Số phiếu:<br /><span className="old-label-en">Advance No:</span></td>
