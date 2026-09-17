@@ -144,7 +144,11 @@ const liftingExportQuery = z.object({
 reportRouter.get('/lifting/export', validateQuery(liftingExportQuery), requirePermission('report_lifting', 'view'), asyncHandler(async (req, res) => {
   const { from, to, ids } = req.query as { from?: string; to?: string; ids?: string };
   if (ids) {
-    const idList = ids.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0);
+    const idList = ids.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+    if (!idList.length) {
+      res.status(400).json({ error: 'Danh sách ids trống hoặc quá 100' });
+      return;
+    }
     const { prisma } = await import('../../lib/prisma.js');
     const sheets = await prisma.trackingSheet.findMany({
       where: { id: { in: idList }, isDelete: 1 },
@@ -200,7 +204,7 @@ reportRouter.get('/lifting/sheets', validateQuery(z.object({
 }));
 
 reportRouter.get('/lifting/batch', validateQuery(z.object({ ids: z.string().min(1) })), requirePermission('report_lifting', 'view'), asyncHandler(async (req, res) => {
-  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0);
+  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
   const { prisma } = await import('../../lib/prisma.js');
   const sheets = await prisma.trackingSheet.findMany({
     where: { id: { in: ids }, isDelete: 1 },
@@ -277,7 +281,11 @@ reportRouter.get('/debit/export', validateQuery(debitExportQuery), requirePermis
   const fromDate = from ? new Date(from) : undefined;
   const toDate = to ? new Date(to) : undefined;
   if (ids) {
-    const idList = ids.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0);
+    const idList = ids.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+    if (!idList.length) {
+      res.status(400).json({ error: 'Danh sách ids trống hoặc quá 100' });
+      return;
+    }
     const { prisma } = await import('../../lib/prisma.js');
     const sheets = await prisma.trackingSheet.findMany({
       where: { id: { in: idList }, isDelete: 1 },
@@ -333,7 +341,7 @@ reportRouter.get('/debit/sheets', validateQuery(z.object({
 }));
 
 reportRouter.get('/debit/batch', validateQuery(z.object({ ids: z.string().min(1) })), requirePermission('report_debit', 'view'), asyncHandler(async (req, res) => {
-  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0);
+  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
   const { prisma } = await import('../../lib/prisma.js');
   const sheets = await prisma.trackingSheet.findMany({
     where: { id: { in: ids }, isDelete: 1 },

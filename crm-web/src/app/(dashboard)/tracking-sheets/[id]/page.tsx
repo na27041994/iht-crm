@@ -1,14 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { App, Button, Card, Descriptions, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import { ArrowLeftOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
 import { usePermissions } from '@/hooks/usePermission';
-import JobOrderModal, { JobOrderItem } from '@/components/JobOrderModal';
-import JobBookingModal, { JobBookingItem } from '@/components/JobBookingModal';
-import DebitNoteModal, { DebitNoteItem } from '@/components/DebitNoteModal';
+import type { JobOrderItem } from '@/components/JobOrderModal';
+import type { JobBookingItem } from '@/components/JobBookingModal';
+import type { DebitNoteItem } from '@/components/DebitNoteModal';
+
+const JobOrderModal = dynamic(() => import('@/components/JobOrderModal'), { ssr: false });
+const JobBookingModal = dynamic(() => import('@/components/JobBookingModal'), { ssr: false });
+const DebitNoteModal = dynamic(() => import('@/components/DebitNoteModal'), { ssr: false });
 
 interface StaffRef {
   id: number;
@@ -111,6 +116,13 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
   const [selectedBookingIds, setSelectedBookingIds] = useState<number[]>([]);
   const [selectedDebitIds, setSelectedDebitIds] = useState<number[]>([]);
+
+  const sortedOrders = useMemo(() => sortByType(sheet?.jobOrders ?? []), [sheet]);
+  const sortedBookings = useMemo(() => sortByType(sheet?.jobBookings ?? []), [sheet]);
+  const sortedDebits = useMemo(() => sortByType(sheet?.debitNotes ?? []), [sheet]);
+  const totalOrder = useMemo(() => (sheet?.jobOrders ?? []).reduce((s, r) => s + Number((r as any).portAmt ?? 0), 0), [sheet]);
+  const totalBooking = useMemo(() => (sheet?.jobBookings ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0), [sheet]);
+  const totalDebit = useMemo(() => (sheet?.debitNotes ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0), [sheet]);
 
   const load = useCallback(async () => {
     const id = (await params).id;
@@ -290,7 +302,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           size="small"
           rowKey="id"
           loading={loading}
-          dataSource={sortByType(sheet?.jobOrders ?? [])}
+          dataSource={sortedOrders}
           rowSelection={{
             selectedRowKeys: selectedOrderIds,
             onChange: (keys) => setSelectedOrderIds(keys as number[]),
@@ -304,7 +316,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           locale={{ emptyText: 'Chưa có mục Job Order' }}
           scroll={{ x: 1000 }}
           summary={() => {
-            const total = (sheet?.jobOrders ?? []).reduce((s, r) => s + Number((r as any).portAmt ?? 0), 0);
+            const total = totalOrder;
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={5} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
@@ -361,7 +373,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           size="small"
           rowKey="id"
           loading={loading}
-          dataSource={sortByType(sheet?.jobBookings ?? [])}
+          dataSource={sortedBookings}
           rowSelection={{
             selectedRowKeys: selectedBookingIds,
             onChange: (keys) => setSelectedBookingIds(keys as number[]),
@@ -375,7 +387,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           locale={{ emptyText: 'Chưa có mục Job Book' }}
           scroll={{ x: 1200 }}
           summary={() => {
-            const total = (sheet?.jobBookings ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0);
+            const total = totalBooking;
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={8} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
@@ -435,7 +447,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           size="small"
           rowKey="id"
           loading={loading}
-          dataSource={sortByType(sheet?.debitNotes ?? [])}
+          dataSource={sortedDebits}
           rowSelection={{
             selectedRowKeys: selectedDebitIds,
             onChange: (keys) => setSelectedDebitIds(keys as number[]),
@@ -449,7 +461,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           locale={{ emptyText: 'Chưa có mục Debit Note' }}
           scroll={{ x: 1200 }}
           summary={() => {
-            const total = (sheet?.debitNotes ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0);
+            const total = totalDebit;
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={10} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>

@@ -7,9 +7,11 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import { usePermission } from '@/hooks/usePermission';
-import TrackingSheetFormModal from '@/components/TrackingSheetFormModal';
-import ExportExcelModal from '@/components/ExportExcelModal';
-import ImportExcelModal from '@/components/ImportExcelModal';
+import dynamic from 'next/dynamic';
+
+const TrackingSheetFormModal = dynamic(() => import('@/components/TrackingSheetFormModal'), { ssr: false });
+const ExportExcelModal = dynamic(() => import('@/components/ExportExcelModal'), { ssr: false });
+const ImportExcelModal = dynamic(() => import('@/components/ImportExcelModal'), { ssr: false });
 
 interface StaffRef {
   id: number;

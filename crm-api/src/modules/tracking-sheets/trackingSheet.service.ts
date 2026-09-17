@@ -88,22 +88,25 @@ async function nextSheetNumber(now = new Date()): Promise<string> {
   return `${prefix}${timestamp}`;
 }
 
-// Liệt kê phiếu theo dõi có phân trang và tìm kiếm
+// Liệt kê phiếu theo dõi có phân trang và tìm kiếm (nhẹ: không load jobs, chỉ _count)
 export async function listTrackingSheets(search?: string, page = 1, pageSize = 20) {
+  const safePageSize = Math.min(Math.max(pageSize, 1), 50);
   const where: Prisma.TrackingSheetWhereInput = { isDelete: 1 };
   if (search) {
-    where.OR = [
-      { sheetNumber: { contains: search, mode: 'insensitive' } },
-      { containerNumber: { contains: search, mode: 'insensitive' } },
-      { customer: { is: { companyName: { contains: search, mode: 'insensitive' } } } },
-      { fromLocation: { contains: search, mode: 'insensitive' } },
-      { toLocation: { contains: search, mode: 'insensitive' } },
-      { customNo: { contains: search, mode: 'insensitive' } },
-      { billNumber: { contains: search, mode: 'insensitive' } },
-      { invoiceNumber: { contains: search, mode: 'insensitive' } },
-      { pol: { contains: search, mode: 'insensitive' } },
-      { pod: { contains: search, mode: 'insensitive' } },
-    ];
+    const kw = search.trim().slice(0, 50);
+    if (kw) {
+      where.OR = [
+        { sheetNumber: { contains: kw, mode: 'insensitive' } },
+        { containerNumber: { contains: kw, mode: 'insensitive' } },
+        { customer: { is: { companyName: { contains: kw, mode: 'insensitive' } } } },
+        { customer: { is: { customerName: { contains: kw, mode: 'insensitive' } } } },
+        { fromLocation: { contains: kw, mode: 'insensitive' } },
+        { toLocation: { contains: kw, mode: 'insensitive' } },
+        { customNo: { contains: kw, mode: 'insensitive' } },
+        { billNumber: { contains: kw, mode: 'insensitive' } },
+        { invoiceNumber: { contains: kw, mode: 'insensitive' } },
+      ];
+    }
   }
 
   const [total, items] = await Promise.all([
@@ -111,13 +114,25 @@ export async function listTrackingSheets(search?: string, page = 1, pageSize = 2
     prisma.trackingSheet.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      include: trackingSheetInclude,
+      skip: (page - 1) * safePageSize,
+      take: safePageSize,
+      select: {
+        id: true,
+        sheetNumber: true,
+        containerNumber: true,
+        customerId: true,
+        customer: { select: { id: true, customerName: true, companyName: true } },
+        fromLocation: true,
+        toLocation: true,
+        containerQuantity: true,
+        etaDate: true,
+        createdAt: true,
+        _count: { select: { jobOrders: { where: { isDelete: 1 } }, jobBookings: { where: { isDelete: 1 } }, debitNotes: { where: { isDelete: 1 } } } },
+      },
     }),
   ]);
 
-  return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  return { items, total, page, pageSize: safePageSize, totalPages: Math.ceil(total / safePageSize) };
 }
 
 // Lấy chi tiết một phiếu theo dõi
@@ -127,11 +142,12 @@ export async function getTrackingSheet(id: number) {
   return sheet;
 }
 
-// Lấy nhiều phiếu theo dõi theo ids
+// Lấy nhiều phiếu theo dõi theo ids (giới hạn 100 để tránh payload lớn khi in)
 export async function getTrackingSheetsByIds(ids: number[]) {
   if (!ids.length) return [];
+  const capped = ids.slice(0, 100);
   return prisma.trackingSheet.findMany({
-    where: { id: { in: ids }, isDelete: 1 },
+    where: { id: { in: capped }, isDelete: 1 },
     orderBy: { id: 'asc' },
     include: trackingSheetInclude,
   });

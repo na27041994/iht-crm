@@ -239,6 +239,8 @@ model TrackingSheet {
   @@index([sheetNumber])
   @@index([customerId])
   @@index([createdAt])
+  @@index([isDelete, createdAt(sort: Desc)])
+  @@index([isDelete, etaDate])
   @@map("tracking_sheets")
 }
 
@@ -260,6 +262,8 @@ model JobOrder {
   updatedAt       DateTime       @updatedAt
 
   @@index([sheetId])
+  @@index([isDelete, sheetId])
+  @@index([isDelete, type])
   @@map("job_orders")
 }
 
@@ -281,6 +285,8 @@ model JobBooking {
   updatedAt      DateTime       @updatedAt
 
   @@index([sheetId])
+  @@index([isDelete, sheetId])
+  @@index([isDelete, type])
   @@map("job_bookings")
 }
 
@@ -304,6 +310,8 @@ model DebitNote {
   updatedAt     DateTime       @updatedAt
 
   @@index([sheetId])
+  @@index([isDelete, sheetId])
+  @@index([isDelete, type])
   @@map("debit_notes")
 }
 

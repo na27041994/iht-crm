@@ -36,7 +36,7 @@ const REFUND_ROWS = Prisma.sql`
     s."sheetNumber", s."customerId",
     cu."companyName", cu."customerName"
   FROM job_bookings jb
-  JOIN tracking_sheets s ON s.id = jb."sheetId"
+  JOIN tracking_sheets s ON s.id = jb."sheetId" AND s."isDelete" = 1
   LEFT JOIN customers cu ON cu.id = s."customerId"
   WHERE jb."isDelete" = 1 AND jb.type IN (${Prisma.join(REFUND_TYPES.map((t) => Prisma.sql`${t}`))})
   UNION ALL
@@ -46,7 +46,7 @@ const REFUND_ROWS = Prisma.sql`
     s."sheetNumber", s."customerId",
     cu."companyName", cu."customerName"
   FROM job_orders jo
-  JOIN tracking_sheets s ON s.id = jo."sheetId"
+  JOIN tracking_sheets s ON s.id = jo."sheetId" AND s."isDelete" = 1
   LEFT JOIN customers cu ON cu.id = s."customerId"
   WHERE jo."isDelete" = 1 AND jo.type IN (${Prisma.join(REFUND_TYPES.map((t) => Prisma.sql`${t}`))})
 `;
@@ -323,7 +323,7 @@ const LIFTING_ROWS = Prisma.sql`
     s."sheetNumber", s."customerId",
     cu."companyName", cu."customerName"
   FROM job_bookings jb
-  JOIN tracking_sheets s ON s.id = jb."sheetId"
+  JOIN tracking_sheets s ON s.id = jb."sheetId" AND s."isDelete" = 1
   LEFT JOIN customers cu ON cu.id = s."customerId"
   WHERE jb."isDelete" = 1 AND (jb.description ILIKE ${'%nâng hạ%'} OR jb.description ILIKE ${'%phí nâng%'} OR jb.description ILIKE ${'%phí hạ%'})
   UNION ALL
@@ -333,7 +333,7 @@ const LIFTING_ROWS = Prisma.sql`
     s."sheetNumber", s."customerId",
     cu."companyName", cu."customerName"
   FROM job_orders jo
-  JOIN tracking_sheets s ON s.id = jo."sheetId"
+  JOIN tracking_sheets s ON s.id = jo."sheetId" AND s."isDelete" = 1
   LEFT JOIN customers cu ON cu.id = s."customerId"
   WHERE jo."isDelete" = 1 AND (jo.description ILIKE ${'%nâng hạ%'} OR jo.description ILIKE ${'%phí nâng%'} OR jo.description ILIKE ${'%phí hạ%'})
 `;
@@ -347,7 +347,7 @@ const DEBIT_ROWS = Prisma.sql`
     cu."companyName", cu."customerName",
     dn.currency, dn."quantity"::float8 AS quantity
   FROM debit_notes dn
-  JOIN tracking_sheets s ON s.id = dn."sheetId"
+  JOIN tracking_sheets s ON s.id = dn."sheetId" AND s."isDelete" = 1
   LEFT JOIN customers cu ON cu.id = s."customerId"
   WHERE dn."isDelete" = 1
 `;
@@ -722,14 +722,19 @@ export async function getLiftingSheets(opts: {
   const sheetIds = items.map((s) => s.id);
   const liftingRows = sheetIds.length
     ? await prisma.$queryRaw<Array<{ sheetId: number; cnt: number; total: number }>>(Prisma.sql`
-        SELECT s.id AS "sheetId", COUNT(*)::int AS cnt, COALESCE(SUM(
-          COALESCE(jb.total, jb."afterTaxAmount", jb."pretaxAmount", jo."portAmt", 0)
-        ), 0)::float8 AS total
+        SELECT s.id AS "sheetId",
+          (SELECT COUNT(*)::int FROM (
+            SELECT jb.id FROM job_bookings jb WHERE jb."sheetId" = s.id AND jb."isDelete" = 1 AND (jb.description ILIKE ${'%nâng hạ%'} OR jb.description ILIKE ${'%phí nâng%'} OR jb.description ILIKE ${'%phí hạ%'})
+            UNION ALL
+            SELECT jo.id FROM job_orders jo WHERE jo."sheetId" = s.id AND jo."isDelete" = 1 AND (jo.description ILIKE ${'%nâng hạ%'} OR jo.description ILIKE ${'%phí nâng%'} OR jo.description ILIKE ${'%phí hạ%'})
+          ) c) AS cnt,
+          COALESCE((
+            SELECT SUM(COALESCE(jb.total, jb."afterTaxAmount", jb."pretaxAmount", 0)) FROM job_bookings jb WHERE jb."sheetId" = s.id AND jb."isDelete" = 1 AND (jb.description ILIKE ${'%nâng hạ%'} OR jb.description ILIKE ${'%phí nâng%'} OR jb.description ILIKE ${'%phí hạ%'})
+          ), 0)::float8 + COALESCE((
+            SELECT SUM(COALESCE(jo."portAmt", 0)) FROM job_orders jo WHERE jo."sheetId" = s.id AND jo."isDelete" = 1 AND (jo.description ILIKE ${'%nâng hạ%'} OR jo.description ILIKE ${'%phí nâng%'} OR jo.description ILIKE ${'%phí hạ%'})
+          ), 0)::float8 AS total
         FROM tracking_sheets s
-        LEFT JOIN job_bookings jb ON jb."sheetId" = s.id AND jb."isDelete" = 1 AND (jb.description ILIKE ${'%nâng hạ%'} OR jb.description ILIKE ${'%phí nâng%'} OR jb.description ILIKE ${'%phí hạ%'})
-        LEFT JOIN job_orders jo ON jo."sheetId" = s.id AND jo."isDelete" = 1 AND (jo.description ILIKE ${'%nâng hạ%'} OR jo.description ILIKE ${'%phí nâng%'} OR jo.description ILIKE ${'%phí hạ%'})
         WHERE s.id IN (${Prisma.join(sheetIds)})
-        GROUP BY s.id
       `)
     : [];
   const sumMap = new Map(liftingRows.map((d) => [Number(d.sheetId), d]));
