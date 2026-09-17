@@ -151,12 +151,12 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
         </thead>
         <tbody>
           <tr>
-            <td className="old-td" style={{ height: 90 }}></td>
-            <td className="old-td"></td>
-            <td className="old-td"></td>
-            <td className="old-td"></td>
-            <td className="old-td"></td>
-            <td className="old-td"></td>
+            <td className="old-td sig-cell" style={{ height: 60 }}></td>
+            <td className="old-td sig-cell" style={{ height: 60 }}></td>
+            <td className="old-td sig-cell" style={{ height: 60 }}></td>
+            <td className="old-td sig-cell" style={{ height: 60 }}></td>
+            <td className="old-td sig-cell" style={{ height: 60 }}></td>
+            <td className="old-td sig-cell" style={{ height: 60 }}></td>
           </tr>
         </tbody>
       </table>
@@ -231,9 +231,16 @@ function PrintAdvanceVouchersContent() {
         .old-total-row td { font-weight: 700; text-align: center; }
         .old-bold { font-weight: 700; }
         @media print {
-          @page { margin: 8mm 10mm; }
+          @page { size: A5 portrait; margin: 6mm 7mm; }
           .no-print { display: none !important; }
           .page-break { page-break-after: always; break-after: page; }
+          .print-sheet { max-width: 100% !important; }
+          .old-header { margin-bottom: 4px; }
+          .old-title { font-size: 15px; }
+          .old-subtitle { font-size: 12px; }
+          .old-table { font-size: 10px; }
+          .old-table th, .old-table td { padding: 2px 4px; }
+          .old-label { width: 70px; }
         }
       `}</style>
     </div>
