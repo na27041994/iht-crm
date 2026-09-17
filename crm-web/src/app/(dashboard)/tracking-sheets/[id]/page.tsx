@@ -128,14 +128,6 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   const totalOrder = useMemo(() => (sheet?.jobOrders ?? []).reduce((s, r) => s + Number((r as any).portAmt ?? 0), 0), [sheet]);
   const totalBooking = useMemo(() => (sheet?.jobBookings ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0), [sheet]);
   const totalDebit = useMemo(() => (sheet?.debitNotes ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0), [sheet]);
-  // Tổng chi tạm ứng (net Chi - Giảm trừ, chỉ loại Chi tạm ứng) để tính còn lại ở Job Order
-  const advanceTamUngNet = useMemo(() => {
-    const vouchers = sheet?.advanceVouchers ?? [];
-    return vouchers
-      .filter((v) => v.type === 'Chi tạm ứng')
-      .reduce((sum, v) => sum + (v.items ?? []).reduce((s, it: any) => s + (it.kind === 'Giảm trừ' ? -Number(it.amount ?? 0) : Number(it.amount ?? 0)), 0), 0);
-  }, [sheet]);
-  const orderRemaining = useMemo(() => totalOrder - advanceTamUngNet, [totalOrder, advanceTamUngNet]);
 
   const load = useCallback(async () => {
     const id = (await params).id;
@@ -299,11 +291,6 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         title="Job Order"
         extra={
           <Space>
-            {advanceTamUngNet !== 0 && (
-              <Tag color={orderRemaining > 0 ? 'orange' : orderRemaining < 0 ? 'green' : 'blue'}>
-                Đã tạm ứng: {fmtMoney(String(advanceTamUngNet))} - Còn lại: {fmtMoney(String(Math.abs(orderRemaining)))} {orderRemaining > 0 ? 'phải trả thêm' : orderRemaining < 0 ? 'thu thêm' : ''}
-              </Tag>
-            )}
             <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('order')}>
               Xuất Excel
             </Button>
@@ -336,24 +323,11 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           summary={() => {
             const total = totalOrder;
             return (
-              <>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={5} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
-                  <Table.Summary.Cell index={5} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
-                  <Table.Summary.Cell index={6} colSpan={2} />
-                </Table.Summary.Row>
-                {advanceTamUngNet !== 0 && (
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={5} align="right">
-                      <span style={{ color: '#888' }}>Đã tạm ứng - Còn lại {orderRemaining > 0 ? 'phải trả thêm' : orderRemaining < 0 ? 'thu thêm' : ''}:</span>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={5} align="right">
-                      <strong style={{ color: orderRemaining > 0 ? '#fa8c16' : orderRemaining < 0 ? '#52c41a' : undefined }}>{fmtMoney(String(Math.abs(orderRemaining)))}</strong>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={6} colSpan={2} />
-                  </Table.Summary.Row>
-                )}
-              </>
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0} colSpan={5} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={5} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={6} colSpan={2} />
+              </Table.Summary.Row>
             );
           }}
           tableLayout="fixed"
