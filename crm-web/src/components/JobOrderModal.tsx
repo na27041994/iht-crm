@@ -184,7 +184,7 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
           </Form.Item>
-          <Form.Item label="Port Amt (sau thuế, nhập để suy ngược trước thuế)" name="portAmt" className="sm:col-span-2">
+          <Form.Item label="Thành Tiền (sau thuế, nhập để suy ngược trước thuế)" name="portAmt" className="sm:col-span-2">
             <InputNumber min={0} style={{ width: '100%' }} placeholder="Nhập sau thuế để tự tính ngược, hoặc để trống tự tính" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">

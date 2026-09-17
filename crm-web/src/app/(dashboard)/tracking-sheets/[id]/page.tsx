@@ -128,6 +128,13 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   const totalOrder = useMemo(() => (sheet?.jobOrders ?? []).reduce((s, r) => s + Number((r as any).portAmt ?? 0), 0), [sheet]);
   const totalBooking = useMemo(() => (sheet?.jobBookings ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0), [sheet]);
   const totalDebit = useMemo(() => (sheet?.debitNotes ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0), [sheet]);
+  // Tổng tạm ứng chỉ tính khoản Chi (không trừ Giảm trừ), chỉ phiếu Chi tạm ứng
+  const totalTamUng = useMemo(() => {
+    const vouchers = sheet?.advanceVouchers ?? [];
+    return vouchers
+      .filter((v) => v.type === 'Chi tạm ứng')
+      .reduce((sum, v) => sum + (v.items ?? []).filter((it: any) => it.kind !== 'Giảm trừ').reduce((s, it: any) => s + Number(it.amount ?? 0), 0), 0);
+  }, [sheet]);
 
   const load = useCallback(async () => {
     const id = (await params).id;
@@ -291,6 +298,9 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         title="Job Order"
         extra={
           <Space>
+            {totalTamUng > 0 && (
+              <Tag color="blue">Đã tạm ứng: {fmtMoney(String(totalTamUng))}</Tag>
+            )}
             <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('order')}>
               Xuất Excel
             </Button>
@@ -323,11 +333,20 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           summary={() => {
             const total = totalOrder;
             return (
-              <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={5} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={5} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={6} colSpan={2} />
-              </Table.Summary.Row>
+              <>
+                <Table.Summary.Row>
+                  <Table.Summary.Cell index={0} colSpan={5} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
+                  <Table.Summary.Cell index={5} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
+                  <Table.Summary.Cell index={6} colSpan={2} />
+                </Table.Summary.Row>
+                {totalTamUng > 0 && (
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell index={0} colSpan={5} align="right"><span style={{ color: '#888' }}>Đã tạm ứng (chỉ Chi):</span></Table.Summary.Cell>
+                    <Table.Summary.Cell index={5} align="right"><strong>{fmtMoney(String(totalTamUng))}</strong></Table.Summary.Cell>
+                    <Table.Summary.Cell index={6} colSpan={2} />
+                  </Table.Summary.Row>
+                )}
+              </>
             );
           }}
           tableLayout="fixed"
@@ -337,7 +356,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             { title: 'NV giao nhận', key: 'deliveryStaff', width: 140, ellipsis: true, render: (_: unknown, r: JobOrderItem) => (r as any).deliveryStaff?.fullName ?? '-' },
             { title: 'Trước thuế', dataIndex: 'pretaxAmount', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : fmtMoney(v)) },
             { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
-            { title: 'Port Amt', dataIndex: 'portAmt', align: 'right' as const, render: fmtMoney },
+            { title: 'Thành Tiền', dataIndex: 'portAmt', align: 'right' as const, render: fmtMoney },
             { title: 'Ghi chú', dataIndex: 'note', width: 200, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             {
               title: 'Thao tác',

@@ -211,7 +211,7 @@ function SheetDocument({
               <th>NV giao nhận</th>
               <th className="right">Trước thuế</th>
               <th className="right">Thuế</th>
-              <th className="right">Port Amt</th>
+              <th className="right">Thành Tiền</th>
               <th>Ghi chú</th>
             </tr>
           </thead>

@@ -55,7 +55,7 @@ const JOB_ORDER_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'NV giao nhận', key: 'deliveryStaff', width: 18 },
   { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
   { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-  { header: 'Port Amt', key: 'portAmt', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Thành Tiền', key: 'portAmt', width: 15, style: { numFmt: '#,##0.00' } },
   { header: 'Ghi chú', key: 'note', width: 26 },
 ];
 
@@ -391,7 +391,7 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       { header: 'NV giao nhận', key: 'deliveryStaff', width: 18 },
       { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
       { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-      { header: 'Port Amt', key: 'portAmt', width: 15, style: { numFmt: '#,##0.00' } },
+      { header: 'Thành Tiền', key: 'portAmt', width: 15, style: { numFmt: '#,##0.00' } },
       { header: 'Ghi chú', key: 'note', width: 26 },
     ]);
     for (const o of sheet.jobOrders) {
