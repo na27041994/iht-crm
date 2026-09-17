@@ -5,13 +5,14 @@ import { AutoComplete } from 'antd';
 import { apiFetch } from '@/lib/api';
 
 interface Props {
-  type: 'order' | 'booking' | 'debit';
+  type: 'order' | 'booking' | 'debit' | 'advance';
   value?: string;
   onChange?: (value: string) => void;
   placeholder?: string;
+  style?: React.CSSProperties;
 }
 
-export default function DescriptionAutocomplete({ type, value, onChange, placeholder }: Props) {
+export default function DescriptionAutocomplete({ type, value, onChange, placeholder, style }: Props) {
   const [options, setOptions] = useState<{ value: string }[]>([]);
   const timeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -41,6 +42,7 @@ export default function DescriptionAutocomplete({ type, value, onChange, placeho
       placeholder={placeholder ?? 'Mô tả nội dung'}
       allowClear
       filterOption={false}
+      style={style ?? { width: '100%' }}
     />
   );
 }

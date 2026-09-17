@@ -8,6 +8,7 @@ import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { ADVANCE_TYPES } from '@/lib/advanceTypes';
 import { ADVANCE_ITEM_KINDS } from '@/components/AdvanceItemModal';
+import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 import { usePermissions } from '@/hooks/usePermission';
 
 interface SheetOption {
@@ -58,7 +59,7 @@ export default function AdvanceVoucherFormModal({
   const [loading, setLoading] = useState(false);
   const [sheets, setSheets] = useState<SheetOption[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
-  const [items, setItems] = useState<Array<{ amount?: number; kind?: string; note?: string }>>([]);
+  const [items, setItems] = useState<Array<{ amount?: number; kind?: string; description?: string; note?: string }>>([]);
   const [createJobOrders, setCreateJobOrders] = useState(false);
   const { can } = usePermissions();
   const canCreateJobOrder = can('job_order', 'create');
@@ -163,12 +164,12 @@ export default function AdvanceVoucherFormModal({
   }, [open, editingId, form, message]);
 
   function addItem() {
-    setItems((prev) => [...prev, { amount: undefined, kind: 'Chi', note: '' }]);
+    setItems((prev) => [...prev, { amount: undefined, kind: 'Chi', description: '', note: '' }]);
   }
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
   }
-  function updateItem(idx: number, patch: Partial<{ amount?: number; kind?: string; note?: string }>) {
+  function updateItem(idx: number, patch: Partial<{ amount?: number; kind?: string; description?: string; note?: string }>) {
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   }
   const signed = (it: { amount?: number; kind?: string }) => (it.kind === 'Giảm trừ' ? -Number(it.amount ?? 0) : Number(it.amount ?? 0));
@@ -214,6 +215,7 @@ export default function AdvanceVoucherFormModal({
             body: JSON.stringify({
               amount: it.amount,
               kind: it.kind ?? 'Chi',
+              description: it.description?.trim() ? it.description.trim() : null,
               note: it.note?.trim() ? it.note.trim() : null,
               ...(withJob ? { createJobOrder: true } : {}),
             }),
@@ -354,16 +356,23 @@ export default function AdvanceVoucherFormModal({
               </div>
             )}
             {items.map((it, idx) => (
-              <Space key={idx} style={{ display: 'flex', marginBottom: 8 }} align="start">
+              <Space key={idx} style={{ display: 'flex', marginBottom: 8 }} align="start" wrap>
                 <Select
-                  style={{ width: 110 }}
+                  style={{ width: 100 }}
                   value={it.kind ?? 'Chi'}
                   onChange={(v) => updateItem(idx, { kind: v })}
                   options={ADVANCE_ITEM_KINDS.map((k) => ({ value: k, label: k }))}
                 />
+                <DescriptionAutocomplete
+                  type="advance"
+                  value={it.description}
+                  onChange={(v) => updateItem(idx, { description: v })}
+                  placeholder="Mô tả khoản"
+                  style={{ width: 200 }}
+                />
                 <InputNumber
                   min={0}
-                  style={{ width: 160 }}
+                  style={{ width: 150 }}
                   placeholder="Số tiền dương"
                   value={it.amount}
                   onChange={(v) => updateItem(idx, { amount: v == null ? undefined : Number(v) })}
@@ -371,8 +380,8 @@ export default function AdvanceVoucherFormModal({
                   parser={parseMoneyInput}
                 />
                 <Input
-                  style={{ width: 240 }}
-                  placeholder="Ghi chú khoản"
+                  style={{ width: 180 }}
+                  placeholder="Ghi chú"
                   value={it.note}
                   onChange={(e) => updateItem(idx, { note: e.target.value })}
                 />

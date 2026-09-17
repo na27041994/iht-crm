@@ -349,14 +349,15 @@ model AdvanceVoucher {
 }
 
 model AdvanceVoucherItem {
-  id        Int            @id @default(autoincrement())
-  voucher   AdvanceVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  voucherId Int
-  amount    Decimal        @db.Decimal(15, 2)
-  kind      String         @default("Chi")
-  note      String?
-  isDelete  Int            @default(1)
-  createdAt DateTime       @default(now())
+  id          Int            @id @default(autoincrement())
+  voucher     AdvanceVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  voucherId   Int
+  amount      Decimal        @db.Decimal(15, 2)
+  kind        String         @default("Chi")
+  description String?
+  note        String?
+  isDelete    Int            @default(1)
+  createdAt   DateTime       @default(now())
 
   @@index([voucherId])
   @@map("advance_voucher_items")

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Breadcrumb, Button, Card, Descriptions, Empty, Popconfirm, Table, Tag, Typography } from 'antd';
+import { App, Breadcrumb, Button, Card, Descriptions, Empty, Popconfirm, Table, Tag, Tooltip, Typography } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
@@ -174,9 +174,11 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
           rowKey="id"
           dataSource={voucher.items}
           pagination={false}
+          tableLayout="fixed"
           locale={{ emptyText: 'Chưa có khoản chi' }}
           columns={[
             { title: 'Loại', dataIndex: 'kind', width: 110, render: (v: string | null) => <Tag color={v === 'Giảm trừ' ? 'red' : 'blue'}>{v ?? 'Chi'}</Tag> },
+            { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Tiền', dataIndex: 'amount', align: 'right' as const, render: (v: string, r: AdvanceItem) => <span className="font-medium" style={(r as any).kind === 'Giảm trừ' ? { color: '#cf1322' } : undefined}>{(r as any).kind === 'Giảm trừ' ? `- ${fmtMoney(v)}` : fmtMoney(v)}</span> },
             { title: 'Ghi chú', dataIndex: 'note', ellipsis: true, render: (v: string | null) => v ?? '-' },
             {
@@ -206,6 +208,7 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={2} />
                 <Table.Summary.Cell index={3} />
+                <Table.Summary.Cell index={4} />
               </Table.Summary.Row>
             );
           }}

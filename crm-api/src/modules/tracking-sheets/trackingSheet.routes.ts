@@ -188,10 +188,10 @@ trackingSheetRouter.get(
 
 trackingSheetRouter.get(
   '/descriptions',
-  validateQuery(z.object({ type: z.enum(['order', 'booking', 'debit']), search: z.string().optional(), limit: z.coerce.number().int().min(1).max(50).default(20) })),
+  validateQuery(z.object({ type: z.enum(['order', 'booking', 'debit', 'advance']), search: z.string().optional(), limit: z.coerce.number().int().min(1).max(50).default(20) })),
   asyncHandler(async (req: AuthedRequest, res) => {
-    const { type, search, limit } = req.query as unknown as { type: 'order' | 'booking' | 'debit'; search?: string; limit: number };
-    const resource = type === 'order' ? 'job_order' : type === 'booking' ? 'job_booking' : 'debit_note';
+    const { type, search, limit } = req.query as unknown as { type: 'order' | 'booking' | 'debit' | 'advance'; search?: string; limit: number };
+    const resource = type === 'order' ? 'job_order' : type === 'booking' ? 'job_booking' : type === 'advance' ? 'advance_voucher' : 'debit_note';
     const { hasPermission } = await import('../../modules/permissions/permissions.service.js');
     const ok = await hasPermission(req.user!.sub, resource as any, 'view');
     if (!ok) {
@@ -211,6 +211,16 @@ trackingSheetRouter.get(
     }
     if (type === 'booking') {
       const rows = await prisma.jobBooking.groupBy({
+        by: ['description'],
+        where: { isDelete: 1, description: kw ? { contains: kw, mode: 'insensitive' } : { not: null } },
+        orderBy: { description: 'asc' },
+        take: limit,
+      });
+      res.json(rows.map((r) => r.description).filter(Boolean));
+      return;
+    }
+    if (type === 'advance') {
+      const rows = await prisma.advanceVoucherItem.groupBy({
         by: ['description'],
         where: { isDelete: 1, description: kw ? { contains: kw, mode: 'insensitive' } : { not: null } },
         orderBy: { description: 'asc' },

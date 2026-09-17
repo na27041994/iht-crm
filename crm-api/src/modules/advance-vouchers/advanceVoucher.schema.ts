@@ -27,8 +27,8 @@ export const advanceItemKinds = ['Chi', 'Giảm trừ'] as const;
 export const advanceItemSchema = z.object({
   amount: z.coerce.number().gt(0, 'Số tiền phải > 0'),
   kind: z.enum(advanceItemKinds).default('Chi'),
+  description: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
-  createJobOrder: z.boolean().optional().default(false),
 });
 
 export type AdvanceItemInput = z.infer<typeof advanceItemSchema>;

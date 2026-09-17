@@ -5,6 +5,7 @@ import { App, Checkbox, Form, Input, InputNumber, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { usePermissions } from '@/hooks/usePermission';
+import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 
 export const ADVANCE_ITEM_KINDS = ['Chi', 'Giảm trừ'] as const;
 
@@ -12,6 +13,7 @@ export interface AdvanceItem {
   id: number;
   amount: string;
   kind?: string | null;
+  description?: string | null;
   note: string | null;
 }
 
@@ -45,13 +47,13 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
       .catch(() => setVoucherInfo(null));
     if (editing) {
       // DB lưu *100, hiển thị chia 100, amount luôn dương
-      form.setFieldsValue({ amount: Number(editing.amount) / 100, kind: (editing as any).kind ?? 'Chi', note: editing.note ?? '' });
+      form.setFieldsValue({ amount: Number(editing.amount) / 100, kind: (editing as any).kind ?? 'Chi', description: (editing as any).description ?? '', note: editing.note ?? '' });
     }
   }, [open, editing, form, voucherId]);
 
   const showJobCheckbox = !editing && (kind ?? 'Chi') === 'Chi' && voucherInfo?.type === 'Chi tạm ứng' && voucherInfo?.sheetId != null && canCreateJobOrder;
 
-  async function handleSubmit(values: { amount: number; kind: string; note?: string }) {
+  async function handleSubmit(values: { amount: number; kind: string; description?: string; note?: string }) {
     if (values.amount == null || Number(values.amount) <= 0) {
       message.error('Số tiền phải > 0');
       return;
@@ -61,6 +63,7 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
       const body: Record<string, unknown> = {
         amount: values.amount,
         kind: values.kind ?? 'Chi',
+        description: values.description && String(values.description).trim() !== '' ? String(values.description).trim() : null,
         note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
       };
       if (showJobCheckbox && createJobOrder) (body as any).createJobOrder = true;
@@ -97,6 +100,9 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
         </Form.Item>
         <Form.Item label="Tiền (luôn nhập dương)" name="amount" rules={[{ required: true, message: 'Nhập số tiền' }]}>
           <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền chi" formatter={formatMoneyInput} parser={parseMoneyInput} />
+        </Form.Item>
+        <Form.Item label="Mô tả" name="description">
+          <DescriptionAutocomplete type="advance" placeholder="Gõ để tìm mô tả đã từng nhập..." />
         </Form.Item>
         <Form.Item label="Ghi chú" name="note">
           <Input placeholder="Ghi chú khoản chi" />

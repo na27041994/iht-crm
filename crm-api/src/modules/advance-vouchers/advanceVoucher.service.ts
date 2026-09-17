@@ -193,7 +193,7 @@ async function syncJobOrderFromItem(voucherId: number, itemId: number) {
   const data: any = {
     sheetId: (voucher as any).sheetId,
     type: 'Our Company Pay',
-    description: item.note || `Tạm ứng ${voucher.advanceNo}`,
+    description: (item as any).description || item.note || `Tạm ứng ${voucher.advanceNo}`,
     portAmt: amount,
     pretaxAmount: amount,
     taxRate: 0,
