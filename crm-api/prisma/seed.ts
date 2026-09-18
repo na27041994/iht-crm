@@ -48,15 +48,35 @@ async function main() {
     },
   });
 
+  // 5 vai trò mặc định (bảng roles phải có thì mới tạo được user qua UI)
+  const defaultRoles = [
+    { name: 'admin', displayName: 'Quản trị' },
+    { name: 'sales', displayName: 'Kinh doanh' },
+    { name: 'ops', displayName: 'Điều hành' },
+    { name: 'accountant', displayName: 'Kế toán' },
+    { name: 'viewer', displayName: 'Chỉ xem' },
+  ];
+  for (const r of defaultRoles) {
+    await prisma.role.upsert({
+      where: { name: r.name },
+      update: { displayName: r.displayName },
+      create: { name: r.name, displayName: r.displayName, isSystem: true },
+    });
+  }
+
   const customer = await prisma.customer.upsert({
     where: { id: 1 },
     update: {
+      customerType: 'KH',
+      code: 'KH00001',
       customerName: 'Công ty TNHH ABC Logistics',
       contactPerson: 'Trần Văn Minh',
       fax: '0243 823 4567',
     },
     create: {
       id: 1,
+      customerType: 'KH',
+      code: 'KH00001',
       customerName: 'Công ty TNHH ABC Logistics',
       companyName: 'Công ty TNHH ABC Logistics',
       contactPerson: 'Trần Văn Minh',
@@ -128,7 +148,7 @@ async function main() {
       customerId: customer.id,
       fromLocation: 'Cat Lai Port, HCM',
       toLocation: 'Shanghai Port',
-      containerQuantity: 1,
+      containerQuantity: '1',
       etaDate: new Date('2026-09-01'),
       gw: 23000,
     },
@@ -266,9 +286,10 @@ async function main() {
   });
 
   const tables = [
-    'users', 'customers', 'contacts', 'carriers', 'truckers', 'agents',
+    'users', 'roles', 'role_permissions', 'user_permissions',
+    'customers', 'contacts', 'carriers', 'truckers', 'agents',
     'quotes', 'quote_items', 'orders',
-    'activities',
+    'activities', 'audit_logs', 'import_logs',
     'tracking_sheets', 'job_orders', 'job_bookings', 'debit_notes',
     'advance_vouchers', 'advance_voucher_items',
   ];
