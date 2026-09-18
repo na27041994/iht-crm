@@ -3,6 +3,7 @@ import { prisma } from '../../lib/prisma.js';
 import { toScaled } from '../../lib/money.js';
 
 interface ImportSheetRow {
+  sheetNumber?: string | null;
   containerNumber?: string | null;
   customerId?: number | null;
   fromLocation?: string | null;
@@ -100,12 +101,14 @@ function toInt(v: unknown): number | null {
   return n == null ? null : Math.trunc(n);
 }
 
-// Column mappings (1-based index matching template column order) - phanLuong thay POL/POD, containerQuantity cho phép chữ
+// Column mappings (1-based index matching template column order)
+// sheetNumber: để trống = thêm mới, có mã phiếu (VD: J260918-001) = sửa phiếu đó
 const SHEET_COLS: Record<string, number> = {
-  containerNumber: 1, customerId: 2, fromLocation: 3, toLocation: 4,
-  containerQuantity: 5, etaDate: 6, nw: 7, gw: 8, customNo: 9,
-  declarationDate: 10, billNumber: 11, invoiceNumber: 12, phanLuong: 13,
-  note: 14, createdById: 15,
+  sheetNumber: 1,
+  containerNumber: 2, customerId: 3, fromLocation: 4, toLocation: 5,
+  containerQuantity: 6, etaDate: 7, nw: 8, gw: 9, customNo: 10,
+  declarationDate: 11, billNumber: 12, invoiceNumber: 13, phanLuong: 14,
+  note: 15, createdById: 16,
 };
 
 const ORDER_COLS: Record<string, number> = {
@@ -211,12 +214,14 @@ export async function parseImportExcel(buffer: Buffer): Promise<ParsedImportData
   if (wsSheet) {
     wsSheet.eachRow({ includeEmpty: false }, (row, rowNum) => {
       if (rowNum === 1) return; // header
+      const sheetNumberRaw = String(getCellValue(row, SHEET_COLS, 'sheetNumber') ?? '').trim();
       const containerNumberRaw = String(getCellValue(row, SHEET_COLS, 'containerNumber') ?? '').trim();
       const customerId = toInt(getCellValue(row, SHEET_COLS, 'customerId'));
-      // containerNumber và customerId không bắt buộc nữa — bỏ qua dòng hoàn toàn trống
-      const hasAny = containerNumberRaw || customerId || String(getCellValue(row, SHEET_COLS, 'fromLocation') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'toLocation') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'phanLuong') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'note') ?? '').trim();
+      // bỏ qua dòng hoàn toàn trống (kể cả mã phiếu)
+      const hasAny = sheetNumberRaw || containerNumberRaw || customerId || String(getCellValue(row, SHEET_COLS, 'fromLocation') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'toLocation') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'phanLuong') ?? '').trim() || String(getCellValue(row, SHEET_COLS, 'note') ?? '').trim();
       if (!hasAny) return;
       sheets.push({
+        sheetNumber: sheetNumberRaw || null,
         containerNumber: containerNumberRaw || null,
         customerId: customerId ?? null,
         fromLocation: String(getCellValue(row, SHEET_COLS, 'fromLocation') ?? '').trim() || null,
@@ -303,20 +308,27 @@ export async function parseImportExcel(buffer: Buffer): Promise<ParsedImportData
   return { sheets, orders, bookings, debits };
 }
 
-// Hàm resolveSheetId: xử lý resolveSheetId
+// Hàm resolveSheetId: sheetId ở sheet con có thể là số thứ tự tạm (1,2,3... theo dòng
+// trong sheet "Phieu theo doi" của cùng file) HOẶC mã phiếu (VD: J260918-001) của phiếu đã có
 async function resolveSheetId(
   raw: string,
   createdSheets: Map<number, number>
 ): Promise<number | null> {
-  const n = Number(raw);
-  if (!isNaN(n)) {
-    if (raw.includes('.') || raw.startsWith('0')) return null;
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  const n = Number(s);
+  if (!isNaN(n) && Number.isInteger(n) && !s.includes('.') && !s.startsWith('0')) {
     if (n > 0 && n <= 100000) {
       const realId = createdSheets.get(n);
       if (realId) return realId;
     }
   }
-  return null;
+  // thử tìm theo mã phiếu
+  const found = await prisma.trackingSheet.findFirst({
+    where: { sheetNumber: s, isDelete: 1 },
+    select: { id: true },
+  });
+  return found ? found.id : null;
 }
 
 // Hàm nextSheetNumber: xử lý nextSheetNumber
@@ -333,15 +345,22 @@ async function nextSheetNumber(): Promise<string> {
   return `J${y}${m}${d}-${String(count + 1).padStart(3, '0')}`;
 }
 
-// Hàm upsertTrackingSheet: xử lý upsertTrackingSheet
+// Hàm upsertTrackingSheet:
+// - có mã phiếu (sheetNumber): sửa phiếu đó (giữ nguyên mã), không tồn tại -> lỗi dòng
+// - trống mã phiếu: thêm mới, tự sinh mã (trùng containerNumber+customerId thì cập nhật thay vì tạo trùng)
 async function upsertTrackingSheet(
   row: ImportSheetRow,
   tempIndex: number,
   defaultCreatedById: number
 ): Promise<{ id: number; action: 'created' | 'updated' } | null> {
-  // Check existing chỉ khi có containerNumber hoặc customerId
+  const code = (row.sheetNumber ?? '').trim();
   let existing = null as any;
-  if (row.containerNumber || row.customerId) {
+  if (code) {
+    existing = await prisma.trackingSheet.findFirst({ where: { sheetNumber: code, isDelete: 1 } });
+    if (!existing) {
+      throw new Error(`Mã phiếu "${code}" không tồn tại (muốn thêm mới thì để trống cột sheetNumber)`);
+    }
+  } else if (row.containerNumber || row.customerId) {
     const where: any = { isDelete: 1 };
     if (row.containerNumber) where.containerNumber = row.containerNumber;
     if (row.customerId) where.customerId = row.customerId;
@@ -351,9 +370,7 @@ async function upsertTrackingSheet(
     }
   }
 
-  const sheetNumber = await nextSheetNumber();
   const data = {
-    sheetNumber,
     containerNumber: row.containerNumber,
     customerId: row.customerId,
     fromLocation: row.fromLocation,
@@ -368,18 +385,21 @@ async function upsertTrackingSheet(
     invoiceNumber: row.invoiceNumber,
     phanLuong: row.phanLuong,
     note: row.note,
-    createdById: row.createdById ?? defaultCreatedById,
+    createdById: row.createdById ?? (defaultCreatedById || null),
     isDelete: 1,
   };
 
   if (existing) {
+    // sửa: giữ nguyên mã phiếu cũ
     const updated = await prisma.trackingSheet.update({
       where: { id: existing.id },
       data,
     });
     return { id: updated.id, action: 'updated' };
   } else {
-    const created = await prisma.trackingSheet.create({ data });
+    const created = await prisma.trackingSheet.create({
+      data: { ...data, sheetNumber: await nextSheetNumber() },
+    });
     return { id: created.id, action: 'created' };
   }
 }
@@ -576,14 +596,15 @@ export async function createTrackingSheetsFromImport(
     const tempIndex = i + 1;
 
     try {
-      const result = await upsertTrackingSheet(row, tempIndex, 0);
+      const result = await upsertTrackingSheet(row, tempIndex, defaultCreatedById);
       if (result) {
         createdSheets.set(tempIndex, result.id);
         if (result.action === 'created') created++;
         else updated++;
       }
     } catch (e) {
-      errors.push(`Dòng ${tempIndex} (${row.containerNumber}): ${e instanceof Error ? e.message : String(e)}`);
+      const label = row.sheetNumber || row.containerNumber || `dòng ${tempIndex}`;
+      errors.push(`Phiếu ${label}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

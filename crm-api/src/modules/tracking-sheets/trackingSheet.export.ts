@@ -234,6 +234,7 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
   }
 
   const SHEET_COLS: Partial<ExcelJS.Column>[] = [
+    { header: 'sheetNumber (trống=thêm mới, có mã=sửa)', key: 'sheetNumber', width: 26 },
     { header: 'containerNumber', key: 'containerNumber', width: 18 },
     { header: 'customerId', key: 'customerId', width: 12 },
     { header: 'fromLocation', key: 'fromLocation', width: 18 },
@@ -254,6 +255,7 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
   const wsSheet = wb.addWorksheet('Phieu theo doi');
   setup(wsSheet, SHEET_COLS);
   wsSheet.addRow({
+    sheetNumber: '',
     containerNumber: 'MSKU1234567',
     customerId: 1,
     fromLocation: 'Hà Nội',
@@ -272,36 +274,33 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
   });
 
   const ORDER_COLS: Partial<ExcelJS.Column>[] = [
-    { header: 'sheetId*', key: 'sheetId', width: 10 },
+    { header: 'sheetId* (số thứ tự hoặc mã phiếu)', key: 'sheetId', width: 24 },
     { header: 'type*', key: 'type', width: 20 },
     { header: 'description', key: 'description', width: 22 },
     { header: 'pretaxAmount', key: 'pretaxAmount', width: 14 },
     { header: 'taxRate', key: 'taxRate', width: 10 },
     { header: 'portAmt', key: 'portAmt', width: 14 },
     { header: 'deliveryStaffId', key: 'deliveryStaffId', width: 14 },
-    { header: 'carrierId', key: 'carrierId', width: 10 },
-    { header: 'agentId', key: 'agentId', width: 10 },
+    { header: 'industry', key: 'industry', width: 12 },
     { header: 'note', key: 'note', width: 20 },
   ];
   const wsOrder = wb.addWorksheet('Job Order');
   setup(wsOrder, ORDER_COLS);
-  wsOrder.addRow({ sheetId: 1, type: 'Chi Trực Tiếp', description: 'Cước tàu', pretaxAmount: 5000000, taxRate: 10, portAmt: 5500000, deliveryStaffId: '', carrierId: 1, agentId: '', note: 'Mẫu job order' });
+  wsOrder.addRow({ sheetId: 1, type: 'Chi Trực Tiếp', description: 'Cước tàu', pretaxAmount: 5000000, taxRate: 10, portAmt: 5500000, deliveryStaffId: '', industry: '', note: 'Mẫu job order' });
 
   const BOOKING_COLS: Partial<ExcelJS.Column>[] = [
-    { header: 'sheetId*', key: 'sheetId', width: 10 },
+    { header: 'sheetId* (số thứ tự hoặc mã phiếu)', key: 'sheetId', width: 24 },
     { header: 'type*', key: 'type', width: 20 },
     { header: 'description', key: 'description', width: 22 },
     { header: 'unit', key: 'unit', width: 10 },
     { header: 'quantity', key: 'quantity', width: 10 },
     { header: 'pretaxAmount', key: 'pretaxAmount', width: 14 },
     { header: 'taxRate', key: 'taxRate', width: 10 },
-    { header: 'carrierId', key: 'carrierId', width: 10 },
-    { header: 'agentId', key: 'agentId', width: 10 },
     { header: 'note', key: 'note', width: 20 },
   ];
   const wsBooking = wb.addWorksheet('Job Booking');
   setup(wsBooking, BOOKING_COLS);
-  wsBooking.addRow({ sheetId: 1, type: 'Cược Cont', description: 'Cước tàu', unit: 'Cont', quantity: 1, pretaxAmount: 5000000, taxRate: 10, carrierId: 1, agentId: '', note: 'Mẫu job booking' });
+  wsBooking.addRow({ sheetId: 1, type: 'Cược Cont', description: 'Cước tàu', unit: 'Cont', quantity: 1, pretaxAmount: 5000000, taxRate: 10, note: 'Mẫu job booking' });
 
   const DEBIT_COLS: Partial<ExcelJS.Column>[] = [
     { header: 'sheetId*', key: 'sheetId', width: 10 },
@@ -324,16 +323,15 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
   wsInstr.columns = [{ width: 120 }];
   wsInstr.addRow(['HƯỚNG DẪN NHẬP EXCEL NHANH']);
   wsInstr.addRow(['']);
-  wsInstr.addRow(['1. Sheet "Phieu theo doi": Mỗi dòng = 1 phiếu theo dõi mới (không bắt buộc containerNumber/customerId).']);
-  wsInstr.addRow(['   - Tất cả cột đều tùy chọn, có thể để trống.']);
-  wsInstr.addRow(['   - customerId, docStaffId, deliveryStaffId, createdById: nhập ID từ hệ thống.']);
+  wsInstr.addRow(['1. Sheet "Phieu theo doi": Mỗi dòng = 1 phiếu.']);
+  wsInstr.addRow(['   - THÊM MỚI: để trống cột sheetNumber, hệ thống tự sinh mã phiếu (VD: J260918-001).']);
+  wsInstr.addRow(['   - SỬA: nhập mã phiếu có sẵn vào cột sheetNumber (mã giữ nguyên, các cột khác ghi đè). Mã không tồn tại -> báo lỗi dòng đó.']);
+  wsInstr.addRow(['   - containerNumber/customerId không bắt buộc. customerId, deliveryStaffId, createdById: nhập ID từ hệ thống.']);
   wsInstr.addRow(['   - Ngày nhập định dạng YYYY-MM-DD (ví dụ: 2026-09-15).']);
-  wsInstr.addRow(['   - Sau khi import, hệ thống sẽ tạo phiếu và trả về sheetId.']);
   wsInstr.addRow(['']);
   wsInstr.addRow(['2. Sheet "Job Order", "Job Booking", "Debit Note": TÙY CHỌN.']);
-  wsInstr.addRow(['   - sheetId: để trống (để hệ thống tự điền sau khi tạo phiếu) HOẶC nhập tạm số thứ tự 1,2,3... tương ứng thứ tự dòng trong sheet "Phieu theo doi".']);
+  wsInstr.addRow(['   - sheetId: số thứ tự 1,2,3... tương ứng dòng trong sheet "Phieu theo doi" của cùng file, HOẶC mã phiếu có sẵn (VD: J260918-001).']);
   wsInstr.addRow(['   - type: nhập đúng tên loại trong hệ thống (ví dụ: "Cược Cont", "Cược sửa chữa cont", "Our Company Pay"...).']);
-  wsInstr.addRow(['   - carrierId / agentId: nhập ID hãng tàu/đại lý nếu có.']);
   wsInstr.addRow(['']);
   wsInstr.addRow(['3. Quy trình import:']);
   wsInstr.addRow(['   a. Điền sheet "Phieu theo doi" (bắt buộc).']);

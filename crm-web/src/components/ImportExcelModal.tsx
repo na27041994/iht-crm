@@ -165,11 +165,12 @@ export default function ImportExcelModal({ open, onClose, onSaved }: ImportExcel
         <div className="text-xs text-gray-500 pt-2 border-t">
           <strong>Lưu ý:</strong>
           <ul className="list-disc pl-4 mt-1 space-y-1">
+            <li><strong>Thêm mới:</strong> để trống cột <code>sheetNumber</code>, hệ thống tự sinh mã phiếu</li>
+            <li><strong>Sửa:</strong> nhập mã phiếu có sẵn vào <code>sheetNumber</code> (mã không tồn tại sẽ báo lỗi)</li>
             <li>Các cột <code>containerNumber</code>, <code>customerId</code> không bắt buộc, có thể để trống</li>
-            <li><code>customerId</code>, <code>docStaffId</code>, <code>deliveryStaffId</code>, <code>createdById</code>: nếu nhập thì điền ID từ hệ thống</li>
+            <li><code>customerId</code>, <code>deliveryStaffId</code>, <code>createdById</code>: nếu nhập thì điền ID từ hệ thống</li>
             <li>Ngày nhập định dạng <code>YYYY-MM-DD</code> (ví dụ: <code>2026-09-15</code>)</li>
-            <li>Sau khi import, hệ thống sẽ tạo phiếu và tự điền <code>sheetId</code> cho các sheet con</li>
-            <li>Các sheet con (Job Order, Job Booking, Debit Note) dùng <code>sheetId</code> tạm là số thứ tự 1,2,3... theo dòng phiếu</li>
+            <li>Các sheet con dùng <code>sheetId</code> là số thứ tự 1,2,3... theo dòng phiếu, <strong>hoặc mã phiếu có sẵn</strong></li>
           </ul>
         </div>
       </div>
