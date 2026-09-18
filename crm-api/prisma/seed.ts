@@ -90,21 +90,6 @@ async function main() {
     },
   });
 
-  const carrier = await prisma.carrier.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      id: 1,
-      carrierName: 'Maersk Line',
-      companyName: 'A.P. Moller - Maersk',
-      address: 'Saigon Port, District 4, HCM',
-      phone: '028 3822 8899',
-      fax: '028 3822 8890',
-      taxCode: '0311111111',
-      contactPerson: 'Peter Jensen',
-    },
-  });
-
   await prisma.trucker.upsert({
     where: { id: 1 },
     update: {},
@@ -287,7 +272,7 @@ async function main() {
 
   const tables = [
     'users', 'roles', 'role_permissions', 'user_permissions',
-    'customers', 'contacts', 'carriers', 'truckers', 'agents',
+    'customers', 'contacts', 'truckers', 'agents',
     'quotes', 'quote_items', 'orders',
     'activities', 'audit_logs', 'import_logs',
     'tracking_sheets', 'job_orders', 'job_bookings', 'debit_notes',
