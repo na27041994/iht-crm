@@ -18,12 +18,6 @@ interface CustomerOption {
   companyName: string;
 }
 
-interface CarrierOption {
-  id: number;
-  carrierName: string;
-  companyName: string;
-}
-
 interface AgentOption {
   id: number;
   agentName: string;
@@ -36,7 +30,7 @@ export interface TrackingSheetFormValues {
   nw?: number;
   containerNumber?: string;
   customerId?: number;
-  carrierId?: number;
+  carrierName?: string;
   agentId?: number;
   fromLocation?: string;
   toLocation?: string;
@@ -74,7 +68,6 @@ export default function TrackingSheetFormModal({
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const customerSearchTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [carriers, setCarriers] = useState<CarrierOption[]>([]);
   const [agents, setAgents] = useState<AgentOption[]>([]);
 
   async function fetchCustomers(search: string) {
@@ -101,13 +94,11 @@ export default function TrackingSheetFormModal({
     Promise.all([
       apiFetch<UserOption[]>('/auth/users'),
       apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=100'),
-      apiFetch<{ items: CarrierOption[] }>('/carriers?pageSize=100'),
       apiFetch<{ items: AgentOption[] }>('/agents?pageSize=100'),
     ])
-      .then(([us, cs, ca, ag]) => {
+      .then(([us, cs, ag]) => {
         setUsers(us);
         setCustomers(cs.items);
-        setCarriers(ca.items);
         setAgents(ag.items);
         form.resetFields();
         if (editingId) {
@@ -118,7 +109,7 @@ export default function TrackingSheetFormModal({
               nw: s.nw == null ? undefined : Number(s.nw),
               containerNumber: s.containerNumber ?? '',
               customerId: s.customerId ?? undefined,
-              carrierId: s.carrierId ?? undefined,
+              carrierName: (s as any).carrierName ?? '',
               agentId: s.agentId ?? undefined,
               fromLocation: s.fromLocation ?? '',
               toLocation: s.toLocation ?? '',
@@ -151,7 +142,7 @@ export default function TrackingSheetFormModal({
         nw: values.nw ?? null,
         containerNumber: values.containerNumber && String(values.containerNumber).trim() !== '' ? String(values.containerNumber).trim() : null,
         customerId: values.customerId ?? null,
-        carrierId: values.carrierId ?? null,
+        carrierName: values.carrierName && String(values.carrierName).trim() !== '' ? String(values.carrierName).trim() : null,
         agentId: values.agentId ?? null,
         fromLocation: values.fromLocation && String(values.fromLocation).trim() !== '' ? String(values.fromLocation).trim() : null,
         toLocation: values.toLocation && String(values.toLocation).trim() !== '' ? String(values.toLocation).trim() : null,
@@ -221,16 +212,8 @@ export default function TrackingSheetFormModal({
               }))}
             />
           </Form.Item>
-          <Form.Item label="Hãng tàu" name="carrierId">
-            <Select
-              placeholder="Chọn hãng tàu"
-              showSearch
-              optionFilterProp="label"
-              options={carriers.map((c) => ({
-                value: c.id,
-                label: c.carrierName,
-              }))}
-            />
+          <Form.Item label="Hãng tàu" name="carrierName">
+            <Input placeholder="Nhập tên hãng tàu" />
           </Form.Item>
           <Form.Item label="Đại lý" name="agentId">
             <Select

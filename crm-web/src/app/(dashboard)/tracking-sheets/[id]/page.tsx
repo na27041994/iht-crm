@@ -26,12 +26,6 @@ interface CustomerRef {
   companyName: string;
 }
 
-interface CarrierRef {
-  id: number;
-  carrierName: string;
-  companyName: string;
-}
-
 interface AgentRef {
   id: number;
   agentName: string;
@@ -46,7 +40,7 @@ interface TrackingSheetDetail {
   nw: string | null;
   containerNumber: string | null;
   customer: CustomerRef | null;
-  carrier: CarrierRef | null;
+  carrierName: string | null;
   agent: AgentRef | null;
   fromLocation: string | null;
   toLocation: string | null;
@@ -273,7 +267,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             column={{ xs: 1, sm: 2, lg: 4 }}
             items={[
               { key: 'customer', label: 'Khách hàng', children: sheet.customer ? `${sheet.customer.companyName} (#${sheet.customer.id})` : '-' },
-              { key: 'carrier', label: 'Hãng tàu', children: sheet.carrier ? `${sheet.carrier.carrierName} (#${sheet.carrier.id})` : '-' },
+              { key: 'carrier', label: 'Hãng tàu', children: sheet.carrierName ?? '-' },
               { key: 'agent', label: 'Đại lý', children: sheet.agent ? `${sheet.agent.agentName} (#${sheet.agent.id})` : '-' },
               { key: 'container', label: 'Số container', children: sheet.containerNumber ?? '-' },
               { key: 'route', label: 'Tuyến', children: `${sheet.fromLocation ?? '?'} → ${sheet.toLocation ?? '?'}` },

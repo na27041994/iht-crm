@@ -8,7 +8,6 @@ import { errorHandler } from './middleware/error.js';
 import { auditLogger } from './middleware/audit.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { customerRouter } from './modules/customers/customer.routes.js';
-import { carrierRouter } from './modules/carriers/carrier.routes.js';
 import { truckerRouter } from './modules/truckers/trucker.routes.js';
 import { agentRouter } from './modules/agents/agent.routes.js';
 import { trackingSheetRouter } from './modules/tracking-sheets/trackingSheet.routes.js';
@@ -37,7 +36,6 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', time: new Date().toIS
 
 app.use('/api/auth', authRouter);
 app.use('/api/customers', customerRouter);
-app.use('/api/carriers', carrierRouter);
 app.use('/api/truckers', truckerRouter);
 app.use('/api/agents', agentRouter);
 app.use('/api/tracking-sheets', trackingSheetRouter);

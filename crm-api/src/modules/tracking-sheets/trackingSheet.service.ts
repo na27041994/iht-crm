@@ -35,7 +35,6 @@ export const trackingSheetInclude = {
   deliveryStaff: { select: { id: true, fullName: true } },
   createdBy: { select: { id: true, fullName: true } },
   customer: { select: { id: true, customerName: true, companyName: true } },
-  carrier: { select: { id: true, carrierName: true, companyName: true } },
   agent: { select: { id: true, agentName: true, companyName: true } },
   jobOrders: {
     where: { isDelete: 1 },

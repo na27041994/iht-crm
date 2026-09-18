@@ -18,14 +18,13 @@ export const TRACKING_SHEET_SUB_RESOURCES = [
 export type TrackingSheetSubResource = (typeof TRACKING_SHEET_SUB_RESOURCES)[number];
 
 // Nhóm hiển thị Dữ liệu cơ bản (không có resource cha riêng, chỉ gom UI)
-export const MASTER_DATA_RESOURCES = ['customer', 'carrier', 'trucker', 'agent'] as const;
+export const MASTER_DATA_RESOURCES = ['customer', 'trucker', 'agent'] as const;
 
 // Tài nguyên quản lý vai trò
 export const ROLE_RESOURCE = 'role' as const;
 
 export const RESOURCES = [
   'customer',
-  'carrier',
   'trucker',
   'agent',
   'tracking_sheet',
@@ -46,7 +45,6 @@ export type Action = (typeof ACTIONS)[number];
 
 export const RESOURCE_LABELS: Record<Resource, string> = {
   customer: 'Khách hàng',
-  carrier: 'Hãng tàu',
   trucker: 'Nhà xe',
   agent: 'Đại lý',
   tracking_sheet: 'Phiếu theo dõi',
@@ -82,7 +80,6 @@ export function defaultPermissionsForRole(role: string): Record<Resource, Record
   if (role === 'admin') {
     return {
       customer: allTrue,
-      carrier: allTrue,
       trucker: allTrue,
       agent: allTrue,
       tracking_sheet: allTrue,
@@ -107,7 +104,6 @@ export function defaultPermissionsForRole(role: string): Record<Resource, Record
   if (role === 'viewer') {
     return {
       customer: viewOnly,
-      carrier: viewOnly,
       trucker: viewOnly,
       agent: viewOnly,
       tracking_sheet: viewOnly,
@@ -132,7 +128,6 @@ export function defaultPermissionsForRole(role: string): Record<Resource, Record
   // sales / ops / accountant: mặc định cho phép tất cả trừ quản lý user/audit/role
   return {
     customer: allTrue,
-    carrier: allTrue,
     trucker: allTrue,
     agent: allTrue,
     tracking_sheet: allTrue,
