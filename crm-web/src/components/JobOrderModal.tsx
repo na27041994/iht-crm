@@ -82,7 +82,19 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
     if (!open) lastPriceEdit.current = null;
   }, [open ]);
 
+  // chọn Cược Cont / Cược sửa chữa cont -> tự điền mô tả cùng tên
+  const AUTO_DESC_TYPES = ['Cược Cont', 'Cược sửa chữa cont'];
+
   function handleValuesChange(changed: Partial<JobOrderFormValues>, all: JobOrderFormValues) {
+    if ('type' in changed) {
+      const t = String(changed.type ?? '');
+      const curDesc = String(all.description ?? '').trim();
+      if (AUTO_DESC_TYPES.includes(t)) {
+        if (curDesc === '' || AUTO_DESC_TYPES.includes(curDesc)) form.setFieldsValue({ description: t });
+      } else if (AUTO_DESC_TYPES.includes(curDesc)) {
+        form.setFieldsValue({ description: '' });
+      }
+    }
     const r = Number(all.taxRate ?? 0);
     const factor = 1 + r / 100;
     if ('pretaxAmount' in changed) {
