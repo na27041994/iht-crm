@@ -26,6 +26,8 @@ interface TrackingSheet {
 
 interface CustomerDetail {
   id: number;
+  customerType: string;
+  code: string | null;
   customerName: string;
   companyName: string;
   contactPerson: string | null;
@@ -92,6 +94,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   }
 
   const info = [
+    { label: 'Mã khách hàng', value: customer.code },
+    { label: 'Phân loại', value: customer.customerType },
     { label: 'Tên đơn vị', value: customer.companyName },
     { label: 'Người liên hệ', value: customer.contactPerson },
     { label: 'Mã số thuế', value: customer.taxCode },

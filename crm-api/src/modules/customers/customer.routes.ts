@@ -21,12 +21,13 @@ customerRouter.get(
   validateQuery(listCustomersQuery),
   requirePermission('customer', 'view'),
   asyncHandler(async (req, res) => {
-    const { search, page, pageSize } = req.query as unknown as {
+    const { search, customerType, page, pageSize } = req.query as unknown as {
       search?: string;
+      customerType?: string;
       page: number;
       pageSize: number;
     };
-    res.json(await listCustomers(search, page, pageSize));
+    res.json(await listCustomers(search, page, pageSize, customerType));
   }),
 );
 

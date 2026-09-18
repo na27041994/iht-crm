@@ -22,6 +22,7 @@ interface SheetOption {
 
 interface CustomerOption {
   id: number;
+  code?: string | null;
   customerName: string;
   companyName: string;
 }
@@ -312,7 +313,7 @@ export default function AdvanceVoucherFormModal({
               notFoundContent={fetchingCustomers ? <Spin size="small" /> : null}
               options={customers.map((c) => ({
                 value: c.id,
-                label: `#${c.id} - ${c.companyName || c.customerName}`,
+                label: `${c.code ?? `#${c.id}`} - ${c.companyName || c.customerName}`,
               }))}
             />
           </Form.Item>

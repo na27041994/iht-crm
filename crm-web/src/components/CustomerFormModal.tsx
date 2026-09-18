@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { App, Form, Input, Modal } from 'antd';
+import { App, Form, Input, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
 
+export const CUSTOMER_TYPES = ['KH', 'DL'] as const;
+
 export interface CustomerFormValues {
+  customerType: string;
   customerName: string;
   companyName: string;
   contactPerson?: string;
@@ -29,15 +32,20 @@ export default function CustomerFormModal({ open, editingId, onClose, onSaved }:
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentCode, setCurrentCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     form.resetFields();
+    form.setFieldsValue({ customerType: 'KH' });
+    setCurrentCode(null);
     if (editingId) {
       setLoading(true);
-      apiFetch<CustomerFormValues & { id: number }>(`/customers/${editingId}`)
+      apiFetch<CustomerFormValues & { id: number; code?: string | null }>(`/customers/${editingId}`)
         .then((c) => {
+          setCurrentCode((c as any).code ?? null);
           form.setFieldsValue({
+            customerType: (c as any).customerType ?? 'KH',
             customerName: c.customerName,
             companyName: c.companyName,
             contactPerson: c.contactPerson ?? '',
@@ -93,6 +101,12 @@ export default function CustomerFormModal({ open, editingId, onClose, onSaved }:
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+          <Form.Item label="Phân loại" name="customerType" rules={[{ required: true, message: 'Chọn phân loại' }]}>
+            <Select options={CUSTOMER_TYPES.map((t) => ({ value: t, label: t }))} />
+          </Form.Item>
+          <Form.Item label="Mã khách hàng">
+            <Input value={currentCode ?? '(tự sinh khi lưu)'} disabled />
+          </Form.Item>
           <Form.Item
             label="Tên khách hàng"
             name="customerName"

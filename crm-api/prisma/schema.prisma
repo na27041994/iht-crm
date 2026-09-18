@@ -94,6 +94,8 @@ model RolePermission {
 
 model Customer {
   id             Int        @id @default(autoincrement())
+  customerType   String     @default("KH")
+  code           String?    @unique
   customerName   String
   companyName    String
   contactPerson  String?

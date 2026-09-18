@@ -13,6 +13,7 @@ interface UserOption {
 
 interface CustomerOption {
   id: number;
+  code?: string | null;
   customerName: string;
   companyName: string;
 }
@@ -216,7 +217,7 @@ export default function TrackingSheetFormModal({
               notFoundContent={fetchingCustomers ? <Spin size="small" /> : null}
               options={customers.map((c) => ({
                 value: c.id,
-                label: `#${c.id} - ${c.customerName} (${c.companyName})`,
+                label: `${c.code ?? `#${c.id}`} - ${c.customerName} (${c.companyName})`,
               }))}
             />
           </Form.Item>

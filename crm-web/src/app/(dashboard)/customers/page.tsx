@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Empty, Input, Popconfirm, Space, Table, Typography } from 'antd';
-import { DeleteOutlined, EditOutlined, LinkOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { App, Button, Empty, Input, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd';
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { usePermission } from '@/hooks/usePermission';
@@ -10,6 +10,8 @@ import CustomerFormModal from '@/components/CustomerFormModal';
 
 interface Customer {
   id: number;
+  customerType: string;
+  code: string | null;
   customerName: string;
   companyName: string;
   contactPerson: string | null;
@@ -38,16 +40,18 @@ export default function CustomersPage() {
   const [data, setData] = useState<ListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const load = useCallback(
-    async (kw = '', pg = 1) => {
+    async (kw = '', pg = 1, tp?: string) => {
       setLoading(true);
       try {
         const params = new URLSearchParams({ page: String(pg) });
         if (kw) params.set('search', kw);
+        if (tp) params.set('customerType', tp);
         const res = await apiFetch<ListResponse>(`/customers?${params}`);
         setData(res);
       } catch (err) {
@@ -66,7 +70,7 @@ export default function CustomersPage() {
   // Hàm handleSearch: xử lý handleSearch
   function handleSearch() {
     setPage(1);
-    load(search, 1);
+    load(search, 1, typeFilter);
   }
 
   // Hàm openCreate: xử lý openCreate
@@ -86,7 +90,7 @@ export default function CustomersPage() {
     try {
       await apiFetch(`/customers/${id}`, { method: 'DELETE' });
       message.success('Đã xóa khách hàng');
-      load(search, page);
+      load(search, page, typeFilter);
     } catch (err) {
       message.error(err instanceof Error ? err.message : 'Xóa thất bại');
     }
@@ -112,15 +116,32 @@ export default function CustomersPage() {
         <Empty description="Bạn không có quyền xem khách hàng" />
       ) : (
         <>
-          <Input.Search
-            placeholder="Tìm theo tên, email, số điện thoại..."
-            allowClear
-            enterButton={<SearchOutlined />}
-            style={{ width: '100%', maxWidth: 420, marginBottom: 16 }}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onSearch={handleSearch}
-          />
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+            <Input.Search
+              placeholder="Tìm theo mã, tên, email, số điện thoại..."
+              allowClear
+              enterButton={<SearchOutlined />}
+              style={{ width: '100%', maxWidth: 420 }}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onSearch={handleSearch}
+            />
+            <Select
+              placeholder="Phân loại"
+              allowClear
+              style={{ width: 140 }}
+              value={typeFilter}
+              onChange={(v) => {
+                setTypeFilter(v);
+                setPage(1);
+                load(search, 1, v);
+              }}
+              options={[
+                { value: 'KH', label: 'KH' },
+                { value: 'DL', label: 'DL' },
+              ]}
+            />
+          </div>
 
           <Table<Customer>
             size="small"
@@ -139,6 +160,19 @@ export default function CustomersPage() {
             }}
             scroll={{ x: 900 }}
             columns={[
+              {
+                title: 'Mã KH',
+                dataIndex: 'code',
+                width: 110,
+                render: (v: string | null) => <span style={{ fontWeight: 600 }}>{v ?? '-'}</span>,
+              },
+              {
+                title: 'Loại',
+                dataIndex: 'customerType',
+                width: 70,
+                align: 'center' as const,
+                render: (v: string) => <Tag color={v === 'DL' ? 'purple' : 'blue'}>{v ?? 'KH'}</Tag>,
+              },
               {
                 title: 'Tên khách hàng',
                 dataIndex: 'customerName',
@@ -202,7 +236,7 @@ export default function CustomersPage() {
         open={modalOpen}
         editingId={editingId}
         onClose={() => setModalOpen(false)}
-        onSaved={() => load(search, page)}
+        onSaved={() => load(search, page, typeFilter)}
       />
     </div>
   );
