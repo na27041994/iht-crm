@@ -164,6 +164,7 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
     { header: 'Số hóa đơn', key: 'invoiceNumber', width: 17 },
     { header: 'Ghi chú', key: 'note', width: 26 },
     { header: 'Ngày tạo', key: 'createdAt', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
+    { header: 'Người tạo', key: 'createdBy', width: 20 },
   ]);
   for (const s of sheets) {
     wsSheet.addRow({
@@ -183,6 +184,7 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
       invoiceNumber: s.invoiceNumber ?? '',
       note: s.note ?? '',
       createdAt: dateCell(s.createdAt),
+      createdBy: (s as any).createdBy?.fullName ?? '',
     });
   }
 
