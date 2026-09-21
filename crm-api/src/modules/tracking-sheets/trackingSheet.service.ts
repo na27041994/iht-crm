@@ -92,10 +92,20 @@ async function nextSheetNumber(now = new Date()): Promise<string> {
   return `${prefix}${timestamp}`;
 }
 
-// Liệt kê phiếu theo dõi có phân trang và tìm kiếm (nhẹ: không load jobs, chỉ _count)
-export async function listTrackingSheets(search?: string, page = 1, pageSize = 20) {
+// Liệt kê phiếu theo dõi có phân trang, tìm kiếm và lọc theo ngày tạo (nhẹ: không load jobs, chỉ _count)
+export async function listTrackingSheets(search?: string, page = 1, pageSize = 20, from?: Date, to?: Date) {
   const safePageSize = Math.min(Math.max(pageSize, 1), 50);
   const where: Prisma.TrackingSheetWhereInput = { isDelete: 1 };
+  if (from || to) {
+    where.createdAt = {};
+    if (from) where.createdAt.gte = from;
+    if (to) {
+      // bao cả ngày cuối (to chỉ có 00:00:00)
+      const end = new Date(to);
+      end.setHours(23, 59, 59, 999);
+      where.createdAt.lte = end;
+    }
+  }
   if (search) {
     const kw = search.trim().slice(0, 50);
     if (kw) {

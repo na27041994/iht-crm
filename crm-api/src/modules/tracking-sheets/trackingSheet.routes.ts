@@ -164,12 +164,14 @@ trackingSheetRouter.get(
   validateQuery(listTrackingSheetsQuery),
   requirePermission('tracking_sheet_list', 'view'),
   asyncHandler(async (req, res) => {
-    const { search, page, pageSize } = req.query as unknown as {
+    const { search, from, to, page, pageSize } = req.query as unknown as {
       search?: string;
+      from?: Date;
+      to?: Date;
       page: number;
       pageSize: number;
     };
-    res.json(await listTrackingSheets(search, page, pageSize));
+    res.json(await listTrackingSheets(search, page, pageSize, from, to));
   }),
 );
 

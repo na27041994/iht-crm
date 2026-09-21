@@ -1,10 +1,11 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { App, Button, Empty, Input, Popconfirm, Table, Tooltip, Typography } from 'antd';
+import { App, Button, DatePicker, Empty, Input, Popconfirm, Table, Tooltip, Typography } from 'antd';
 import { DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
 import { usePermission } from '@/hooks/usePermission';
 import dynamic from 'next/dynamic';
@@ -44,6 +45,7 @@ interface TrackingSheet {
   pol: string | null;
   pod: string | null;
   note: string | null;
+  createdAt: string;
 }
 
 interface ListResponse {
@@ -64,15 +66,23 @@ export default function TrackingSheetsPage() {
 
 const LIST_STATE_KEY = 'tracking-sheets-list-state';
 
+// Định dạng ngày DD/MM/YYYY
+function fmtDate(v: string | null) {
+  if (!v) return '-';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '-';
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
 // Hàm readStoredListState: xử lý readStoredListState
-function readStoredListState(): { search: string; page: number } | null {
+function readStoredListState(): { search: string; page: number; from: string; to: string } | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = sessionStorage.getItem(LIST_STATE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { search?: string; page?: number };
+    const parsed = JSON.parse(raw) as { search?: string; page?: number; from?: string; to?: string };
     const page = Math.max(1, Number(parsed.page) || 1);
-    return { search: parsed.search ?? '', page };
+    return { search: parsed.search ?? '', page, from: parsed.from ?? '', to: parsed.to ?? '' };
   } catch {
     return null;
   }
@@ -86,9 +96,13 @@ function TrackingSheetsContent() {
   const urlHasParams = searchParams.toString() !== '';
   const urlPage = Math.max(1, Number(searchParams.get('page')) || 1);
   const urlSearch = searchParams.get('search') ?? '';
+  const urlFrom = searchParams.get('from') ?? '';
+  const urlTo = searchParams.get('to') ?? '';
   const stored = readStoredListState();
   const effectiveSearch = urlHasParams ? urlSearch : (stored?.search ?? '');
   const effectivePage = urlHasParams ? urlPage : (stored?.page ?? 1);
+  const effectiveFrom = urlHasParams ? urlFrom : (stored?.from ?? '');
+  const effectiveTo = urlHasParams ? urlTo : (stored?.to ?? '');
   const [data, setData] = useState<ListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(effectiveSearch);
@@ -103,15 +117,17 @@ function TrackingSheetsContent() {
   const canDelete = usePermission('tracking_sheet', 'delete');
 
   const load = useCallback(
-    async (kw: string, pg: number) => {
+    async (kw: string, pg: number, from = '', to = '') => {
       setLoading(true);
       try {
         const params = new URLSearchParams({ page: String(pg) });
         if (kw) params.set('search', kw);
+        if (from) params.set('from', from);
+        if (to) params.set('to', to);
         const res = await apiFetch<ListResponse>(`/tracking-sheets?${params}`);
         setData(res);
         try {
-          sessionStorage.setItem(LIST_STATE_KEY, JSON.stringify({ search: kw, page: pg }));
+          sessionStorage.setItem(LIST_STATE_KEY, JSON.stringify({ search: kw, page: pg, from, to }));
         } catch {
           // ignore
         }
@@ -126,18 +142,20 @@ function TrackingSheetsContent() {
 
   useEffect(() => {
     setSearchInput(effectiveSearch);
-    load(effectiveSearch, effectivePage);
-  }, [effectiveSearch, effectivePage, load]);
+    load(effectiveSearch, effectivePage, effectiveFrom, effectiveTo);
+  }, [effectiveSearch, effectivePage, effectiveFrom, effectiveTo, load]);
 
   // Hàm applyUrl: xử lý applyUrl
-  function applyUrl(kw: string, pg: number) {
+  function applyUrl(kw: string, pg: number, from = '', to = '') {
     try {
-      sessionStorage.setItem(LIST_STATE_KEY, JSON.stringify({ search: kw, page: pg }));
+      sessionStorage.setItem(LIST_STATE_KEY, JSON.stringify({ search: kw, page: pg, from, to }));
     } catch {
       // ignore
     }
     const params = new URLSearchParams();
     if (kw) params.set('search', kw);
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
     if (pg > 1) params.set('page', String(pg));
     const qs = params.toString();
     router.push(`/tracking-sheets${qs ? `?${qs}` : ''}`);
@@ -145,7 +163,14 @@ function TrackingSheetsContent() {
 
   // Hàm handleSearch: xử lý handleSearch
   function handleSearch() {
-    applyUrl(searchInput.trim(), 1);
+    applyUrl(searchInput.trim(), 1, urlFrom, urlTo);
+  }
+
+  // Hàm handleDateChange: đổi khoảng ngày -> về trang 1
+  function handleDateChange(dates: any) {
+    const from = dates?.[0] ? dates[0].format('YYYY-MM-DD') : '';
+    const to = dates?.[1] ? dates[1].format('YYYY-MM-DD') : '';
+    applyUrl(urlSearch, 1, from, to);
   }
 
   // Hàm openCreate: xử lý openCreate
@@ -170,7 +195,7 @@ function TrackingSheetsContent() {
     try {
       await apiFetch(`/tracking-sheets/${id}`, { method: 'DELETE' });
       message.success('Đã xóa phiếu theo dõi');
-      load(urlSearch, urlPage);
+      load(urlSearch, urlPage, urlFrom, urlTo);
     } catch (err) {
       message.error(err instanceof Error ? err.message : 'Xóa thất bại');
     }
@@ -225,15 +250,26 @@ function TrackingSheetsContent() {
         <Empty description="Bạn không có quyền xem phiếu theo dõi" />
       ) : (
         <>
-          <Input.Search
-            placeholder="Tìm theo mã phiếu, container, khách hàng, tuyến..."
-            allowClear
-            enterButton={<SearchOutlined />}
-            style={{ width: '100%', maxWidth: 420, marginBottom: 16 }}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onSearch={handleSearch}
-          />
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+            <Input.Search
+              placeholder="Tìm theo mã phiếu, container, khách hàng, tuyến..."
+              allowClear
+              enterButton={<SearchOutlined />}
+              style={{ width: '100%', maxWidth: 420 }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onSearch={handleSearch}
+            />
+            <DatePicker.RangePicker
+              format="DD/MM/YYYY"
+              placeholder={['Từ ngày', 'Đến ngày']}
+              value={[
+                urlFrom ? dayjs(urlFrom, 'YYYY-MM-DD') : null,
+                urlTo ? dayjs(urlTo, 'YYYY-MM-DD') : null,
+              ]}
+              onChange={handleDateChange}
+            />
+          </div>
 
           <Table<TrackingSheet>
             size="small"
@@ -252,7 +288,7 @@ function TrackingSheetsContent() {
               total: data?.total ?? 0,
               showSizeChanger: false,
               onChange: (p) => {
-                applyUrl(urlSearch, p);
+                applyUrl(urlSearch, p, urlFrom, urlTo);
               },
             }}
             scroll={{ x: 800 }}
@@ -271,6 +307,7 @@ function TrackingSheetsContent() {
                   ),
               },
               { title: 'Số container', dataIndex: 'containerNumber', width: 180, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
+              { title: 'Ngày tạo', dataIndex: 'createdAt', width: 110, render: (v: string) => fmtDate(v) },
               {
                 title: 'Tuyến',
                 key: 'route',
@@ -317,11 +354,11 @@ function TrackingSheetsContent() {
         open={modalOpen}
         editingId={editingId}
         onClose={() => setModalOpen(false)}
-        onSaved={() => load(urlSearch, urlPage)}
+        onSaved={() => load(urlSearch, urlPage, urlFrom, urlTo)}
       />
 
       <ExportExcelModal open={exportOpen} onClose={() => setExportOpen(false)} />
-      <ImportExcelModal open={importOpen} onClose={() => setImportOpen(false)} onSaved={() => load(urlSearch, urlPage)} />
+      <ImportExcelModal open={importOpen} onClose={() => setImportOpen(false)} onSaved={() => load(urlSearch, urlPage, urlFrom, urlTo)} />
     </div>
   );
 }
