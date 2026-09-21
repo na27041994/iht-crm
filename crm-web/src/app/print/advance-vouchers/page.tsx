@@ -40,8 +40,11 @@ function fmtMoney(v: string | number | null | undefined) {
 }
 
 // Component in một phiếu (layout khớp mẫu cũ)
+// Tổng tiền = số sau giảm trừ: SUM(Chi) - SUM(Giảm trừ) (khớp totalAmount net từ API)
 function VoucherDocument({ v }: { v: AdvanceVoucher }) {
-  const total = v.totalAmount ?? v.items.reduce((s, it) => s + Number(it.amount ?? 0), 0);
+  const totalChi = v.items.filter((it: any) => it.kind !== 'Giảm trừ').reduce((s, it: any) => s + Number(it.amount ?? 0), 0);
+  const totalGiam = v.items.filter((it: any) => it.kind === 'Giảm trừ').reduce((s, it: any) => s + Number(it.amount ?? 0), 0);
+  const total = v.totalAmount ?? (totalChi - totalGiam);
   const custNo = v.customer ? String(v.customer.id) : '';
   const custName = v.customer ? v.customer.companyName || v.customer.customerName : '';
   const staffName = v.createdBy?.fullName ?? '';
@@ -138,7 +141,7 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
             </tr>
           )}
           <tr className="old-total-row">
-            <td colSpan={7} className="old-td-center old-bold">TỔNG TIỀN / TOTAL AMOUNT: {fmtMoney(total)}{(() => { const chi = v.items.filter((x: any) => x.kind !== 'Giảm trừ').reduce((s: number, x: any) => s + Number(x.amount ?? 0), 0); const giam = v.items.filter((x: any) => x.kind === 'Giảm trừ').reduce((s: number, x: any) => s + Number(x.amount ?? 0), 0); return giam > 0 ? ` (Chi: ${fmtMoney(String(chi))} - Giảm trừ: ${fmtMoney(String(giam))})` : ''; })()}</td>
+            <td colSpan={7} className="old-td-center old-bold">TỔNG TIỀN / TOTAL AMOUNT: {fmtMoney(total)}{totalGiam > 0 ? ` (Chi: ${fmtMoney(String(totalChi))} - Giảm trừ: ${fmtMoney(String(totalGiam))})` : ''}</td>
           </tr>
         </tbody>
       </table>
