@@ -6,11 +6,6 @@ import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 
-interface UserOption {
-  id: number;
-  fullName: string;
-}
-
 interface CustomerOption {
   id: number;
   code?: string | null;
@@ -64,7 +59,6 @@ export default function TrackingSheetFormModal({
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<UserOption[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const customerSearchTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -91,13 +85,13 @@ export default function TrackingSheetFormModal({
   useEffect(() => {
     if (!open) return;
     setLoading(true);
+    // Dropdown tải chịu lỗi: thiếu quyền xem thì để trống, không chặn form
+    // (quyền vẫn được backend kiểm khi lưu)
     Promise.all([
-      apiFetch<UserOption[]>('/auth/users'),
-      apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=100'),
-      apiFetch<{ items: AgentOption[] }>('/agents?pageSize=100'),
+      apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=100').catch(() => ({ items: [] })),
+      apiFetch<{ items: AgentOption[] }>('/agents?pageSize=100').catch(() => ({ items: [] })),
     ])
-      .then(([us, cs, ag]) => {
-        setUsers(us);
+      .then(([cs, ag]) => {
         setCustomers(cs.items);
         setAgents(ag.items);
         form.resetFields();
