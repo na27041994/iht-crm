@@ -111,10 +111,13 @@ function TrackingSheetsContent() {
   const [importOpen, setImportOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const canView = usePermission('tracking_sheet', 'view');
-  const canCreate = usePermission('tracking_sheet', 'create');
-  const canEdit = usePermission('tracking_sheet', 'edit');
-  const canDelete = usePermission('tracking_sheet', 'delete');
+  // Check đúng quyền con khớp backend (tracking_sheet_list / tracking_sheet_import_history),
+  // không dùng quyền cha tracking_sheet để tránh nút ẩn dù đã được tick quyền con
+  const canView = usePermission('tracking_sheet_list', 'view');
+  const canCreate = usePermission('tracking_sheet_list', 'create');
+  const canEdit = usePermission('tracking_sheet_list', 'edit');
+  const canDelete = usePermission('tracking_sheet_list', 'delete');
+  const canImport = usePermission('tracking_sheet_import_history', 'create');
 
   const load = useCallback(
     async (kw: string, pg: number, from = '', to = '') => {
@@ -233,7 +236,7 @@ function TrackingSheetsContent() {
               Xuất Excel
             </Button>
           )}
-          {canCreate && (
+          {canImport && (
             <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)} block className="sm:!w-auto">
               Nhập Excel
             </Button>
