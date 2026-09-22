@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, DatePicker, Select, Table, Tag, Tooltip, Typography } from 'antd';
+import { App, Select, Table, Tag, Tooltip, Typography } from 'antd';
 import { apiFetch } from '@/lib/api';
+import { SlashRangePicker } from '@/components/SlashDatePicker';
 
 interface AuditLog {
   id: number;
@@ -163,7 +164,7 @@ export default function AuditLogsPage() {
           onChange={(v) => setEntity(v)}
           options={Object.entries(ENTITY_LABELS).map(([value, label]) => ({ value, label }))}
         />
-        <DatePicker.RangePicker
+        <SlashRangePicker
           onChange={(_, strs) => setRange(strs[0] && strs[1] ? [strs[0], strs[1]] : null)} format="DD/MM/YYYY"
         />
         <button

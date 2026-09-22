@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { App, Button, DatePicker, Form, Input, Modal, Select } from 'antd';
+import { App, Button, Form, Input, Modal, Select } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import dayjs, { type Dayjs } from 'dayjs';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
+import { SlashRangePicker } from '@/components/SlashDatePicker';
 
 interface CustomerOption {
   id: number;
@@ -85,7 +86,7 @@ export default function ExportExcelModal({ open, onClose }: ExportExcelModalProp
           />
         </Form.Item>
         <Form.Item label="Khoảng ngày (ngày tạo)" name="range">
-          <DatePicker.RangePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+          <SlashRangePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
         </Form.Item>
       </Form>
     </Modal>

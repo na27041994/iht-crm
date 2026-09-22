@@ -2,11 +2,12 @@
 const MONEY_SCALE = 100;
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Card, DatePicker, Input, Select, Space, Table, Tag, Typography } from 'antd';
+import { App, Button, Card, Input, Select, Space, Table, Tag, Typography } from 'antd';
 import { DownloadOutlined, PrinterOutlined, SearchOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
+import { SlashRangePicker } from '@/components/SlashDatePicker';
 
 interface CustomerRef {
   id: number;
@@ -205,7 +206,7 @@ export default function AdvanceVoucherReportPage() {
             options={customers.map((c) => ({ value: c.id, label: c.companyName || c.customerName }))}
             allowClear
           />
-          <DatePicker.RangePicker
+          <SlashRangePicker
             value={range}
             onChange={(vals) => {
               if (vals && vals[0] && vals[1]) setRange([vals[0], vals[1]]);

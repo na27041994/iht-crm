@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { App, DatePicker, Form, Input, InputNumber, Modal, Select, Spin } from 'antd';
+import { App, Form, Input, InputNumber, Modal, Select, Spin } from 'antd';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
+import { SlashDatePicker } from '@/components/SlashDatePicker';
 
 interface CarrierOption {
   id: number;
@@ -257,7 +258,7 @@ export default function TrackingSheetFormModal({
             <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
           </Form.Item>
           <Form.Item label="Ngày ETA/ETD" name="etaDate">
-            <DatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />
+            <SlashDatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />
           </Form.Item>
           <Form.Item label="Phân Luồng" name="phanLuong">
             <Input placeholder="VD: Xanh, Vàng, Đỏ" />
@@ -266,7 +267,7 @@ export default function TrackingSheetFormModal({
             <Input placeholder="Số tờ khai hải quan" />
           </Form.Item>
           <Form.Item label="Ngày tờ khai" name="declarationDate">
-            <DatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />
+            <SlashDatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />
           </Form.Item>
           <Form.Item label="Số bill" name="billNumber">
             <Input placeholder="VD: MSK1234567890" />

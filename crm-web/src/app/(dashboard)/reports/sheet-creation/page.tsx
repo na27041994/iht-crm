@@ -2,11 +2,12 @@
 const MONEY_SCALE = 100;
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Card, DatePicker, Space, Statistic, Table, Typography } from 'antd';
+import { App, Button, Card, Space, Statistic, Table, Typography } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
+import { SlashRangePicker } from '@/components/SlashDatePicker';
 
 interface SheetCreationItem {
   sheetId: number;
@@ -156,7 +157,7 @@ export default function SheetCreationReportPage() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <DatePicker.RangePicker
+        <SlashRangePicker
           value={range}
           onChange={(vals) => {
             if (vals && vals[0] && vals[1]) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { App, Button, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Spin } from 'antd';
+import { App, Button, Form, Input, InputNumber, Modal, Select, Space, Spin } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
@@ -9,6 +9,7 @@ import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { ADVANCE_TYPES } from '@/lib/advanceTypes';
 import { ADVANCE_ITEM_KINDS } from '@/components/AdvanceItemModal';
 import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
+import { SlashDatePicker } from '@/components/SlashDatePicker';
 
 interface SheetOption {
   id: number;
@@ -299,7 +300,7 @@ export default function AdvanceVoucherFormModal({
             <Input value={`${dayjs().format('YYMMDD')}xxx`} disabled />
           </Form.Item>
           <Form.Item label="Ngày tạo" name="advanceDate" rules={[{ required: true, message: 'Chọn ngày' }]}>
-            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+            <SlashDatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
           </Form.Item>
           <Form.Item label="Current" name="currency">
             <Select options={[{ value: 'VND', label: 'VND' }, { value: 'USD', label: 'USD' }]} />

@@ -1,12 +1,13 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { App, Button, DatePicker, Empty, Input, Popconfirm, Table, Tooltip, Typography } from 'antd';
+import { App, Button, Empty, Input, Popconfirm, Table, Tooltip, Typography } from 'antd';
 import { DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
+import { SlashRangePicker } from '@/components/SlashDatePicker';
 import { usePermission } from '@/hooks/usePermission';
 import dynamic from 'next/dynamic';
 
@@ -263,7 +264,7 @@ function TrackingSheetsContent() {
               onChange={(e) => setSearchInput(e.target.value)}
               onSearch={handleSearch}
             />
-            <DatePicker.RangePicker
+            <SlashRangePicker
               format="DD/MM/YYYY"
               placeholder={['Từ ngày', 'Đến ngày']}
               value={[

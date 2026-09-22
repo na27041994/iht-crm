@@ -2,10 +2,11 @@
 const MONEY_SCALE = 100;
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Card, DatePicker, Input, Select, Space, Table, Typography } from 'antd';
+import { App, Button, Card, Input, Select, Space, Table, Typography } from 'antd';
 import { DownloadOutlined, PrinterOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
+import { SlashRangePicker } from '@/components/SlashDatePicker';
 
 // Định dạng số tiền/số lượng theo chuẩn vi-VN
 const fmtMoney = (v: string | number | null | undefined) =>
@@ -139,7 +140,7 @@ export default function LiftingReportPage() {
             options={customers.map((c) => ({ value: c.id, label: c.companyName || c.customerName }))}
             allowClear
           />
-          <DatePicker.RangePicker
+          <SlashRangePicker
             value={range}
             onChange={(vals) => {
               if (vals && vals[0] && vals[1]) {
