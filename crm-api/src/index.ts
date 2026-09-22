@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import morgan from 'morgan';
 import path from 'node:path';
 import { env } from './config/env.js';
@@ -22,6 +23,8 @@ import { ensureUploadDirs } from './modules/upload/upload.service.js';
 const app = express();
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+// Nén gzip responses JSON/Excel (giảm 70-90% payload danh sách, báo cáo, export)
+app.use(compression({ threshold: 1024 }));
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 if (process.env.NODE_ENV !== 'production') {
