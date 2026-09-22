@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import type { Resource, Action, PermissionMap } from '@/lib/permissions';
 
@@ -18,6 +18,7 @@ export interface UsePermissionsReturn {
   error: string | null;
   isAdmin: boolean;
   can: (resource: Resource, action: Action) => boolean;
+  refresh: () => void;
 }
 
 /**
@@ -30,40 +31,61 @@ export function usePermissions(): UsePermissionsReturn {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const lastFetchRef = useRef(0);
+
+  // Hàm fetchPermissions: xử lý fetchPermissions
+  const fetchPermissions = useCallback(async (cancelledRef?: { cancelled: boolean }) => {
+    try {
+      // Fetch role first to determine admin bypass
+      const me = await apiFetch<MeResponse>('/auth/me');
+      if (cancelledRef?.cancelled) return;
+      const admin = me.role === 'admin';
+      setIsAdmin(admin);
+
+      const perms = await apiFetch<PermissionMap>('/permissions/me');
+      if (cancelledRef?.cancelled) return;
+      setPermissions(perms);
+      setError(null);
+      lastFetchRef.current = Date.now();
+    } catch (err: unknown) {
+      if (cancelledRef?.cancelled) return;
+      const message = err instanceof Error ? err.message : 'Không thể tải quyền';
+      setError(message);
+      setPermissions(null);
+    }
+  }, []);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    fetchPermissions().finally(() => setLoading(false));
+  }, [fetchPermissions]);
 
   useEffect(() => {
-    let cancelled = false;
+    const flag = { cancelled: false };
+    setLoading(true);
+    fetchPermissions(flag).finally(() => {
+      if (!flag.cancelled) setLoading(false);
+    });
 
-    // Hàm fetchPermissions: xử lý fetchPermissions
-    async function fetchPermissions() {
-      try {
-        setLoading(true);
-        // Fetch role first to determine admin bypass
-        const me = await apiFetch<MeResponse>('/auth/me');
-        if (cancelled) return;
-        const admin = me.role === 'admin';
-        setIsAdmin(admin);
-
-        const perms = await apiFetch<PermissionMap>('/permissions/me');
-        if (cancelled) return;
-        setPermissions(perms);
-        setError(null);
-      } catch (err: unknown) {
-        if (cancelled) return;
-        const message = err instanceof Error ? err.message : 'Không thể tải quyền';
-        setError(message);
-        setPermissions(null);
-      } finally {
-        if (!cancelled) setLoading(false);
+    // Tự tải lại quyền khi quay lại tab (admin vừa phân quyền xong không cần đăng nhập lại),
+    // throttle 60s để tránh spam API
+    function onFocus() {
+      if (Date.now() - lastFetchRef.current > 60000) {
+        fetchPermissions(flag);
       }
     }
-
-    fetchPermissions();
+    function onVisibility() {
+      if (document.visibilityState === 'visible') onFocus();
+    }
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
-      cancelled = true;
+      flag.cancelled = true;
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, []);
+  }, [fetchPermissions]);
 
   const can = useCallback(
     (resource: Resource, action: Action): boolean => {
@@ -74,7 +96,7 @@ export function usePermissions(): UsePermissionsReturn {
     [permissions, isAdmin],
   );
 
-  return { permissions, loading, error, isAdmin, can };
+  return { permissions, loading, error, isAdmin, can, refresh };
 }
 
 /**
