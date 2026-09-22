@@ -6,7 +6,7 @@ export const trackingSheetSchema = z.object({
   nw: z.coerce.number().nonnegative().optional().nullable(),
   containerNumber: z.string().optional().nullable(),
   customerId: z.number().int().positive().optional().nullable(),
-  carrierName: z.string().optional().nullable(),
+  carrierId: z.coerce.number().int().positive().optional().nullable(),
   agentId: z.coerce.number().int().positive().optional().nullable(),
   fromLocation: z.string().optional().nullable(),
   toLocation: z.string().optional().nullable(),

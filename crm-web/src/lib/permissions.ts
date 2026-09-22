@@ -16,10 +16,11 @@ export const TRACKING_SHEET_SUB_RESOURCES = [
 ] as const;
 export type TrackingSheetSubResource = (typeof TRACKING_SHEET_SUB_RESOURCES)[number];
 
-export const MASTER_DATA_RESOURCES = ['customer', 'trucker', 'agent'] as const;
+export const MASTER_DATA_RESOURCES = ['customer', 'carrier', 'trucker', 'agent'] as const;
 
 export const RESOURCES = [
   'customer',
+  'carrier',
   'trucker',
   'agent',
   'tracking_sheet',
@@ -40,6 +41,7 @@ export type Action = (typeof ACTIONS)[number];
 
 export const RESOURCE_LABELS: Record<Resource, string> = {
   customer: 'Khách hàng',
+  carrier: 'Hãng tàu',
   trucker: 'Nhà xe',
   agent: 'Đại lý',
   tracking_sheet: 'Phiếu theo dõi',
@@ -77,6 +79,7 @@ export function defaultPermissionsForRole(role: string): PermissionMap {
   if (role === 'admin') {
     return {
       customer: { ...allTrue },
+      carrier: { ...allTrue },
       trucker: { ...allTrue },
       agent: { ...allTrue },
       tracking_sheet: { ...allTrue },
@@ -101,6 +104,7 @@ export function defaultPermissionsForRole(role: string): PermissionMap {
   if (role === 'viewer') {
     return {
       customer: { ...viewOnly },
+      carrier: { ...viewOnly },
       trucker: { ...viewOnly },
       agent: { ...viewOnly },
       tracking_sheet: { ...viewOnly },
@@ -125,6 +129,7 @@ export function defaultPermissionsForRole(role: string): PermissionMap {
   // sales / ops / accountant: default allow all except user/audit/role management
   return {
     customer: { ...allTrue },
+    carrier: { ...allTrue },
     trucker: { ...allTrue },
     agent: { ...allTrue },
     tracking_sheet: { ...allTrue },

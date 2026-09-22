@@ -143,6 +143,25 @@ model Contact {
   @@map("contacts")
 }
 
+model Carrier {
+  id            Int            @id @default(autoincrement())
+  carrierName   String
+  companyName   String
+  address       String?
+  phone         String?
+  fax           String?
+  taxCode       String?
+  contactPerson String?
+  note          String?
+  isDelete      Int            @default(1)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sheets        TrackingSheet[] @relation("SheetCarrier")
+
+  @@index([companyName])
+  @@map("carriers")
+}
+
 model Trucker {
   id            Int      @id @default(autoincrement())
   truckerName   String
@@ -193,7 +212,8 @@ model TrackingSheet {
   containerNumber    String?
   customer           Customer? @relation(fields: [customerId], references: [id])
   customerId         Int?
-  carrierName        String?
+  carrier            Carrier?       @relation("SheetCarrier", fields: [carrierId], references: [id])
+  carrierId          Int?
   agent              Agent?         @relation("SheetAgent", fields: [agentId], references: [id])
   agentId            Int?
   fromLocation       String?
