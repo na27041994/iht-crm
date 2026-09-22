@@ -54,8 +54,10 @@ function loadShared(): Promise<void> {
       const perms = await apiFetch<PermissionMap>('/permissions/me');
       shared = { me, perms, error: null, at: Date.now() };
     } catch (err: unknown) {
+      // Thất bại (mạng/server): GIỮ quyền cũ đang dùng, không xóa trắng gây biến mất menu/nội dung.
+      // Chỉ báo lỗi khi chưa từng có quyền nào.
       const message = err instanceof Error ? err.message : 'Không thể tải quyền';
-      shared = { me: null, perms: null, error: message, at: Date.now() };
+      shared = { ...shared, error: shared.perms ? null : message, at: Date.now() };
     } finally {
       inflight = null;
       notify();
