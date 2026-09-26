@@ -21,6 +21,7 @@ import {
   FileSearchOutlined,
   FileDoneOutlined,
   AccountBookOutlined,
+  CalendarOutlined,
   LogoutOutlined,
   RocketOutlined,
   MenuOutlined,
@@ -62,6 +63,7 @@ const NAV: NavItem[] = [
     ],
   },
   { key: '/advance-vouchers', href: '/advance-vouchers', label: 'Phiếu chi tạm ứng', icon: <AccountBookOutlined /> },
+  { key: '/leave-requests', href: '/leave-requests', label: 'Nghỉ phép', icon: <CalendarOutlined /> },
   {
     key: 'reports',
     label: 'Báo cáo',
@@ -103,6 +105,7 @@ function getResourceForHref(href: string): Resource | null {
   if (href.startsWith('/tracking-sheets/import-history')) return 'tracking_sheet_import_history';
   if (href.startsWith('/tracking-sheets')) return 'tracking_sheet_list';
   if (href.startsWith('/advance-vouchers')) return 'advance_voucher';
+  if (href.startsWith('/leave-requests')) return 'leave_request';
   if (href.startsWith('/reports/profit')) return 'report_profit';
   if (href.startsWith('/reports/refund')) return 'report_refund';
   if (href.startsWith('/reports/sheet-creation')) return 'report_sheet_creation';
