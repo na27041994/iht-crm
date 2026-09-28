@@ -85,6 +85,7 @@ export const exportTrackingSheetsQuery = z.object({
   customerId: z.coerce.number().int().positive().optional(),
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
+  ids: z.string().optional(),
 });
 
 export const exportJobsQuery = z.object({

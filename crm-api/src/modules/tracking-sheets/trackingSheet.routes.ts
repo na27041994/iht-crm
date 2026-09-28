@@ -246,13 +246,20 @@ trackingSheetRouter.get(
   validateQuery(exportTrackingSheetsQuery),
   requirePermission('tracking_sheet_list', 'view'),
   asyncHandler(async (req, res) => {
-    const { search, customerId, from, to } = req.query as unknown as {
+    const { search, customerId, from, to, ids } = req.query as unknown as {
       search?: string;
       customerId?: number;
       from?: Date;
       to?: Date;
+      ids?: string;
     };
-    const sheets = await getTrackingSheetsForExport({ search, customerId, from, to });
+    const idList = ids
+      ? ids
+          .split(',')
+          .map((s) => Number(s.trim()))
+          .filter((n) => Number.isInteger(n) && n > 0)
+      : undefined;
+    const sheets = await getTrackingSheetsForExport({ search, customerId, from, to, ids: idList });
     const buffer = await buildTrackingSheetsWorkbook(sheets);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="phieu-theo-doi.xlsx"');

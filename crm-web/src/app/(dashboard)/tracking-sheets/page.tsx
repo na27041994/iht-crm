@@ -6,7 +6,7 @@ import { DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOu
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
-import { apiFetch } from '@/lib/api';
+import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
 import { SlashRangePicker } from '@/components/SlashDatePicker';
 import { usePermission } from '@/hooks/usePermission';
 import dynamic from 'next/dynamic';
@@ -188,6 +188,22 @@ function TrackingSheetsContent() {
     window.open(`/print/tracking-sheets?ids=${ids.join(',')}`, '_blank', 'noopener');
   }
 
+  // Xuất Excel các phiếu đã tích chọn
+  const [exportingSelected, setExportingSelected] = useState(false);
+  async function handleExportSelected() {
+    if (!selectedIds.length) return;
+    setExportingSelected(true);
+    try {
+      const blob = await apiDownload(`/tracking-sheets/export?ids=${selectedIds.join(',')}`);
+      saveBlob(blob, `phieu-theo-doi-dachon-${dayjs().format('YYYYMMDD-HHmmss')}.xlsx`);
+      message.success(`Đã xuất ${selectedIds.length} phiếu đã chọn`);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
+    } finally {
+      setExportingSelected(false);
+    }
+  }
+
   // Hàm openEdit: xử lý openEdit
   function openEdit(id: number) {
     setEditingId(id);
@@ -230,6 +246,18 @@ function TrackingSheetsContent() {
           {selectedIds.length > 0 && (
             <Button onClick={() => setSelectedIds([])} block className="sm:!w-auto">
               Bỏ chọn
+            </Button>
+          )}
+          {canView && (
+            <Button
+              icon={<DownloadOutlined />}
+              disabled={!selectedIds.length}
+              loading={exportingSelected}
+              onClick={handleExportSelected}
+              block
+              className="sm:!w-auto"
+            >
+              Xuất đã chọn{selectedIds.length ? ` (${selectedIds.length})` : ''}
             </Button>
           )}
           {canView && (

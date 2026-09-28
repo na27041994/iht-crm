@@ -174,19 +174,23 @@ export async function getTrackingSheetsForExport(opts: {
   customerId?: number;
   from?: Date;
   to?: Date;
+  ids?: number[];
 }) {
   const where: Prisma.TrackingSheetWhereInput = { isDelete: 1 };
-  if (opts.customerId) {
-    where.customerId = opts.customerId;
-  }
-  if (opts.from || opts.to) {
-    where.createdAt = {};
-    if (opts.from) where.createdAt.gte = opts.from;
-    if (opts.to) where.createdAt.lte = opts.to;
-  }
-  if (opts.search) {
-    const s = opts.search;
-    where.OR = [
+  if (opts.ids?.length) {
+    where.id = { in: opts.ids };
+  } else {
+    if (opts.customerId) {
+      where.customerId = opts.customerId;
+    }
+    if (opts.from || opts.to) {
+      where.createdAt = {};
+      if (opts.from) where.createdAt.gte = opts.from;
+      if (opts.to) where.createdAt.lte = opts.to;
+    }
+    if (opts.search) {
+      const s = opts.search;
+      where.OR = [
       { sheetNumber: { contains: s, mode: 'insensitive' } },
       { containerNumber: { contains: s, mode: 'insensitive' } },
       { customer: { is: { companyName: { contains: s, mode: 'insensitive' } } } },
@@ -197,7 +201,8 @@ export async function getTrackingSheetsForExport(opts: {
       { invoiceNumber: { contains: s, mode: 'insensitive' } },
       { pol: { contains: s, mode: 'insensitive' } },
       { pod: { contains: s, mode: 'insensitive' } },
-    ];
+      ];
+    }
   }
   return prisma.trackingSheet.findMany({
     where,
