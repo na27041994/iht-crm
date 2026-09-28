@@ -24,6 +24,7 @@ interface AdvanceVoucher {
   customer: CustomerRef | null;
   sheet: { id: number; sheetNumber: string } | null;
   createdBy: { fullName: string } | null;
+  advanceStaff: { fullName: string } | null;
   totalAmount: number;
   note: string | null;
 }
@@ -157,6 +158,12 @@ export default function AdvanceVoucherReportPage() {
       render: (_: unknown, r: AdvanceVoucher) => r.customer?.companyName ?? r.customer?.customerName ?? '-',
     },
     { title: 'Người tạo', dataIndex: ['createdBy', 'fullName'], width: 140, render: (v: string) => v ?? '-' },
+    {
+      title: 'NV ứng tiền',
+      key: 'advanceStaff',
+      width: 140,
+      render: (_: unknown, r: AdvanceVoucher) => r.advanceStaff?.fullName ?? r.createdBy?.fullName ?? '-',
+    },
     {
       title: 'Tổng tiền',
       dataIndex: 'totalAmount',

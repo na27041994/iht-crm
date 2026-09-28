@@ -13,6 +13,7 @@ export const advanceVoucherSchema = z.object({
   containerQty: z.number().int().optional().nullable(),
   qty: z.coerce.number().optional().nullable(),
   note: z.string().optional().nullable(),
+  advanceStaffId: z.number().int().optional().nullable(),
 }).superRefine((data, ctx) => {
   // Chỉ "Chi tạm ứng" bắt buộc chọn Job, "Phiếu tạm ứng" không bắt buộc
   if (data.type === 'Chi tạm ứng' && (data.sheetId == null)) {

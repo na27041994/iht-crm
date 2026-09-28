@@ -17,6 +17,7 @@ interface AdvanceVoucher {
   sheet: { id: number; sheetNumber: string } | null;
   customer: { id: number; customerName: string; companyName: string } | null;
   createdBy: { id: number; fullName: string } | null;
+  advanceStaff: { id: number; fullName: string } | null;
   orderFrom: string | null;
   orderTo: string | null;
   containerQty: number | null;
@@ -111,6 +112,7 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
     { label: 'Loại', value: voucher.type },
     { label: 'Ngày tạo', value: new Date(voucher.advanceDate).toLocaleDateString('vi-VN') },
     { label: 'Nhân viên tạo', value: voucher.createdBy?.fullName },
+    { label: 'NV ứng tiền', value: voucher.advanceStaff?.fullName ?? voucher.createdBy?.fullName },
     { label: 'Job', value: voucher.sheet?.sheetNumber },
     {
       label: 'Khách hàng',

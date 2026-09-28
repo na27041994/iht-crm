@@ -18,6 +18,7 @@ const include = {
   sheet: { select: { id: true, sheetNumber: true } },
   customer: { select: { id: true, customerName: true, companyName: true } },
   createdBy: { select: { id: true, fullName: true } },
+  advanceStaff: { select: { id: true, fullName: true } },
   items: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
 } satisfies Prisma.AdvanceVoucherInclude;
 
@@ -152,6 +153,7 @@ export async function getAdvanceVoucher(id: number) {
 
 // Tạo phiếu chi mới, sinh mã advanceNo
 export async function createAdvanceVoucher(input: AdvanceVoucherInput, userId: number) {
+  await requireAdvanceStaff(input.advanceStaffId);
   const advanceNo = await nextAdvanceNo();
   return prisma.advanceVoucher.create({
     data: { ...input, advanceNo, createdById: userId },
@@ -163,7 +165,15 @@ export async function createAdvanceVoucher(input: AdvanceVoucherInput, userId: n
 export async function updateAdvanceVoucher(id: number, input: AdvanceVoucherInput) {
   const exists = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
   if (!exists) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  await requireAdvanceStaff(input.advanceStaffId);
   return prisma.advanceVoucher.update({ where: { id }, data: input, include });
+}
+
+// Kiểm tra nhân viên ứng tiền tồn tại (nếu có chọn), ném lỗi nếu không
+async function requireAdvanceStaff(advanceStaffId?: number | null) {
+  if (advanceStaffId == null) return;
+  const staff = await prisma.user.findFirst({ where: { id: advanceStaffId, isDelete: 1 }, select: { id: true } });
+  if (!staff) throw new AppError('Nhân viên ứng tiền không tồn tại', 400);
 }
 
 // Xóa mềm phiếu chi

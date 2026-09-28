@@ -28,6 +28,11 @@ interface CustomerOption {
   companyName: string;
 }
 
+interface StaffOption {
+  id: number;
+  fullName: string;
+}
+
 export interface AdvanceVoucherFormValues {
   sheetId?: number;
   type: string;
@@ -39,6 +44,7 @@ export interface AdvanceVoucherFormValues {
   containerQty?: number;
   qty?: number;
   note?: string;
+  advanceStaffId?: number;
 }
 
 interface AdvanceVoucherFormModalProps {
@@ -60,6 +66,7 @@ export default function AdvanceVoucherFormModal({
   const [loading, setLoading] = useState(false);
   const [sheets, setSheets] = useState<SheetOption[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [staffList, setStaffList] = useState<StaffOption[]>([]);
   const [items, setItems] = useState<Array<{ amount?: number; kind?: string; description?: string; note?: string }>>([]);
   const [fetchingSheets, setFetchingSheets] = useState(false);
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
@@ -113,25 +120,37 @@ export default function AdvanceVoucherFormModal({
     });
   }
 
+  // Đảm bảo option NV ứng tiền đã lưu luôn có trong list để hiện tên thay vì ID
+  function ensureStaffOption(staff?: { id: number; fullName: string } | null) {
+    if (!staff) return;
+    setStaffList((prev) => (prev.some((s) => s.id === staff.id) ? prev : [...prev, staff]));
+  }
+
   useEffect(() => {
     if (!open) return;
     setLoading(true);
     Promise.all([
       apiFetch<{ items: SheetOption[] }>('/tracking-sheets?pageSize=100'),
       apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=100'),
+      apiFetch<StaffOption[]>('/auth/staff-options').catch(() => [] as StaffOption[]),
+      apiFetch<{ sub: number } | { id: number }>('/auth/me').catch(() => null),
     ])
-      .then(([sh, cs]) => {
+      .then(([sh, cs, st, me]) => {
         setSheets(sh.items);
         setCustomers(cs.items);
+        setStaffList(st);
         form.resetFields();
         setItems([]);
-        form.setFieldsValue({ currency: 'VND', advanceDate: dayjs(), type: 'Chi tạm ứng' });
+        const meId = me ? ('sub' in me ? me.sub : me.id) : undefined;
+        form.setFieldsValue({ currency: 'VND', advanceDate: dayjs(), type: 'Chi tạm ứng', advanceStaffId: meId });
         if (editingId) {
           return apiFetch<
             AdvanceVoucherFormValues & {
               id: number;
               advanceNo: string;
               advanceDate: string;
+              advanceStaff?: StaffOption | null;
+              createdBy?: StaffOption | null;
             }
           >(`/advance-vouchers/${editingId}`).then((v) => {
             form.setFieldsValue({
@@ -145,7 +164,9 @@ export default function AdvanceVoucherFormModal({
               containerQty: v.containerQty ?? undefined,
               qty: v.qty == null ? undefined : Number(v.qty),
               note: v.note ?? '',
+              advanceStaffId: v.advanceStaff?.id ?? undefined,
             });
+            ensureStaffOption(v.advanceStaff);
             // nạp option cho job/khách đã lưu để hiện tên
             if (v.sheetId) {
               apiFetch<SheetOption>(`/tracking-sheets/${v.sheetId}`).then((s: any) => {
@@ -195,6 +216,7 @@ export default function AdvanceVoucherFormModal({
         containerQty: values.containerQty ?? null,
         qty: values.qty ?? null,
         note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
+        advanceStaffId: values.advanceStaffId ?? null,
       };
       if (editingId) {
         await apiFetch(`/advance-vouchers/${editingId}`, { method: 'PUT', body: JSON.stringify(body) });
@@ -316,6 +338,15 @@ export default function AdvanceVoucherFormModal({
                 value: c.id,
                 label: `${c.code ?? `#${c.id}`} - ${c.companyName || c.customerName}`,
               }))}
+            />
+          </Form.Item>
+          <Form.Item label="NV ứng tiền" name="advanceStaffId" tooltip="Nhân viên ứng tiền của phiếu này (trống = theo người tạo phiếu)">
+            <Select
+              placeholder="Mặc định: người tạo phiếu"
+              showSearch
+              optionFilterProp="label"
+              allowClear
+              options={staffList.map((s) => ({ value: s.id, label: s.fullName }))}
             />
           </Form.Item>
           <Form.Item label="Order From" name="orderFrom">

@@ -8,6 +8,7 @@ import {
   login,
   createUser,
   listUsers,
+  listStaffOptions,
   getUser,
   updateUser,
   deactivateUser,
@@ -41,6 +42,11 @@ authRouter.get('/users', requireAuth, requirePermission('user', 'view'), asyncHa
 
 authRouter.get('/users/:id', requireAuth, requirePermission('user', 'view'), asyncHandler(async (req, res) => {
   res.json(await getUser(Number(req.params.id)));
+}));
+
+// Dropdown nhân viên (id + fullName): mọi user đăng nhập đều dùng được, không cần quyền user:view
+authRouter.get('/staff-options', requireAuth, asyncHandler(async (_req, res) => {
+  res.json(await listStaffOptions());
 }));
 
 authRouter.patch(

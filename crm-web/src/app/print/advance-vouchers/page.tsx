@@ -20,6 +20,7 @@ interface AdvanceVoucher {
   customer: { id: number; companyName: string; customerName: string } | null;
   sheet: { id: number; sheetNumber: string } | null;
   createdBy: { id: number; fullName: string } | null;
+  advanceStaff: { id: number; fullName: string } | null;
   totalAmount?: number;
   items: { id: number; amount: string; kind?: string | null; description?: string | null; note: string | null }[];
 }
@@ -47,7 +48,7 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
   const total = v.totalAmount ?? (totalChi - totalGiam);
   const custNo = v.customer ? String(v.customer.id) : '';
   const custName = v.customer ? v.customer.companyName || v.customer.customerName : '';
-  const staffName = v.createdBy?.fullName ?? '';
+  const staffName = v.advanceStaff?.fullName ?? v.createdBy?.fullName ?? '';
   const staffShort = staffName ? staffName.toUpperCase().replace(/\s+/g, '') : '';
   // fallback short: BOITHANH style
   const personShort = staffShort || 'NV';

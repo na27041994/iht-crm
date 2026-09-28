@@ -55,6 +55,7 @@ model User {
   deliverySheets   TrackingSheet[] @relation("SheetDeliveryStaff")
   sheetsCreated    TrackingSheet[] @relation("SheetCreatedBy")
   advanceVouchers  AdvanceVoucher[] @relation("VoucherCreator")
+  advancesTaken  AdvanceVoucher[] @relation("VoucherAdvanceStaff")
   jobOrderDeliveries JobOrder[] @relation("JobOrderDeliveryStaff")
   permissions      UserPermission[]
   leaveRequests    LeaveRequest[] @relation("LeaveRequester")
@@ -363,6 +364,8 @@ model AdvanceVoucher {
   isDelete     Int            @default(1)
   createdBy    User?          @relation("VoucherCreator", fields: [createdById], references: [id])
   createdById  Int?
+  advanceStaff User?          @relation("VoucherAdvanceStaff", fields: [advanceStaffId], references: [id])
+  advanceStaffId Int?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -372,6 +375,7 @@ model AdvanceVoucher {
   @@index([sheetId])
   @@index([customerId])
   @@index([advanceDate])
+  @@index([advanceStaffId])
   @@map("advance_vouchers")
 }
 

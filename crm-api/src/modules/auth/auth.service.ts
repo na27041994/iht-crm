@@ -89,6 +89,15 @@ export async function listUsers() {
   });
 }
 
+// Danh sách nhân viên gọn nhẹ cho dropdown (mọi user đã đăng nhập đều được dùng)
+export async function listStaffOptions() {
+  return prisma.user.findMany({
+    where: { isDelete: 1, isActive: true },
+    select: { id: true, fullName: true },
+    orderBy: { fullName: 'asc' },
+  });
+}
+
 // Hàm getUser: xử lý getUser
 export async function getUser(id: number) {
   const user = await prisma.user.findUnique({

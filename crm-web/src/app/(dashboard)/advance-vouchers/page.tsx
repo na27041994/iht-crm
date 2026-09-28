@@ -16,6 +16,7 @@ interface AdvanceVoucher {
   sheet: { id: number; sheetNumber: string } | null;
   customer: { id: number; companyName: string } | null;
   createdBy: { id: number; fullName: string } | null;
+  advanceStaff: { id: number; fullName: string } | null;
   totalAmount: number;
 }
 
@@ -149,6 +150,7 @@ export default function AdvanceVouchersPage() {
             render: (v: string) => new Date(v).toLocaleDateString('vi-VN'),
           },
           { title: 'Nhân viên tạo', render: (_: unknown, r: AdvanceVoucher) => r.createdBy?.fullName ?? '-' },
+          { title: 'NV ứng tiền', render: (_: unknown, r: AdvanceVoucher) => r.advanceStaff?.fullName ?? r.createdBy?.fullName ?? '-' },
           { title: 'Job', render: (_: unknown, r: AdvanceVoucher) => r.sheet?.sheetNumber ?? '-' },
           {
             title: 'Khách hàng',
