@@ -52,6 +52,7 @@ export default function LeaveRequestsPage() {
   const [note, setNote] = useState('');
   const [decidingNow, setDecidingNow] = useState(false);
   const [meId, setMeId] = useState<number | null>(null);
+  const [quota, setQuota] = useState<{ year: number; quota: number; used: number; pending: number; remaining: number } | null>(null);
 
   const load = useCallback(
     async (st?: string, pg = 1) => {
@@ -59,12 +60,14 @@ export default function LeaveRequestsPage() {
       try {
         const params = new URLSearchParams({ page: String(pg) });
         if (st) params.set('status', st);
-        const [res, me] = await Promise.all([
+        const [res, me, q] = await Promise.all([
           apiFetch<ListResponse>(`/leave-requests?${params}`),
           apiFetch<{ sub: number }>('/auth/me'),
+          apiFetch<{ year: number; quota: number; used: number; pending: number; remaining: number }>('/leave-requests/quota').catch(() => null),
         ]);
         setData(res);
         setMeId(me.sub);
+        setQuota(q);
       } catch (err) {
         message.error(err instanceof Error ? err.message : 'Không tải được danh sách nghỉ phép');
       } finally {
@@ -134,6 +137,15 @@ export default function LeaveRequestsPage() {
         <Empty description="Bạn không có quyền xem nghỉ phép" />
       ) : (
         <>
+          {quota && (
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: 8, fontSize: 13 }}>
+              <Typography.Text strong>Phép năm {quota.year}: </Typography.Text>
+              <Typography.Text>quota {Number(quota.quota)} ngày</Typography.Text>
+              <Typography.Text type="secondary"> · đã dùng {Number(quota.used)}</Typography.Text>
+              <Typography.Text type="secondary"> · chờ duyệt {Number(quota.pending)}</Typography.Text>
+              <Typography.Text strong style={{ color: Number(quota.remaining) < 0 ? '#cf1322' : '#1677ff' }}> · còn lại {Number(quota.remaining)}</Typography.Text>
+            </div>
+          )}
           <div style={{ marginBottom: 16 }}>
             <Select
               placeholder="Trạng thái"

@@ -7,6 +7,7 @@ import { hasPermission } from '../permissions/permissions.service.js';
 import { leaveRequestSchema, listLeaveRequestsQuery, approveLeaveSchema } from './leaveRequest.schema.js';
 import {
   listLeaveRequests,
+  getLeaveQuota,
   createLeaveRequest,
   updateLeaveRequest,
   deleteLeaveRequest,
@@ -30,6 +31,16 @@ leaveRequestRouter.get(
     };
     const canViewAll = await hasPermission(req.user!.sub, 'leave_request' as any, 'edit');
     res.json(await listLeaveRequests(req.user!.sub, canViewAll, { status, userId, page, pageSize }));
+  }),
+);
+
+// Quota phép năm của chính mình (đặt trước /:id để không bị nuốt route)
+leaveRequestRouter.get(
+  '/quota',
+  requirePermission('leave_request', 'view'),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const year = req.query.year ? Number(req.query.year) : new Date().getFullYear();
+    res.json(await getLeaveQuota(req.user!.sub, Number.isInteger(year) ? year : new Date().getFullYear()));
   }),
 );
 

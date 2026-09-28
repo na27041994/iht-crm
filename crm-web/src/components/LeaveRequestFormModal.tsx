@@ -35,11 +35,17 @@ export default function LeaveRequestFormModal({ open, editing, onClose, onSaved 
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const [days, setDays] = useState(0);
+  const [quota, setQuota] = useState<{ year: number; quota: number; used: number; pending: number; remaining: number } | null>(null);
+  const watchedType = Form.useWatch('type', form);
 
   useEffect(() => {
     if (!open) return;
     form.resetFields();
     setDays(0);
+    setQuota(null);
+    apiFetch<{ year: number; quota: number; used: number; pending: number; remaining: number }>('/leave-requests/quota')
+      .then(setQuota)
+      .catch(() => setQuota(null));
     if (editing) {
       const f = dayjs(editing.fromDate);
       const t = dayjs(editing.toDate);
@@ -92,6 +98,11 @@ export default function LeaveRequestFormModal({ open, editing, onClose, onSaved 
         <Form.Item label="Loại nghỉ" name="type" rules={[{ required: true, message: 'Chọn loại nghỉ' }]}>
           <Select placeholder="Chọn loại nghỉ" options={LEAVE_TYPES.map((t) => ({ value: t, label: t }))} />
         </Form.Item>
+        {watchedType === 'Nghỉ phép năm' && quota && (
+          <div style={{ marginTop: -12, marginBottom: 12, fontSize: 13, color: Number(quota.remaining) < days ? '#cf1322' : '#1677ff' }}>
+            Phép năm {quota.year}: còn lại {Number(quota.remaining)} / {Number(quota.quota)} ngày (đã dùng {Number(quota.used)}, chờ duyệt {Number(quota.pending)})
+          </div>
+        )}
         <Form.Item label="Từ ngày - Đến ngày" name="range" rules={[{ required: true, message: 'Chọn khoảng ngày' }]}>
           <SlashRangePicker
             style={{ width: '100%' }}

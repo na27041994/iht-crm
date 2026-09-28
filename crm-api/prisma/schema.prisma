@@ -43,6 +43,7 @@ model User {
   avatarUrl    String?
   role         String     @default("viewer")
   isActive     Boolean    @default(true)
+  annualLeaveQuota Decimal @default(12) @db.Decimal(5, 1)
   isDelete     Int        @default(1)
   lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())
