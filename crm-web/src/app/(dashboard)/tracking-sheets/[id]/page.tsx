@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { App, Button, Card, Descriptions, Popconfirm, Space, Table, Tag, Tooltip, Typography } from 'antd';
-import { ArrowLeftOutlined, DeleteOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, DeleteOutlined, DownOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined, UpOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
@@ -121,6 +121,22 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
   const [selectedBookingIds, setSelectedBookingIds] = useState<number[]>([]);
   const [selectedDebitIds, setSelectedDebitIds] = useState<number[]>([]);
+  // Thu gọn/mở rộng từng bảng (mặc định mở hết)
+  const [collapsed, setCollapsed] = useState({ order: false, booking: false, debit: false });
+  function toggleSection(key: 'order' | 'booking' | 'debit') {
+    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+  function CollapseToggle({ sectionKey, collapsed: isCollapsed }: { sectionKey: 'order' | 'booking' | 'debit'; collapsed: boolean }) {
+    return (
+      <Button
+        size="small"
+        icon={isCollapsed ? <DownOutlined /> : <UpOutlined />}
+        onClick={() => toggleSection(sectionKey)}
+      >
+        {isCollapsed ? 'Mở rộng' : 'Thu gọn'}
+      </Button>
+    );
+  }
 
   const sortedOrders = useMemo(() => sortByType(sheet?.jobOrders ?? []), [sheet]);
   const sortedBookings = useMemo(() => sortByType(sheet?.jobBookings ?? []), [sheet]);
@@ -295,9 +311,10 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
 
       {canViewOrder && (
       <Card
-        title="Job Order"
+        title={`Job Order (${sortedOrders.length})`}
         extra={
           <Space>
+            <CollapseToggle sectionKey="order" collapsed={collapsed.order} />
             {totalTamUng > 0 && (
               <Tag color="blue">Đã tạm ứng: {fmtMoney(String(totalTamUng))}</Tag>
             )}
@@ -313,6 +330,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         }
         style={{ marginBottom: 16 }}
       >
+        {!collapsed.order && (
         <Table<JobOrderItem>
           size="small"
           rowKey="id"
@@ -375,14 +393,16 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             },
           ]}
         />
+        )}
       </Card>
       )}
 
       {canViewBooking && (
       <Card
-        title="Job Book tàu"
+        title={`Job Book tàu (${sortedBookings.length})`}
         extra={
           <Space>
+            <CollapseToggle sectionKey="booking" collapsed={collapsed.booking} />
             <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('booking')}>
               Xuất Excel
             </Button>
@@ -394,6 +414,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           </Space>
         }
       >
+        {!collapsed.booking && (
         <Table<JobBookingItem>
           size="small"
           rowKey="id"
@@ -449,14 +470,16 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             },
           ]}
         />
+        )}
       </Card>
       )}
 
       {canViewDebit && (
       <Card
-        title="Debit Note"
+        title={`Debit Note (${sortedDebits.length})`}
         extra={
           <Space>
+            <CollapseToggle sectionKey="debit" collapsed={collapsed.debit} />
             <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('debit')}>
               Xuất Excel
             </Button>
@@ -469,6 +492,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         }
         style={{ marginTop: 16 }}
       >
+        {!collapsed.debit && (
         <Table<DebitNoteItem>
           size="small"
           rowKey="id"
@@ -526,6 +550,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             },
           ]}
         />
+        )}
       </Card>
       )}
 
