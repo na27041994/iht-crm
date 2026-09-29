@@ -251,6 +251,8 @@ function PrintAdvanceVouchersContent() {
           .old-table { font-size: 10px; }
           .old-table th, .old-table td { padding: 2px 4px; }
           .old-label { width: 70px; }
+          /* In giấy: ép chữ đen đậm, tránh chữ xám in ra nhạt */
+          .print-sheet, .print-sheet * { color: #000 !important; }
         }
       `}</style>
     </div>

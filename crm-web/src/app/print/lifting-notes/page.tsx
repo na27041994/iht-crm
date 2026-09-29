@@ -229,6 +229,8 @@ function PrintContent() {
           .print-sheet { max-width: 100%; padding: 0; }
           .print-sheet { page-break-after: always; break-after: page; }
           .print-sheet:last-child { page-break-after: auto; break-after: auto; }
+          /* In giấy: ép chữ đen đậm, tránh chữ xám in ra nhạt */
+          .print-sheet, .print-sheet * { color: #000 !important; }
         }
       `}</style>
     </div>
