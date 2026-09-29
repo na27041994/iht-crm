@@ -76,7 +76,11 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
   const [fetchingCustomers, setFetchingCustomers] = useState(false);
   const customerSearchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [carriers, setCarriers] = useState<CarrierOption[]>([]);
+  const [fetchingCarriers, setFetchingCarriers] = useState(false);
+  const carrierSearchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [fetchingAgents, setFetchingAgents] = useState(false);
+  const agentSearchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useImperativeHandle(ref, () => ({ submit: () => form.submit() }), [form]);
 
@@ -97,26 +101,68 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
     if (customerSearchTimeout.current) clearTimeout(customerSearchTimeout.current);
     customerSearchTimeout.current = setTimeout(() => fetchCustomers(value), 300);
   }
+  async function fetchCarriers(search: string) {
+    setFetchingCarriers(true);
+    try {
+      const params = new URLSearchParams({ pageSize: '50' });
+      if (search) params.set('search', search);
+      const res = await apiFetch<{ items: CarrierOption[] }>(`/carriers?${params}`);
+      setCarriers(res.items);
+    } catch {
+      // ignore
+    } finally {
+      setFetchingCarriers(false);
+    }
+  }
+  function handleCarrierSearch(value: string) {
+    if (carrierSearchTimeout.current) clearTimeout(carrierSearchTimeout.current);
+    carrierSearchTimeout.current = setTimeout(() => fetchCarriers(value), 300);
+  }
+  async function fetchAgents(search: string) {
+    setFetchingAgents(true);
+    try {
+      const params = new URLSearchParams({ pageSize: '50' });
+      if (search) params.set('search', search);
+      const res = await apiFetch<{ items: AgentOption[] }>(`/agents?${params}`);
+      setAgents(res.items);
+    } catch {
+      // ignore
+    } finally {
+      setFetchingAgents(false);
+    }
+  }
+  function handleAgentSearch(value: string) {
+    if (agentSearchTimeout.current) clearTimeout(agentSearchTimeout.current);
+    agentSearchTimeout.current = setTimeout(() => fetchAgents(value), 300);
+  }
+  // Nạp riêng option đang được chọn để hiện tên thay vì ID (khi sửa)
+  function ensureOption<T extends { id: number }>(
+    setter: React.Dispatch<React.SetStateAction<T[]>>,
+    fetcher: Promise<T>,
+  ) {
+    fetcher
+      .then((one) => setter((prev) => (prev.some((x) => x.id === one.id) ? prev : [...prev, one])))
+      .catch(() => {});
+  }
 
   useEffect(() => {
     setLoading(true);
-    // Dropdown tải chịu lỗi: thiếu quyền xem thì để trống, không chặn form
-    // (quyền vẫn được backend kiểm khi lưu)
+    // Tải sẵn 50 dòng mỗi dropdown (thiếu quyền xem thì để trống, không chặn form)
     Promise.all([
-      apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=100').catch(() => ({ items: [] })),
-      apiFetch<{ items: CarrierOption[] }>('/carriers?pageSize=100').catch(() => ({ items: [] })),
-      apiFetch<{ items: AgentOption[] }>('/agents?pageSize=100').catch(() => ({ items: [] })),
+      apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=50').catch(() => ({ items: [] as CustomerOption[] })),
+      apiFetch<{ items: CarrierOption[] }>('/carriers?pageSize=50').catch(() => ({ items: [] as CarrierOption[] })),
+      apiFetch<{ items: AgentOption[] }>('/agents?pageSize=50').catch(() => ({ items: [] as AgentOption[] })),
     ])
       .then(([cs, ca, ag]) => {
         setCustomers(cs.items);
         setCarriers(ca.items);
         setAgents(ag.items);
         form.resetFields();
-        if (editingId) {
-          return apiFetch<TrackingSheetFormValues & { id: number; sheetNumber: string; etaDate: string | null; declarationDate: string | null }>(
-            `/tracking-sheets/${editingId}`,
-          ).then((s) => {
-            form.setFieldsValue({
+        if (!editingId) return Promise.resolve();
+        return apiFetch<TrackingSheetFormValues & { id: number; sheetNumber: string; etaDate: string | null; declarationDate: string | null }>(
+          `/tracking-sheets/${editingId}`,
+        ).then((s) => {
+        form.setFieldsValue({
               sheetNumber: (s as any).sheetNumber ?? '',
               nw: s.nw == null ? undefined : Number(s.nw),
               containerNumber: s.containerNumber ?? '',
@@ -137,10 +183,18 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
               shipper: (s as any).shipper ?? '',
               note: s.note ?? '',
             });
+            // nạp thêm option đang chọn nếu nằm ngoài 50 dòng tải sẵn
+            if (s.customerId != null) {
+              ensureOption(setCustomers, apiFetch<CustomerOption>(`/customers/${s.customerId}`));
+            }
+            if ((s as any).carrierId != null) {
+              ensureOption(setCarriers, apiFetch<CarrierOption>(`/carriers/${(s as any).carrierId}`));
+            }
+            if (s.agentId != null) {
+              ensureOption(setAgents, apiFetch<AgentOption>(`/agents/${s.agentId}`));
+            }
           });
-        }
-        return Promise.resolve();
-      })
+        })
       .catch((err) => message.error(err instanceof Error ? err.message : 'Không tải được dữ liệu'))
       .finally(() => setLoading(false));
   }, [editingId, form, message]);
@@ -215,6 +269,7 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
               filterOption={false}
               onSearch={handleCustomerSearch}
               notFoundContent={fetchingCustomers ? <Spin size="small" /> : null}
+              allowClear
               options={customers.map((c) => ({
                 value: c.id,
                 label: `${c.code ?? `#${c.id}`} - ${c.customerName} (${c.companyName})`,
@@ -223,9 +278,11 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
           </Form.Item>
           <Form.Item label="Hãng tàu" name="carrierId">
             <Select
-              placeholder="Chọn hãng tàu"
+              placeholder="Gõ để tìm hãng tàu..."
               showSearch
-              optionFilterProp="label"
+              filterOption={false}
+              onSearch={handleCarrierSearch}
+              notFoundContent={fetchingCarriers ? <Spin size="small" /> : null}
               allowClear
               options={carriers.map((c) => ({
                 value: c.id,
@@ -235,9 +292,12 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
           </Form.Item>
           <Form.Item label="Đại lý" name="agentId">
             <Select
-              placeholder="Chọn đại lý"
+              placeholder="Gõ để tìm đại lý..."
               showSearch
-              optionFilterProp="label"
+              filterOption={false}
+              onSearch={handleAgentSearch}
+              notFoundContent={fetchingAgents ? <Spin size="small" /> : null}
+              allowClear
               options={agents.map((a) => ({
                 value: a.id,
                 label: a.agentName,
