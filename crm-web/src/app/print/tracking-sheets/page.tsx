@@ -443,13 +443,26 @@ function PrintContent() {
         .sig { text-align: center; width: 30%; }
         .sig-name { font-size: 13px; font-weight: 600; border-top: 1px solid #000; padding-top: 40px; }
         @media print {
-          @page { margin: 12mm; }
+          @page { margin: 10mm; }
+          body { margin: 0; }
           .no-print { display: none !important; }
           .print-sheet { max-width: 100%; padding: 0; }
           .print-sheet { page-break-after: always; break-after: page; }
           .print-sheet:last-child { page-break-after: auto; break-after: auto; }
           /* In giấy: ép chữ đen đậm, tránh chữ xám in ra nhạt */
           .print-sheet, .print-sheet * { color: #000 !important; }
+          /* Gom gọn để 1 phiếu vừa 1 trang A4 */
+          .doc-header { margin-bottom: 10px; }
+          .company-name { font-size: 20px; }
+          .doc-title { font-size: 16px; padding: 3px 12px; margin-top: 6px; }
+          .doc-no { font-size: 12px; margin-top: 4px; }
+          .p-table { font-size: 11px; margin-bottom: 10px; }
+          .p-table th, .p-table td { padding: 3px 6px; }
+          .p-table th.section-title { font-size: 12px; }
+          .info-table td.label { width: 120px; }
+          .signatures { margin-top: 28px; }
+          .sig-name { padding-top: 24px; font-size: 12px; }
+          tr { page-break-inside: avoid; }
         }
       `}</style>
     </div>
