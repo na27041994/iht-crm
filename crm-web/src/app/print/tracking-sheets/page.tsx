@@ -186,7 +186,7 @@ function SheetDocument({
             <td>{sheet.billNumber ?? '-'}</td>
           </tr>
           <tr>
-            <td className="label">Số hóa đơn</td>
+            <td className="label">Invoice No</td>
             <td>{sheet.invoiceNumber ?? '-'}</td>
             <td className="label">NV chứng từ</td>
             <td>{sheet.docStaff?.fullName ?? '-'}</td>
@@ -279,7 +279,7 @@ function SheetDocument({
           <thead>
             <tr>
               <th>Loại</th>
-              <th>Số hóa đơn</th>
+              <th>Invoice No</th>
               <th>Mô tả</th>
               <th>Unit</th>
               <th>Current</th>

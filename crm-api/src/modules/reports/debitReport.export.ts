@@ -39,7 +39,7 @@ const SUMMARY_COLUMNS: Partial<ExcelJS.Column>[] = [
 const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
   { header: 'Loại', key: 'type', width: 18 },
-  { header: 'Số hóa đơn', key: 'invoiceNumber', width: 16 },
+  { header: 'Invoice No', key: 'invoiceNumber', width: 16 },
   { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'Khách hàng', key: 'customerName', width: 30 },
   { header: 'SL', key: 'quantity', width: 8 },

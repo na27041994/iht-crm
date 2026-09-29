@@ -304,7 +304,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               { key: 'customNo', label: 'Custom No', children: sheet.customNo ?? '-' },
               { key: 'decl', label: 'Ngày tờ khai', children: fmtDate(sheet.declarationDate) },
               { key: 'bill', label: 'Số bill', children: sheet.billNumber ?? '-' },
-              { key: 'invoice', label: 'Số hóa đơn', children: sheet.invoiceNumber ?? '-' },
+              { key: 'invoice', label: 'Invoice No', children: sheet.invoiceNumber ?? '-' },
               { key: 'consignee', label: 'Consignee', children: sheet.consignee ?? '-' },
               { key: 'shipper', label: 'Shipper', children: sheet.shipper ?? '-' },
               { key: 'note', label: 'Ghi chú', children: sheet.note ?? '-' },
@@ -527,7 +527,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           tableLayout="fixed"
           columns={[
             { title: 'Loại', dataIndex: 'type', width: 140, render: (v: string) => <Tag color="blue">{v}</Tag> },
-            { title: 'Số hóa đơn', dataIndex: 'invoiceNumber', width: 140, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
+            { title: 'Invoice No', dataIndex: 'invoiceNumber', width: 140, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Unit', dataIndex: 'unit', render: (v: string | null) => v ?? '-' },
             { title: 'Current', dataIndex: 'currency', align: 'center' as const, render: (v: string) => <Tag color={v === 'USD' ? 'green' : 'default'}>{v}</Tag> },
