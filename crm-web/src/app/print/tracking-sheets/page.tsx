@@ -75,6 +75,8 @@ interface TrackingSheet {
   declarationDate: string | null;
   billNumber: string | null;
   invoiceNumber: string | null;
+  consignee: string | null;
+  shipper: string | null;
   pol: string | null;
   pod: string | null;
   phanLuong: string | null;
@@ -188,6 +190,14 @@ function SheetDocument({
             <td>{sheet.invoiceNumber ?? '-'}</td>
             <td className="label">NV chứng từ</td>
             <td>{sheet.docStaff?.fullName ?? '-'}</td>
+          </tr>
+          <tr>
+            <td className="label">Consignee</td>
+            <td colSpan={3}>{sheet.consignee ?? '-'}</td>
+          </tr>
+          <tr>
+            <td className="label">Shipper</td>
+            <td colSpan={3}>{sheet.shipper ?? '-'}</td>
           </tr>
           <tr>
             <td className="label">NV giao nhận</td>

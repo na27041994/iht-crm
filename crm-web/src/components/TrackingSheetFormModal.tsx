@@ -46,6 +46,8 @@ export interface TrackingSheetFormValues {
   pol?: string;
   pod?: string;
   phanLuong?: string;
+  consignee?: string;
+  shipper?: string;
   note?: string;
 }
 
@@ -125,6 +127,8 @@ export default function TrackingSheetFormModal({
               billNumber: s.billNumber ?? '',
               invoiceNumber: s.invoiceNumber ?? '',
               phanLuong: (s as any).phanLuong ?? '',
+              consignee: (s as any).consignee ?? '',
+              shipper: (s as any).shipper ?? '',
               note: s.note ?? '',
             });
           });
@@ -160,6 +164,8 @@ export default function TrackingSheetFormModal({
         pol: null,
         pod: null,
         phanLuong: values.phanLuong && String(values.phanLuong).trim() !== '' ? String(values.phanLuong).trim() : null,
+        consignee: values.consignee && String(values.consignee).trim() !== '' ? String(values.consignee).trim() : null,
+        shipper: values.shipper && String(values.shipper).trim() !== '' ? String(values.shipper).trim() : null,
         note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
       };
 
@@ -274,6 +280,12 @@ export default function TrackingSheetFormModal({
           </Form.Item>
           <Form.Item label="Invoice No" name="invoiceNumber">
             <Input placeholder="VD: INV-2026-0001" />
+          </Form.Item>
+          <Form.Item label="Consignee" name="consignee">
+            <Input placeholder="Người nhận hàng" />
+          </Form.Item>
+          <Form.Item label="Shipper" name="shipper">
+            <Input placeholder="Người gửi hàng" />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />

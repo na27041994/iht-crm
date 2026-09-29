@@ -17,6 +17,8 @@ export const trackingSheetSchema = z.object({
   declarationDate: z.coerce.date().optional().nullable(),
   billNumber: z.string().optional().nullable(),
   invoiceNumber: z.string().optional().nullable(),
+  consignee: z.string().optional().nullable(),
+  shipper: z.string().optional().nullable(),
   pol: z.string().optional().nullable(),
   pod: z.string().optional().nullable(),
   phanLuong: z.string().optional().nullable(),

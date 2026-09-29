@@ -19,6 +19,8 @@ interface ImportSheetRow {
   phanLuong?: string | null;
   note?: string | null;
   createdById?: number | null;
+  consignee?: string | null;
+  shipper?: string | null;
 }
 
 interface ImportOrderRow {
@@ -108,7 +110,7 @@ const SHEET_COLS: Record<string, number> = {
   containerNumber: 2, customerId: 3, fromLocation: 4, toLocation: 5,
   containerQuantity: 6, etaDate: 7, nw: 8, gw: 9, customNo: 10,
   declarationDate: 11, billNumber: 12, invoiceNumber: 13, phanLuong: 14,
-  note: 15, createdById: 16,
+  note: 15, createdById: 16, consignee: 17, shipper: 18,
 };
 
 const ORDER_COLS: Record<string, number> = {
@@ -237,6 +239,8 @@ export async function parseImportExcel(buffer: Buffer): Promise<ParsedImportData
         phanLuong: String(getCellValue(row, SHEET_COLS, 'phanLuong') ?? '').trim() || null,
         note: String(getCellValue(row, SHEET_COLS, 'note') ?? '').trim() || null,
         createdById: toInt(getCellValue(row, SHEET_COLS, 'createdById')),
+        consignee: String(getCellValue(row, SHEET_COLS, 'consignee') ?? '').trim() || null,
+        shipper: String(getCellValue(row, SHEET_COLS, 'shipper') ?? '').trim() || null,
       });
     });
   }
@@ -386,6 +390,8 @@ async function upsertTrackingSheet(
     phanLuong: row.phanLuong,
     note: row.note,
     createdById: row.createdById ?? (defaultCreatedById || null),
+    consignee: row.consignee,
+    shipper: row.shipper,
     isDelete: 1,
   };
 

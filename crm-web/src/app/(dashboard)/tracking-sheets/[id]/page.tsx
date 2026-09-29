@@ -60,6 +60,8 @@ interface TrackingSheetDetail {
   pol: string | null;
   pod: string | null;
   phanLuong: string | null;
+  consignee: string | null;
+  shipper: string | null;
   note: string | null;
   jobOrders: JobOrderItem[];
   jobBookings: JobBookingItem[];
@@ -303,6 +305,8 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               { key: 'decl', label: 'Ngày tờ khai', children: fmtDate(sheet.declarationDate) },
               { key: 'bill', label: 'Số bill', children: sheet.billNumber ?? '-' },
               { key: 'invoice', label: 'Số hóa đơn', children: sheet.invoiceNumber ?? '-' },
+              { key: 'consignee', label: 'Consignee', children: sheet.consignee ?? '-' },
+              { key: 'shipper', label: 'Shipper', children: sheet.shipper ?? '-' },
               { key: 'note', label: 'Ghi chú', children: sheet.note ?? '-' },
             ]}
           />

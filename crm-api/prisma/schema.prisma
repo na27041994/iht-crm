@@ -252,6 +252,8 @@ model TrackingSheet {
   declarationDate    DateTime? @db.Date
   billNumber         String?
   invoiceNumber      String?
+  consignee          String?
+  shipper            String?
   pol                String?
   pod                String?
   phanLuong          String?

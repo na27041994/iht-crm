@@ -162,6 +162,8 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
     { header: 'Ngày tờ khai', key: 'declarationDate', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
     { header: 'Số bill', key: 'billNumber', width: 17 },
     { header: 'Số hóa đơn', key: 'invoiceNumber', width: 17 },
+    { header: 'Consignee', key: 'consignee', width: 26 },
+    { header: 'Shipper', key: 'shipper', width: 26 },
     { header: 'Ghi chú', key: 'note', width: 26 },
     { header: 'Ngày tạo', key: 'createdAt', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
     { header: 'Người tạo', key: 'createdBy', width: 20 },
@@ -182,6 +184,8 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
       declarationDate: dateCell(s.declarationDate),
       billNumber: s.billNumber ?? '',
       invoiceNumber: s.invoiceNumber ?? '',
+      consignee: (s as any).consignee ?? '',
+      shipper: (s as any).shipper ?? '',
       note: s.note ?? '',
       createdAt: dateCell(s.createdAt),
       createdBy: (s as any).createdBy?.fullName ?? '',
@@ -252,6 +256,8 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
     { header: 'phanLuong', key: 'phanLuong', width: 14 },
     { header: 'note', key: 'note', width: 25 },
     { header: 'createdById', key: 'createdById', width: 12 },
+    { header: 'consignee', key: 'consignee', width: 26 },
+    { header: 'shipper', key: 'shipper', width: 26 },
   ];
 
   const wsSheet = wb.addWorksheet('Phieu theo doi');
@@ -273,6 +279,8 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
     phanLuong: 'Xanh',
     note: 'Ghi chú mẫu',
     createdById: 1,
+    consignee: 'CONG TY C',
+    shipper: 'CONG TY S',
   });
 
   const ORDER_COLS: Partial<ExcelJS.Column>[] = [
