@@ -30,6 +30,50 @@ function scaleDebitNote(input: DebitNoteInput): DebitNoteInput {
   };
 }
 
+// Bỏ key undefined để giữ giá trị backend tự tính
+function pickDefined<T extends Record<string, unknown>>(obj?: T | null): Partial<T> {
+  if (!obj) return {};
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as Partial<T>;
+}
+
+// Tính booking (đơn vị hiển thị) từ debit: pretax = total/(1+thuế), total = (pretax+thuế)*SL
+function bookingDataFromDebit(d: { type: string; description?: unknown; unit?: unknown; quantity?: unknown; taxRate?: unknown; total?: unknown }) {
+  const total = Number(d.total ?? 0);
+  const tax = Number(d.taxRate ?? 0);
+  const qty = Number(d.quantity ?? 1) || 1;
+  const pretax = tax > 0 ? Math.round((total / (1 + tax / 100)) * 100) / 100 : total;
+  const taxAmount = Math.round(pretax * tax) / 100;
+  const afterTax = Math.round((pretax + taxAmount) * 100) / 100;
+  return {
+    type: d.type,
+    description: (d.description as string) ?? null,
+    unit: (d.unit as string) ?? null,
+    quantity: qty,
+    pretaxAmount: pretax,
+    taxRate: tax,
+    taxAmount,
+    afterTaxAmount: afterTax,
+    total: Math.round(afterTax * qty * 100) / 100,
+  };
+}
+
+// Tính debit VND (đơn vị hiển thị) từ booking: giá = trước thuế, tổng = tổng booking
+function debitDataFromBooking(b: { type: string; description?: unknown; unit?: unknown; quantity?: unknown; pretaxAmount?: unknown; taxRate?: unknown; total?: unknown }) {
+  return {
+    type: b.type,
+    invoiceNumber: null as string | null,
+    description: (b.description as string) ?? null,
+    unit: (b.unit as string) ?? null,
+    currency: 'VND' as const,
+    quantity: Number(b.quantity ?? 1) || 1,
+    priceVnd: Number(b.pretaxAmount ?? 0),
+    taxRate: Number(b.taxRate ?? 0),
+    priceUsd: null as number | null,
+    exchangeRate: null as number | null,
+    total: Number(b.total ?? 0),
+  };
+}
+
 export const trackingSheetInclude = {
   docStaff: { select: { id: true, fullName: true } },
   deliveryStaff: { select: { id: true, fullName: true } },
@@ -284,41 +328,108 @@ export async function deleteJobOrder(sheetId: number, id: number) {
 }
 
 // Tạo Job Order/Booking/DebitNote cho phiếu
-export async function createJobBooking(sheetId: number, input: JobBookingInput) {
+export async function createJobBooking(sheetId: number, input: JobBookingInput & { alsoCreateDebit?: boolean }) {
   await requireSheet(sheetId);
-  return prisma.jobBooking.create({ data: { ...scaleJobBooking(input), sheetId } });
+  const { alsoCreateDebit, ...bookingInput } = input;
+  return prisma.$transaction(async (tx) => {
+    const booking = await tx.jobBooking.create({ data: { ...scaleJobBooking(bookingInput), sheetId } });
+    if (alsoCreateDebit) {
+      const debit = await tx.debitNote.create({ data: { ...scaleDebitNote(debitDataFromBooking(bookingInput)), sheetId } });
+      await tx.debitNote.update({ where: { id: debit.id }, data: { sourceBookingId: booking.id } });
+    }
+    return booking;
+  });
 }
 
-// Cập nhật Job item
+// Cập nhật Job item (đồng bộ sang debit liên kết nếu có)
 export async function updateJobBooking(sheetId: number, id: number, input: JobBookingInput) {
   const item = await prisma.jobBooking.findFirst({ where: { id, sheetId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy mục Job Book', 404);
-  return prisma.jobBooking.update({ where: { id }, data: scaleJobBooking(input) });
+  const updated = await prisma.jobBooking.update({ where: { id }, data: scaleJobBooking(input) });
+  const linked = await prisma.debitNote.findFirst({ where: { sourceBookingId: id, sheetId, isDelete: 1 } });
+  if (linked) {
+    const qty = Number(updated.quantity ?? 1) || 1;
+    const tax = Number(updated.taxRate ?? 0);
+    const patch: Record<string, unknown> = {
+      description: updated.description,
+      unit: updated.unit,
+      quantity: qty,
+      taxRate: tax,
+    };
+    if (linked.currency === 'VND') {
+      patch.priceVnd = Number(updated.pretaxAmount ?? 0) / 100;
+      patch.total = Number(updated.total ?? 0) / 100;
+    } else {
+      // Debit USD: giữ đơn giá + tỷ giá cũ, tính lại tổng theo SL/thuế mới
+      const pusd = Number(linked.priceUsd ?? 0) / 100;
+      const rate = Number(linked.exchangeRate ?? 0);
+      patch.total = Math.round(qty * pusd * rate * (1 + tax / 100) * 100) / 100;
+    }
+    await prisma.debitNote.update({ where: { id: linked.id }, data: scaleDebitNote(patch as any) });
+  }
+  return updated;
 }
 
-// Xóa mềm Job item
+// Xóa mềm Job item (xóa luôn debit liên kết nếu có)
 export async function deleteJobBooking(sheetId: number, id: number) {
   const item = await prisma.jobBooking.findFirst({ where: { id, sheetId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy mục Job Book', 404);
-  return prisma.jobBooking.update({ where: { id }, data: { isDelete: -1 } });
+  await prisma.$transaction([
+    prisma.jobBooking.update({ where: { id }, data: { isDelete: -1 } }),
+    prisma.debitNote.updateMany({ where: { sourceBookingId: id, sheetId, isDelete: 1 }, data: { isDelete: -1 } }),
+  ]);
+  return { ...item, isDelete: -1 };
 }
 
 // Tạo Job Order/Booking/DebitNote cho phiếu
-export async function createDebitNote(sheetId: number, input: DebitNoteInput) {
+export async function createDebitNote(sheetId: number, input: DebitNoteInput & { alsoCreateBooking?: boolean; linkedBooking?: Record<string, unknown> }) {
   await requireSheet(sheetId);
-  return prisma.debitNote.create({ data: { ...scaleDebitNote(input), sheetId } });
+  const { alsoCreateBooking, linkedBooking, ...debitInput } = input;
+  return prisma.$transaction(async (tx) => {
+    const debit = await tx.debitNote.create({ data: { ...scaleDebitNote(debitInput), sheetId } });
+    if (alsoCreateBooking) {
+      const computed = bookingDataFromDebit(debitInput);
+      const merged = { ...computed, ...pickDefined(linkedBooking) };
+      const booking = await tx.jobBooking.create({ data: { ...scaleJobBooking(merged as any), sheetId } });
+      await tx.debitNote.update({ where: { id: debit.id }, data: { sourceBookingId: booking.id } });
+      return { ...debit, sourceBookingId: booking.id };
+    }
+    return debit;
+  });
 }
 
-// Cập nhật Job item
+// Cập nhật Job item (đồng bộ sang booking liên kết nếu có)
 export async function updateDebitNote(sheetId: number, id: number, input: DebitNoteInput) {
   const item = await prisma.debitNote.findFirst({ where: { id, sheetId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy mục Debit Note', 404);
-  return prisma.debitNote.update({ where: { id }, data: scaleDebitNote(input) });
+  const { alsoCreateBooking: _also, linkedBooking: _linked, ...debitInput } = input as DebitNoteInput & { alsoCreateBooking?: boolean; linkedBooking?: unknown };
+  const updated = await prisma.debitNote.update({ where: { id }, data: scaleDebitNote(debitInput) });
+  if (updated.sourceBookingId) {
+    const link = await prisma.jobBooking.findFirst({ where: { id: updated.sourceBookingId, sheetId, isDelete: 1 } });
+    if (link) {
+      const mapped = bookingDataFromDebit({
+        type: updated.type,
+        description: updated.description,
+        unit: updated.unit,
+        quantity: Number(updated.quantity ?? 1),
+        taxRate: Number(updated.taxRate ?? 0),
+        total: Number(updated.total ?? 0) / 100,
+      });
+      await prisma.jobBooking.update({ where: { id: link.id }, data: scaleJobBooking(mapped as any) });
+    }
+  }
+  return updated;
 }
 
-// Xóa mềm Job item
+// Xóa mềm Job item (xóa luôn booking liên kết nếu có)
 export async function deleteDebitNote(sheetId: number, id: number) {
   const item = await prisma.debitNote.findFirst({ where: { id, sheetId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy mục Debit Note', 404);
-  return prisma.debitNote.update({ where: { id }, data: { isDelete: -1 } });
+  await prisma.$transaction([
+    prisma.debitNote.update({ where: { id }, data: { isDelete: -1 } }),
+    ...(item.sourceBookingId
+      ? [prisma.jobBooking.updateMany({ where: { id: item.sourceBookingId, sheetId, isDelete: 1 }, data: { isDelete: -1 } })]
+      : []),
+  ]);
+  return { ...item, isDelete: -1 };
 }

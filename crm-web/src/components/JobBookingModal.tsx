@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { App, Checkbox, Form, Input, InputNumber, Modal, Select, Tag } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
@@ -36,18 +36,21 @@ interface JobBookingModalProps {
   open: boolean;
   sheetId: number;
   editing: JobBookingItem | null;
+  linkedDebitId?: number | null;
   onClose: () => void;
   onSaved: () => void;
 }
 
-export default function JobBookingModal({ open, sheetId, editing, onClose, onSaved }: JobBookingModalProps) {
+export default function JobBookingModal({ open, sheetId, editing, linkedDebitId, onClose, onSaved }: JobBookingModalProps) {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
+  const [alsoCreateDebit, setAlsoCreateDebit] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     form.resetFields();
+    setAlsoCreateDebit(false);
     if (editing) {
       // DB lưu *100, hiển thị chia 100
       form.setFieldsValue({
@@ -114,10 +117,11 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
       };
       if (editing) {
         await apiFetch(`/tracking-sheets/${sheetId}/job-bookings/${editing.id}`, { method: 'PUT', body: JSON.stringify(body) });
-        message.success('Đã cập nhật mục Job Book');
+        message.success(linkedDebitId ? 'Đã cập nhật Job Book + Debit liên kết' : 'Đã cập nhật mục Job Book');
       } else {
+        if (alsoCreateDebit) (body as Record<string, unknown>).alsoCreateDebit = true;
         await apiFetch(`/tracking-sheets/${sheetId}/job-bookings`, { method: 'POST', body: JSON.stringify(body) });
-        message.success('Đã thêm mục Job Book');
+        message.success(alsoCreateDebit ? 'Đã thêm Job Book + Debit note liên kết' : 'Đã thêm mục Job Book');
       }
       onSaved();
       onClose();
@@ -140,6 +144,12 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
       destroyOnHidden
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={handleValuesChange} style={{ marginTop: 16 }}>
+        {editing && linkedDebitId != null && (
+          <div style={{ marginBottom: 12 }}>
+            <Tag color="purple">Liên kết Debit #{linkedDebitId}</Tag>
+            <span style={{ fontSize: 13, color: '#888' }}>Sửa / xóa ở đây sẽ đồng bộ sang Debit</span>
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
           <Form.Item
             label="Loại"
@@ -185,6 +195,17 @@ export default function JobBookingModal({ open, sheetId, editing, onClose, onSav
           </Form.Item>
         </div>
       </Form>
+
+      {!editing && (
+        <div className="border-t pt-3 mt-3">
+          <Checkbox
+            checked={alsoCreateDebit}
+            onChange={(e) => setAlsoCreateDebit(e.target.checked)}
+          >
+            Đồng thời thêm <strong>Debit note</strong> (tự lấy giá = trước thuế, tổng = tổng booking)
+          </Checkbox>
+        </div>
+      )}
     </Modal>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { App, Checkbox, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { App, Checkbox, Form, Input, InputNumber, Modal, Select, Tag } from 'antd';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
@@ -20,6 +20,7 @@ export interface DebitNoteItem {
   priceUsd: string | null;
   exchangeRate: string | null;
   total: string | null;
+  sourceBookingId?: number | null;
 }
 
 export interface DebitNoteFormValues {
@@ -155,28 +156,24 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
       let savedDebit: any;
       if (editing) {
         savedDebit = await apiFetch(`/tracking-sheets/${sheetId}/debit-notes/${editing.id}`, { method: 'PUT', body: JSON.stringify(body) });
-        message.success('Đã cập nhật Debit Note');
+        message.success(editing.sourceBookingId ? 'Đã cập nhật Debit Note + Job Book liên kết' : 'Đã cập nhật Debit Note');
       } else {
+        if (alsoCreateBooking) {
+          const jbValues = await jbForm.validateFields();
+          (body as Record<string, unknown>).alsoCreateBooking = true;
+          (body as Record<string, unknown>).linkedBooking = {
+            type: jbValues.type,
+            unit: jbValues.unit || values.unit || null,
+            quantity: jbValues.quantity ?? 1,
+            pretaxAmount: jbValues.pretaxAmount ?? 0,
+            taxRate: jbValues.taxRate ?? 0,
+            taxAmount: jbValues.taxAmount ?? 0,
+            afterTaxAmount: jbValues.afterTaxAmount ?? 0,
+            total: jbValues.total ?? 0,
+          };
+        }
         savedDebit = await apiFetch(`/tracking-sheets/${sheetId}/debit-notes`, { method: 'POST', body: JSON.stringify(body) });
-        message.success('Đã thêm Debit Note');
-      }
-
-      // Also create Job Booking
-      if (alsoCreateBooking && !editing) {
-        const jbValues = await jbForm.validateFields();
-        const jbBody: Record<string, unknown> = {
-          type: jbValues.type,
-          description: values.description?.trim() || null,
-          unit: jbValues.unit || values.unit || null,
-          quantity: jbValues.quantity ?? 1,
-          pretaxAmount: jbValues.pretaxAmount ?? 0,
-          taxRate: jbValues.taxRate ?? 0,
-          taxAmount: jbValues.taxAmount ?? 0,
-          afterTaxAmount: jbValues.afterTaxAmount ?? 0,
-          total: jbValues.total ?? 0,
-        };
-        await apiFetch(`/tracking-sheets/${sheetId}/job-bookings`, { method: 'POST', body: JSON.stringify(jbBody) });
-        message.success('Đã thêm Job Book tàu');
+        message.success(alsoCreateBooking ? 'Đã thêm Debit Note + Job Book tàu liên kết' : 'Đã thêm Debit Note');
       }
 
       onSaved();
@@ -200,6 +197,12 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
       destroyOnHidden
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
+        {editing?.sourceBookingId != null && (
+          <div style={{ marginBottom: 12 }}>
+            <Tag color="purple">Liên kết Job Book #{editing.sourceBookingId}</Tag>
+            <span style={{ fontSize: 13, color: '#888' }}>Sửa / xóa ở đây sẽ đồng bộ sang Job Book</span>
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
           <Form.Item label="Loại" name="type" rules={[{ required: true, message: 'Chọn loại' }]} className="sm:col-span-2">
             <Select placeholder="Chọn loại" options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />

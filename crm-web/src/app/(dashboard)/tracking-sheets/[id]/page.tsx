@@ -272,6 +272,11 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
 
   const totalSelected = selectedOrderIds.length + selectedBookingIds.length + selectedDebitIds.length;
 
+  // Tìm debit liên kết với 1 booking (qua DebitNote.sourceBookingId)
+  function linkedDebitIdOf(bookingId: number): number | null {
+    return (sheet?.debitNotes ?? []).find((d) => (d as DebitNoteItem).sourceBookingId === bookingId)?.id ?? null;
+  }
+
   // Hàm exportJobs: xử lý exportJobs
   async function exportJobs(type: 'order' | 'booking' | 'debit') {
     if (!sheet) return;
@@ -537,16 +542,19 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               title: 'Thao tác',
               key: 'actions',
               width: 110,
-              render: (_: unknown, item: JobBookingItem) => (
+              render: (_: unknown, item: JobBookingItem) => {
+                const linkedId = linkedDebitIdOf(item.id);
+                return (
                 <Space>
                   {canEditBooking && <Button size="small" icon={<EditOutlined />} onClick={() => openEditBooking(item)} />}
                   {canDeleteBooking && (
-                    <Popconfirm title="Xóa mục này?" onConfirm={() => deleteBooking(item)} okText="Xóa" cancelText="Hủy">
+                    <Popconfirm title={linkedId ? 'Xóa Job Book này? Debit liên kết cũng bị xóa.' : 'Xóa mục này?'} onConfirm={() => deleteBooking(item)} okText="Xóa" cancelText="Hủy">
                       <Button size="small" danger icon={<DeleteOutlined />} />
                     </Popconfirm>
                   )}
                 </Space>
-              ),
+                );
+              },
             },
           ]}
         />
@@ -617,16 +625,19 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               title: 'Thao tác',
               key: 'actions',
               width: 110,
-              render: (_: unknown, item: DebitNoteItem) => (
+              render: (_: unknown, item: DebitNoteItem) => {
+                const linked = (item as DebitNoteItem).sourceBookingId != null;
+                return (
                 <Space>
                   {canEditDebit && <Button size="small" icon={<EditOutlined />} onClick={() => openEditDebit(item)} />}
                   {canDeleteDebit && (
-                    <Popconfirm title="Xóa mục này?" onConfirm={() => deleteDebit(item)} okText="Xóa" cancelText="Hủy">
+                    <Popconfirm title={linked ? 'Xóa Debit này? Job Book liên kết cũng bị xóa.' : 'Xóa mục này?'} onConfirm={() => deleteDebit(item)} okText="Xóa" cancelText="Hủy">
                       <Button size="small" danger icon={<DeleteOutlined />} />
                     </Popconfirm>
                   )}
                 </Space>
-              ),
+                );
+              },
             },
           ]}
         />
@@ -645,6 +656,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         open={bookingModalOpen}
         sheetId={sheet?.id ?? 0}
         editing={editingBooking}
+        linkedDebitId={editingBooking ? linkedDebitIdOf(editingBooking.id) : null}
         onClose={() => setBookingModalOpen(false)}
         onSaved={load}
       />

@@ -50,9 +50,23 @@ export const jobBookingSchema = z.object({
   taxAmount: z.coerce.number().optional().nullable(),
   afterTaxAmount: z.coerce.number().optional().nullable(),
   total: z.coerce.number().optional().nullable(),
+  alsoCreateDebit: z.boolean().optional(),
 });
 
 export type JobBookingInput = z.infer<typeof jobBookingSchema>;
+
+// Ghi đè field booking liên kết khi tick "đồng thời thêm" (để trống = backend tự tính từ debit)
+export const linkedBookingSchema = z.object({
+  type: z.string().min(1).optional(),
+  description: z.string().optional().nullable(),
+  unit: z.string().optional().nullable(),
+  quantity: z.coerce.number().optional().nullable(),
+  pretaxAmount: z.coerce.number().optional().nullable(),
+  taxRate: z.coerce.number().optional().nullable(),
+  taxAmount: z.coerce.number().optional().nullable(),
+  afterTaxAmount: z.coerce.number().optional().nullable(),
+  total: z.coerce.number().optional().nullable(),
+}).optional();
 
 export const debitNoteSchema = z.object({
   type: z.string().min(1, 'Chọn loại'),
@@ -66,6 +80,8 @@ export const debitNoteSchema = z.object({
   priceUsd: z.coerce.number().optional().nullable(),
   exchangeRate: z.coerce.number().optional().nullable(),
   total: z.coerce.number().optional().nullable(),
+  alsoCreateBooking: z.boolean().optional(),
+  linkedBooking: linkedBookingSchema,
 });
 
 export type DebitNoteInput = z.infer<typeof debitNoteSchema>;
