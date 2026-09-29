@@ -1,19 +1,22 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { App, Button, Card, Descriptions, Popconfirm, Space, Table, Tag, Tooltip, Typography } from 'antd';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { App, Button, Card, Descriptions, Popconfirm, Select, Space, Spin, Table, Tag, Tooltip, Typography } from 'antd';
 import { ArrowLeftOutlined, DeleteOutlined, DownOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined, UpOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
 import { usePermissions } from '@/hooks/usePermission';
 import type { JobOrderItem } from '@/components/JobOrderModal';
 import type { JobBookingItem } from '@/components/JobBookingModal';
 import type { DebitNoteItem } from '@/components/DebitNoteModal';
+import type { TrackingSheetFormHandle } from '@/components/TrackingSheetForm';
 
 const JobOrderModal = dynamic(() => import('@/components/JobOrderModal'), { ssr: false });
 const JobBookingModal = dynamic(() => import('@/components/JobBookingModal'), { ssr: false });
 const DebitNoteModal = dynamic(() => import('@/components/DebitNoteModal'), { ssr: false });
+const TrackingSheetForm = dynamic(() => import('@/components/TrackingSheetForm'), { ssr: false });
 
 interface StaffRef {
   id: number;
@@ -99,6 +102,7 @@ function sortByType<T extends { id: number; type: string }>(items: T[]) {
 
 export default function TrackingSheetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { message } = App.useApp();
+  const router = useRouter();
   const { can } = usePermissions();
   const canViewOrder = can('job_order', 'view');
   const canCreateOrder = can('job_order', 'create');
@@ -112,6 +116,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   const canCreateDebit = can('debit_note', 'create');
   const canEditDebit = can('debit_note', 'edit');
   const canDeleteDebit = can('debit_note', 'delete');
+  const canEditSheet = can('tracking_sheet_list', 'edit');
   const [sheet, setSheet] = useState<TrackingSheetDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [orderModalOpen, setOrderModalOpen] = useState(false);
@@ -123,6 +128,31 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
   const [selectedBookingIds, setSelectedBookingIds] = useState<number[]>([]);
   const [selectedDebitIds, setSelectedDebitIds] = useState<number[]>([]);
+  // Sửa thông tin phiếu inline ngay trong detail
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [infoSaving, setInfoSaving] = useState(false);
+  const infoFormRef = useRef<TrackingSheetFormHandle>(null);
+  // Nhảy nhanh tới phiếu khác bằng mã phiếu
+  const [jumpOptions, setJumpOptions] = useState<Array<{ id: number; sheetNumber: string; customerName: string }>>([]);
+  const [fetchingJump, setFetchingJump] = useState(false);
+  const jumpSearchTimeout = useRef<NodeJS.Timeout | null>(null);
+  async function fetchJumpSheets(search: string) {
+    setFetchingJump(true);
+    try {
+      const p = new URLSearchParams({ pageSize: '20' });
+      if (search) p.set('search', search);
+      const res = await apiFetch<{ items: Array<{ id: number; sheetNumber: string; customer: { companyName: string } | null }> }>(`/tracking-sheets?${p}`);
+      setJumpOptions(res.items.map((s) => ({ id: s.id, sheetNumber: s.sheetNumber, customerName: s.customer?.companyName ?? '' })));
+    } catch {
+      // ignore
+    } finally {
+      setFetchingJump(false);
+    }
+  }
+  function handleJumpSearch(value: string) {
+    if (jumpSearchTimeout.current) clearTimeout(jumpSearchTimeout.current);
+    jumpSearchTimeout.current = setTimeout(() => fetchJumpSheets(value), 300);
+  }
   // Thu gọn/mở rộng từng bảng (mặc định mở hết)
   const [collapsed, setCollapsed] = useState({ order: false, booking: false, debit: false });
   function toggleSection(key: 'order' | 'booking' | 'debit') {
@@ -276,15 +306,49 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         <Typography.Title level={3} style={{ margin: 0 }}>
           Phiếu {sheet?.sheetNumber ?? ''}
         </Typography.Title>
+        <Select
+          placeholder="Nhảy tới phiếu (gõ mã phiếu)..."
+          showSearch
+          filterOption={false}
+          onSearch={handleJumpSearch}
+          onFocus={() => { if (!jumpOptions.length) fetchJumpSheets(''); }}
+          notFoundContent={fetchingJump ? <Spin size="small" /> : null}
+          onChange={(id: number) => router.push(`/tracking-sheets/${id}`)}
+          options={jumpOptions.map((s) => ({
+            value: s.id,
+            label: `${s.sheetNumber}${s.customerName ? ` - ${s.customerName}` : ''}`,
+          }))}
+          style={{ width: 260 }}
+          allowClear
+        />
         {sheet && (
           <Button type="primary" icon={<PrinterOutlined />} onClick={openPrint}>
             {totalSelected > 0 ? `In mục đã chọn (${totalSelected})` : 'In phiếu'}
           </Button>
         )}
+        {sheet && canEditSheet && !editingInfo && (
+          <Button icon={<EditOutlined />} onClick={() => setEditingInfo(true)}>
+            Sửa thông tin
+          </Button>
+        )}
       </Space>
 
-      <Card loading={loading} style={{ marginBottom: 16 }}>
-        {sheet && (
+      <Card
+        loading={loading}
+        style={{ marginBottom: 16 }}
+        title="Thông tin phiếu"
+        extra={
+          editingInfo ? (
+            <Space>
+              <Button onClick={() => setEditingInfo(false)}>Hủy</Button>
+              <Button type="primary" loading={infoSaving} onClick={() => infoFormRef.current?.submit()}>
+                Lưu thay đổi
+              </Button>
+            </Space>
+          ) : undefined
+        }
+      >
+        {sheet && !editingInfo && (
           <Descriptions
             bordered
             size="small"
@@ -309,6 +373,18 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
               { key: 'shipper', label: 'Shipper', children: sheet.shipper ?? '-' },
               { key: 'note', label: 'Ghi chú', children: sheet.note ?? '-' },
             ]}
+          />
+        )}
+        {sheet && editingInfo && (
+          <TrackingSheetForm
+            ref={infoFormRef}
+            editingId={sheet.id}
+            gridClassName="grid grid-cols-2 gap-x-3 sm:grid-cols-3 lg:grid-cols-4"
+            onSavingChange={setInfoSaving}
+            onSaved={() => {
+              setEditingInfo(false);
+              load();
+            }}
           />
         )}
       </Card>
