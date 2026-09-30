@@ -150,6 +150,7 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
   setupSheet(wsSheet, [
     { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
     { header: 'Khách hàng', key: 'customer', width: 30 },
+    { header: 'Mã số thuế', key: 'taxCode', width: 16 },
     { header: 'Số container', key: 'containerNumber', width: 16 },
     { header: 'Số lượng container', key: 'containerQuantity', width: 16 },
     { header: 'Từ (From)', key: 'fromLocation', width: 22 },
@@ -172,6 +173,7 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
     wsSheet.addRow({
       sheetNumber: s.sheetNumber,
       customer: s.customer ? `${s.customer.companyName} (#${s.customer.id})` : '',
+      taxCode: (s.customer as any)?.taxCode ?? '',
       containerNumber: s.containerNumber ?? '',
       containerQuantity: (s as any).containerQuantity ?? '',
       fromLocation: s.fromLocation ?? '',

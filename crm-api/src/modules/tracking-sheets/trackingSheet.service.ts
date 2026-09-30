@@ -78,7 +78,7 @@ export const trackingSheetInclude = {
   docStaff: { select: { id: true, fullName: true } },
   deliveryStaff: { select: { id: true, fullName: true } },
   createdBy: { select: { id: true, fullName: true } },
-  customer: { select: { id: true, customerName: true, companyName: true } },
+  customer: { select: { id: true, customerName: true, companyName: true, taxCode: true } },
   carrier: { select: { id: true, carrierName: true, companyName: true } },
   agent: { select: { id: true, agentName: true, companyName: true } },
   jobOrders: {
@@ -182,7 +182,7 @@ export async function listTrackingSheets(search?: string, page = 1, pageSize = 2
         sheetNumber: true,
         containerNumber: true,
         customerId: true,
-        customer: { select: { id: true, customerName: true, companyName: true } },
+  customer: { select: { id: true, customerName: true, companyName: true, taxCode: true } },
         fromLocation: true,
         toLocation: true,
         containerQuantity: true,
