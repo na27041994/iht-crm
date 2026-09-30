@@ -78,7 +78,7 @@ export const trackingSheetInclude = {
   docStaff: { select: { id: true, fullName: true } },
   deliveryStaff: { select: { id: true, fullName: true } },
   createdBy: { select: { id: true, fullName: true } },
-  customer: { select: { id: true, customerName: true, companyName: true, taxCode: true } },
+  customer: { select: { id: true, code: true, customerName: true, companyName: true, taxCode: true } },
   carrier: { select: { id: true, carrierName: true, companyName: true } },
   agent: { select: { id: true, agentName: true, companyName: true } },
   jobOrders: {
