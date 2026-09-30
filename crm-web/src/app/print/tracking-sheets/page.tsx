@@ -254,6 +254,7 @@ function SheetDocument({
               <th className="right">Tiền thuế</th>
               <th className="right">Sau thuế</th>
               <th className="right">Tổng</th>
+              <th>Ghi chú</th>
             </tr>
           </thead>
           <tbody>
@@ -268,6 +269,7 @@ function SheetDocument({
                 <td className="right">{fmtMoney(b.taxAmount)}</td>
                 <td className="right">{fmtMoney(b.afterTaxAmount)}</td>
                 <td className="right">{fmtMoney(b.total)}</td>
+                <td>{(b as any).note ?? '-'}</td>
               </tr>
             ))}
           </tbody>

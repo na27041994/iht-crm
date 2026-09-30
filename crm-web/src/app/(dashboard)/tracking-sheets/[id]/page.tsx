@@ -538,6 +538,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             { title: 'Tiền thuế', dataIndex: 'taxAmount', align: 'right' as const, render: fmtMoney },
             { title: 'Sau thuế', dataIndex: 'afterTaxAmount', align: 'right' as const, render: fmtMoney },
             { title: 'Tổng tiền', dataIndex: 'total', align: 'right' as const, render: (v: string | null) => <span className="font-medium">{fmtMoney(v)}</span> },
+            { title: 'Ghi chú', dataIndex: 'note', width: 180, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             {
               title: 'Thao tác',
               key: 'actions',

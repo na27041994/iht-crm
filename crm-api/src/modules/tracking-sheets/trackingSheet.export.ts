@@ -71,6 +71,7 @@ const JOB_BOOKING_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#,##0.00' } },
   { header: 'Sau thuế', key: 'afterTaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
   { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Ghi chú', key: 'note', width: 26 },
 ];
 
 const DEBIT_NOTE_COLUMNS: Partial<ExcelJS.Column>[] = [
@@ -118,6 +119,7 @@ function jobBookingRow(s: TrackingSheetWithRelations, b: TrackingSheetWithRelati
     taxAmount: numMoney(b.taxAmount),
     afterTaxAmount: numMoney(b.afterTaxAmount),
     total: numMoney(b.total),
+    note: (b as any).note ?? '',
   };
 }
 
@@ -435,6 +437,7 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#,##0.00' } },
       { header: 'Sau thuế', key: 'afterTaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
       { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#,##0.00' } },
+      { header: 'Ghi chú', key: 'note', width: 26 },
     ]);
     for (const b of sheet.jobBookings) {
       ws.addRow({
@@ -450,6 +453,7 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
         taxAmount: numMoney(b.taxAmount),
         afterTaxAmount: numMoney(b.afterTaxAmount),
         total: numMoney(b.total),
+        note: (b as any).note ?? '',
       });
     }
   } else {

@@ -50,6 +50,7 @@ export const jobBookingSchema = z.object({
   taxAmount: z.coerce.number().optional().nullable(),
   afterTaxAmount: z.coerce.number().optional().nullable(),
   total: z.coerce.number().optional().nullable(),
+  note: z.string().optional().nullable(),
   alsoCreateDebit: z.boolean().optional(),
 });
 

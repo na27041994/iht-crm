@@ -481,6 +481,7 @@ async function upsertJobBooking(
     taxAmount: toScaled(taxAmt) as unknown as number,
     afterTaxAmount: toScaled(afterTax) as unknown as number,
     total: toScaled(total) as unknown as number,
+    note: row.note,
     isDelete: 1,
   };
 

@@ -314,6 +314,7 @@ model JobBooking {
   taxAmount      Decimal?       @db.Decimal(15, 2)
   afterTaxAmount Decimal?       @db.Decimal(15, 2)
   total          Decimal?       @db.Decimal(15, 2)
+  note           String?
   isDelete       Int            @default(1)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt

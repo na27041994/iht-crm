@@ -18,6 +18,7 @@ export interface JobBookingItem {
   taxAmount: string | null;
   afterTaxAmount: string | null;
   total: string | null;
+  note?: string | null;
 }
 
 export interface JobBookingFormValues {
@@ -30,6 +31,7 @@ export interface JobBookingFormValues {
   taxAmount?: number;
   afterTaxAmount?: number;
   total?: number;
+  note?: string;
 }
 
 interface JobBookingModalProps {
@@ -63,6 +65,7 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
         taxAmount: editing.taxAmount == null ? undefined : Number(editing.taxAmount) / 100,
         afterTaxAmount: editing.afterTaxAmount == null ? undefined : Number(editing.afterTaxAmount) / 100,
         total: editing.total == null ? undefined : Number(editing.total) / 100,
+        note: (editing as JobBookingItem).note ?? '',
       });
     }
   }, [open, editing, form]);
@@ -114,6 +117,7 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
         taxAmount: values.taxAmount ?? null,
         afterTaxAmount: values.afterTaxAmount ?? null,
         total: values.total ?? null,
+        note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
       };
       if (editing) {
         await apiFetch(`/tracking-sheets/${sheetId}/job-bookings/${editing.id}`, { method: 'PUT', body: JSON.stringify(body) });
@@ -192,6 +196,9 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
               placeholder={isFivePercent ? 'Nhập tổng để tự tính ngược' : 'Tự tính = (trước thuế + thuế) x SL'}
               formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput}
             />
+          </Form.Item>
+          <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
+            <Input placeholder="Ghi chú" />
           </Form.Item>
         </div>
       </Form>
