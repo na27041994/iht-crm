@@ -9,6 +9,7 @@ interface DecimalInputProps {
   onChange?: (v: number | undefined) => void;
   placeholder?: string;
   style?: React.CSSProperties;
+  disabled?: boolean;
   // Chuẩn hiển thị: 'vi' = 1.000,56 (mặc định), 'en' = 1,000.56
   locale?: 'vi' | 'en';
   format?: (v: any) => string;
@@ -18,7 +19,7 @@ interface DecimalInputProps {
 // Nhập số thập phân kiểu VN (VD: 1.000,56):
 // - giữ nguyên dấu phẩy đang gõ dở (InputNumber thường ăn mất)
 // - blur mới format chuẩn, form luôn nhận number
-export default function DecimalInput({ value, onChange, placeholder, style, locale = 'vi', format, parse }: DecimalInputProps) {
+export default function DecimalInput({ value, onChange, placeholder, style, disabled, locale = 'vi', format, parse }: DecimalInputProps) {
   const fmt = format ?? (locale === 'en' ? formatEnDecimalInput : formatMoneyInput);
   const prs = parse ?? (locale === 'en' ? parseEnDecimalInput : parseMoneyInput);
   const [text, setText] = useState(value == null ? '' : fmt(value));
@@ -64,6 +65,7 @@ export default function DecimalInput({ value, onChange, placeholder, style, loca
       value={text}
       placeholder={placeholder ?? (locale === 'en' ? 'VD: 1,000.56' : 'VD: 1.000,56')}
       style={style}
+      disabled={disabled}
       inputMode="decimal"
       onChange={handleChange}
       onFocus={() => {

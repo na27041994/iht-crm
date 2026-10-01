@@ -1,10 +1,9 @@
 'use client';
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { App, Form, Input, InputNumber, Select, Spin } from 'antd';
+import { App, Form, Input, Select, Spin } from 'antd';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
-import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { SlashDatePicker } from '@/components/SlashDatePicker';
 import DecimalInput from '@/components/DecimalInput';
 

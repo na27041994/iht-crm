@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { App, Form, Input, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
-import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
+import DecimalInput from '@/components/DecimalInput';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
 import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 
@@ -191,13 +191,13 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
             />
           </Form.Item>
           <Form.Item label="Trước thuế" name="pretaxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền trước thuế" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+            <DecimalInput locale="en" placeholder="Số tiền trước thuế" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
           </Form.Item>
           <Form.Item label="Thành Tiền (sau thuế, nhập để suy ngược trước thuế)" name="portAmt" className="sm:col-span-2">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Nhập sau thuế để tự tính ngược, hoặc để trống tự tính" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+            <DecimalInput locale="en" placeholder="Nhập sau thuế để tự tính ngược, hoặc để trống tự tính" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú" />

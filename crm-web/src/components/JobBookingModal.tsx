@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { App, Checkbox, Form, Input, InputNumber, Modal, Select, Tag } from 'antd';
+import { App, Checkbox, Form, Input, Modal, Select, Tag } from 'antd';
 import { apiFetch } from '@/lib/api';
-import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
+import DecimalInput from '@/components/DecimalInput';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
 import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 
@@ -170,31 +170,30 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
             <Input placeholder="VD: Cont, Kg, Chuyến..." />
           </Form.Item>
           <Form.Item label="Số lượng" name="quantity">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+            <DecimalInput locale="en" placeholder="Số lượng" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Trước thuế" name="pretaxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền trước thuế" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+            <DecimalInput locale="en" placeholder="Số tiền trước thuế" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
           </Form.Item>
           <Form.Item label="Tiền thuế" name="taxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+            <DecimalInput locale="en" disabled style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Sau thuế" name="afterTaxAmount">
-            <InputNumber min={0} style={{ width: '100%' }} disabled formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+            <DecimalInput locale="en" disabled style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             label={isFivePercent ? 'Tổng tiền (nhập để suy ngược Trước thuế + Thuế 5%)' : 'Tổng tiền'}
             name="total"
             className="sm:col-span-2"
           >
-            <InputNumber
-              min={0}
-              style={{ width: '100%' }}
+            <DecimalInput
+              locale="en"
               disabled={!isFivePercent}
               placeholder={isFivePercent ? 'Nhập tổng để tự tính ngược' : 'Tự tính = (trước thuế + thuế) x SL'}
-              formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput}
+              style={{ width: '100%' }}
             />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">

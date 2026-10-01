@@ -5,7 +5,7 @@ import { App, Button, Form, Input, InputNumber, Modal, Select, Space, Spin } fro
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
-import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
+import DecimalInput from '@/components/DecimalInput';
 import { ADVANCE_TYPES } from '@/lib/advanceTypes';
 import { ADVANCE_ITEM_KINDS } from '@/components/AdvanceItemModal';
 import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
@@ -359,7 +359,7 @@ export default function AdvanceVoucherFormModal({
             <InputNumber min={1} precision={0} style={{ width: '100%' }} placeholder="Số container" />
           </Form.Item>
           <Form.Item label="Qty" name="qty">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Số lượng" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+            <DecimalInput locale="en" placeholder="Số lượng" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />
@@ -386,14 +386,12 @@ export default function AdvanceVoucherFormModal({
                   placeholder="Mô tả khoản"
                   style={{ width: 200 }}
                 />
-                <InputNumber
-                  min={0}
+                <DecimalInput
+                  locale="en"
                   style={{ width: 150 }}
                   placeholder="Số tiền dương"
                   value={it.amount}
-                  onChange={(v) => updateItem(idx, { amount: v == null ? undefined : Number(v) })}
-                  formatter={formatMoneyInput}
-                  parser={parseMoneyInput}
+                  onChange={(v) => updateItem(idx, { amount: v })}
                 />
                 <Input
                   style={{ width: 180 }}

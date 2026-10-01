@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { App, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { App, Form, Input, Modal, Select } from 'antd';
 import { apiFetch } from '@/lib/api';
-import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
+import DecimalInput from '@/components/DecimalInput';
 import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 
 export const ADVANCE_ITEM_KINDS = ['Chi', 'Giảm trừ'] as const;
@@ -84,7 +84,7 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
           <Select options={ADVANCE_ITEM_KINDS.map((k) => ({ value: k, label: k === 'Giảm trừ' ? 'Giảm trừ (trừ vào tổng)' : 'Chi' }))} />
         </Form.Item>
         <Form.Item label="Tiền (luôn nhập dương)" name="amount" rules={[{ required: true, message: 'Nhập số tiền' }]}>
-          <InputNumber min={0} style={{ width: '100%' }} placeholder="Số tiền chi" formatter={formatMoneyInput} parser={parseMoneyInput} />
+          <DecimalInput locale="en" placeholder="Số tiền chi" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item label="Mô tả" name="description">
           <DescriptionAutocomplete type="advance" placeholder="Gõ để tìm mô tả đã từng nhập..." />
