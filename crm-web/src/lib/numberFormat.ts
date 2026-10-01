@@ -45,3 +45,38 @@ export function parseMoneyInput(value: any): string {
   const dec = parts.slice(1).join('').replace(/\D/g, '').slice(0, 2);
   return dec ? `${int}.${dec}` : int;
 }
+
+// Chuẩn Anh cho NW/GW: nghìn = ,, thập phân = . (VD: 1000.56 -> "1,000.56")
+export function formatEnDecimalInput(value: any): string {
+  if (value == null || value === '') return '';
+  const str = `${value}`.trim();
+  if (str === '' || str === '-') return str;
+  const normalized = str.replace(/\s/g, '').replace(/,/g, '');
+  const dot = normalized.indexOf('.');
+  let intPart = normalized;
+  let decPart = '';
+  if (dot >= 0) {
+    intPart = normalized.slice(0, dot).replace(/[^\d-]/g, '');
+    decPart = normalized.slice(dot + 1).replace(/\D/g, '').slice(0, 2);
+  } else {
+    intPart = normalized.replace(/[^\d-]/g, '');
+  }
+  const sign = intPart.startsWith('-') ? '-' : '';
+  const digits = intPart.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (decPart) return `${sign}${grouped || '0'}.${decPart}`;
+  return `${sign}${grouped}`;
+}
+
+/** Parse "1,000.56" -> "1000.56" */
+export function parseEnDecimalInput(value: any): string {
+  if (value == null || value === '') return '';
+  const str = `${value}`.trim();
+  if (str === '' || str === '-') return str;
+  const noThousand = str.replace(/,/g, '').replace(/\s/g, '');
+  const parts = noThousand.split('.');
+  if (parts.length <= 1) return noThousand.replace(/[^\d-]/g, '');
+  const int = parts[0].replace(/[^\d-]/g, '');
+  const dec = parts.slice(1).join('').replace(/\D/g, '').slice(0, 2);
+  return dec ? `${int}.${dec}` : int;
+}

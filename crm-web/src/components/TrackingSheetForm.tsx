@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
 import { formatMoneyInput, parseMoneyInput } from '@/lib/numberFormat';
 import { SlashDatePicker } from '@/components/SlashDatePicker';
+import DecimalInput from '@/components/DecimalInput';
 
 interface CarrierOption {
   id: number;
@@ -317,10 +318,10 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
             <Input placeholder="VD: Shanghai Port" />
           </Form.Item>
           <Form.Item label="NW (kg)" name="nw">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Net weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+            <DecimalInput locale="en" placeholder="VD: 1,000.56" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="GW (kg)" name="gw">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="Gross weight" formatter={(value: any) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''} parser={parseMoneyInput} />
+            <DecimalInput locale="en" placeholder="VD: 1,000.56" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Ngày ETA/ETD" name="etaDate">
             <SlashDatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />

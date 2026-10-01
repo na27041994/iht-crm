@@ -101,6 +101,13 @@ function fmtNum(v: string | null | undefined) {
   return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN');
 }
 
+// NW/GW hiển thị chuẩn Anh: 1,000.56
+function fmtWeightEn(v: string | null | undefined) {
+  if (v == null || v === '') return '-';
+  const n = Number(v);
+  return Number.isNaN(n) ? '-' : n.toLocaleString('en-US');
+}
+
 // Định dạng ngày YYYY/MM/DD
 function fmtDate(v: string | null | undefined) {
   if (!v) return '-';
@@ -169,9 +176,9 @@ function SheetDocument({
           </tr>
           <tr>
             <td className="label">NW (kg)</td>
-            <td>{fmtNum(sheet.nw)}</td>
+            <td>{fmtWeightEn(sheet.nw)}</td>
             <td className="label">GW (kg)</td>
-            <td>{fmtNum(sheet.gw)}</td>
+            <td>{fmtWeightEn(sheet.gw)}</td>
           </tr>
           <tr>
             <td className="label">Ngày ETA/ETD</td>
