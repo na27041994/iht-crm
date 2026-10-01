@@ -215,7 +215,7 @@ function PrintAdvanceVouchersContent() {
         </Button>
         <Button onClick={() => window.close()}>Đóng</Button>
         <span style={{ fontSize: 13, color: '#888' }}>
-          Trong hộp thoại in nhớ chọn khổ giấy <strong>A5</strong> + hướng <strong>Ngang (Landscape)</strong> thì phiếu mới nằm ngang
+          Giấy <strong>A4 đứng</strong>, phiếu in cỡ A5 nằm trên đầu trang
         </span>
       </div>
 
@@ -244,12 +244,13 @@ function PrintAdvanceVouchersContent() {
         .old-total-row td { font-weight: 700; text-align: center; }
         .old-bold { font-weight: 700; }
         @media print {
-          @page { size: A5 landscape; margin: 0 7mm 6mm; }
+          /* Giấy A4 nhưng phiếu giữ cỡ A5 nằm trên đầu trang */
+          @page { size: A4 portrait; margin: 10mm 15mm 12mm; }
           body { margin: 0; }
           .no-print { display: none !important; }
           .print-wrap { padding: 0 !important; }
           .page-break { page-break-after: always; break-after: page; }
-          .print-sheet { max-width: 100% !important; }
+          .print-sheet { max-width: 170mm !important; margin: 0 auto !important; }
           .old-header { margin-bottom: 4px; }
           .old-title { font-size: 15px; }
           .old-subtitle { font-size: 12px; }
