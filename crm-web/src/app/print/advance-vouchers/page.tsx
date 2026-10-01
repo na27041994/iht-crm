@@ -208,12 +208,15 @@ function PrintAdvanceVouchersContent() {
   if (!vouchers.length) return <div style={{ padding: 24 }}>Không có dữ liệu để in</div>;
 
   return (
-    <div style={{ padding: 12, background: '#fff' }}>
-      <div className="no-print" style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+    <div className="print-wrap" style={{ padding: 12, background: '#fff' }}>
+      <div className="no-print" style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <Button type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>
           In phiếu
         </Button>
         <Button onClick={() => window.close()}>Đóng</Button>
+        <span style={{ fontSize: 13, color: '#888' }}>
+          Trong hộp thoại in nhớ chọn khổ giấy <strong>A5</strong> + hướng <strong>Ngang (Landscape)</strong> thì phiếu mới nằm ngang
+        </span>
       </div>
 
       {vouchers.map((v, idx) => (
@@ -241,8 +244,10 @@ function PrintAdvanceVouchersContent() {
         .old-total-row td { font-weight: 700; text-align: center; }
         .old-bold { font-weight: 700; }
         @media print {
-          @page { size: A5 landscape; margin: 6mm 7mm; }
+          @page { size: A5 landscape; margin: 0 7mm 6mm; }
+          body { margin: 0; }
           .no-print { display: none !important; }
+          .print-wrap { padding: 0 !important; }
           .page-break { page-break-after: always; break-after: page; }
           .print-sheet { max-width: 100% !important; }
           .old-header { margin-bottom: 4px; }
