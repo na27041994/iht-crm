@@ -1,8 +1,8 @@
 'use client';
 // Trang in Phiếu chi trực tiếp khớp mẫu cũ: header PHIẾU CHI TRỰC TIẾP / bảng thông tin 4 hàng / bảng tiền + tổng / 6 ô ký. Dùng batch?ids=.
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Button, Spin } from 'antd';
+import { Button } from 'antd';
 import { PrinterOutlined } from '@ant-design/icons';
 import { apiFetch } from '@/lib/api';
 
@@ -179,6 +179,7 @@ function PrintAdvanceVouchersContent() {
   const searchParams = useSearchParams();
   const [vouchers, setVouchers] = useState<AdvanceVoucher[]>([]);
   const [loading, setLoading] = useState(true);
+  const printedRef = useRef(false);
 
   useEffect(() => {
     const ids = searchParams.get('ids');
@@ -198,8 +199,10 @@ function PrintAdvanceVouchersContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!loading && vouchers.length) {
-      const t = setTimeout(() => window.print(), 500);
+    if (!loading && vouchers.length && !printedRef.current) {
+      printedRef.current = true;
+      // chờ font + render ổn định rồi mới mở hộp thoại in
+      const t = setTimeout(() => window.print(), 1000);
       return () => clearTimeout(t);
     }
   }, [loading, vouchers]);
@@ -269,8 +272,8 @@ export default function PrintAdvanceVouchersPage() {
   return (
     <Suspense
       fallback={
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-          <Spin size="large" />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', fontSize: 16 }}>
+          Đang tải phiếu để in, vui lòng chờ...
         </div>
       }
     >

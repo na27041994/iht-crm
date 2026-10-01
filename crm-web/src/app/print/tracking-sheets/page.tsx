@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { Button, Empty, Spin } from 'antd';
+import { Button, Empty } from 'antd';
 import { PrinterOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
@@ -398,8 +398,8 @@ function PrintContent() {
 
   if (!sheets && !error) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-        <Spin size="large" />
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', fontSize: 16 }}>
+        Đang tải phiếu để in, vui lòng chờ...
       </div>
     );
   }
@@ -482,8 +482,8 @@ export default function PrintTrackingSheetsPage() {
   return (
     <Suspense
       fallback={
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-          <Spin size="large" />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', fontSize: 16 }}>
+          Đang tải phiếu để in, vui lòng chờ...
         </div>
       }
     >
