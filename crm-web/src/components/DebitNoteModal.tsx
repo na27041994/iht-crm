@@ -220,7 +220,7 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
             <Select options={[{ value: 'VND', label: 'VND' }, { value: 'USD', label: 'USD' }]} />
           </Form.Item>
           <Form.Item label="Số lượng" name="quantity">
-            <DecimalInput locale="en" placeholder="Số lượng" style={{ width: '100%' }} />
+            <DecimalInput locale="vi" placeholder="Số lượng" style={{ width: '100%' }} />
           </Form.Item>
           {currency === 'VND' ? (
             <Form.Item label="Giá VND" name="priceVnd">
@@ -269,7 +269,7 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
                   <Input placeholder="VD: Cont, Chuyến..." />
                 </Form.Item>
                 <Form.Item label="Số lượng" name="quantity" initialValue={1}>
-                  <DecimalInput locale="en" style={{ width: '100%' }} />
+                  <DecimalInput locale="vi" style={{ width: '100%' }} />
                 </Form.Item>
                 <Form.Item
                   label="Trước thuế (tự điền từ Debit)"
