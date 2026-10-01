@@ -254,6 +254,8 @@ function PrintAdvanceVouchersContent() {
           .print-wrap { padding: 0 !important; }
           .page-break { page-break-after: always; break-after: page; }
           .print-sheet { max-width: 170mm !important; margin: 0 auto !important; }
+          /* Máy in ra giấy bị ngược 180° nên xoay bản in bù lại (chỉ trang phiếu chi) */
+          .print-sheet { transform: rotate(180deg); transform-origin: center; }
           .old-header { margin-bottom: 4px; }
           .old-title { font-size: 15px; }
           .old-subtitle { font-size: 12px; }
