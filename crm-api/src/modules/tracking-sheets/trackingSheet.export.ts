@@ -471,6 +471,11 @@ function writeDebitHeader(ws: ExcelJS.Worksheet, s: any) {
 
   r = xrow(ws, ['RECEIVE', '', 'Date:', today, '', '', '', ''], { bold: true, center: true });
   xmerge(ws, r, 1, 2);
+  // Hàng Date nền đỏ (khớp mẫu)
+  for (let c = 3; c <= 8; c++) {
+    const cell = r.getCell(c);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
+  }
   r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', ''], { bold: true });
   xmerge(ws, r, 2, 4);
   xmerge(ws, r, 6, 8);
@@ -516,7 +521,7 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     );
   });
   const pretaxTotal = Math.round((t.total - t.vat) * 100) / 100;
-  let r = xrow(ws, ['', '', '', '', '', 'JOB AMT', t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true });
+  let r = xrow(ws, ['', '', '', '', '', 'JOB AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true });
   xmerge(ws, r, 1, 5);
   if (t.tamUng > 0) {
     r = xrow(ws, ['', '', '', '', 'TỔNG CỘNG 合計', pretaxTotal, t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true, fill: 'FFFFFF00' });
@@ -535,7 +540,7 @@ function writeDebitBankSign(ws: ExcelJS.Worksheet) {
     'We are looking forwards to reveiving your payment in the soonest time.',
     'If you have further infomation, please do not hesitate to contact with us.',
     'Also you can settle the payment to:',
-    'Banker name: NGÂN HÀNG Á CHÂU- PGD TẠ UYÊN',
+    'Banker name: NGÂN HÀNG Á CHÂU- CN CHỢ LỚN',
     'Account no: 162000589',
     'Account name: CTY TNHH TM DV VẬN CHUYỂN I.H.T VIỆT NAM',
   ];
