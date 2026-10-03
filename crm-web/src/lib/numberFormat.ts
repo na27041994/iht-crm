@@ -15,11 +15,11 @@ export function formatMoneyInput(value: any): string {
   if (lastComma > lastDot) {
     // đã dạng vi-VN: 9.692.956,52
     intPart = normalized.slice(0, lastComma).replace(/\./g, '');
-    decPart = normalized.slice(lastComma + 1).replace(/\D/g, '').slice(0, 2);
+    decPart = normalized.slice(lastComma + 1).replace(/\D/g, '').slice(0, 4);
   } else if (lastDot >= 0) {
     // dạng raw: 9692956.52
     intPart = normalized.slice(0, lastDot).replace(/[^\d-]/g, '');
-    decPart = normalized.slice(lastDot + 1).replace(/\D/g, '').slice(0, 2);
+    decPart = normalized.slice(lastDot + 1).replace(/\D/g, '').slice(0, 4);
   } else {
     intPart = normalized.replace(/[^\d-]/g, '');
   }
@@ -42,7 +42,7 @@ export function parseMoneyInput(value: any): string {
   const parts = withDot.split('.');
   if (parts.length <= 1) return withDot.replace(/[^\d-]/g, '');
   const int = parts[0].replace(/[^\d-]/g, '');
-  const dec = parts.slice(1).join('').replace(/\D/g, '').slice(0, 2);
+  const dec = parts.slice(1).join('').replace(/\D/g, '').slice(0, 4);
   return dec ? `${int}.${dec}` : int;
 }
 
@@ -57,7 +57,7 @@ export function formatEnDecimalInput(value: any): string {
   let decPart = '';
   if (dot >= 0) {
     intPart = normalized.slice(0, dot).replace(/[^\d-]/g, '');
-    decPart = normalized.slice(dot + 1).replace(/\D/g, '').slice(0, 2);
+    decPart = normalized.slice(dot + 1).replace(/\D/g, '').slice(0, 4);
   } else {
     intPart = normalized.replace(/[^\d-]/g, '');
   }
@@ -77,6 +77,6 @@ export function parseEnDecimalInput(value: any): string {
   const parts = noThousand.split('.');
   if (parts.length <= 1) return noThousand.replace(/[^\d-]/g, '');
   const int = parts[0].replace(/[^\d-]/g, '');
-  const dec = parts.slice(1).join('').replace(/\D/g, '').slice(0, 2);
+  const dec = parts.slice(1).join('').replace(/\D/g, '').slice(0, 4);
   return dec ? `${int}.${dec}` : int;
 }
