@@ -347,9 +347,11 @@ reportRouter.get('/debit/batch', validateQuery(z.object({ ids: z.string().min(1)
     where: { id: { in: ids }, isDelete: 1 },
     include: {
       customer: { select: { id: true, customerName: true, companyName: true, address: true, phone: true, fax: true, contactPerson: true } },
-      docStaff: { select: { id: true, fullName: true } },
-      deliveryStaff: { select: { id: true, fullName: true } },
+      carrier: { select: { id: true, carrierName: true, companyName: true } },
+      docStaff: { select: { id: true, fullName: true, phone: true } },
+      deliveryStaff: { select: { id: true, fullName: true, phone: true } },
       debitNotes: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
+      advanceVouchers: { where: { isDelete: 1 }, include: { items: { where: { isDelete: 1 } } } },
     },
   });
   res.json(sheets);

@@ -50,49 +50,40 @@ interface SheetWithDebits {
   pol: string | null;
   pod: string | null;
   note: string | null;
-  docStaff: { id: number; fullName: string } | null;
-  deliveryStaff: { id: number; fullName: string } | null;
+  docStaff: { id: number; fullName: string; phone: string | null } | null;
+  deliveryStaff: { id: number; fullName: string; phone: string | null } | null;
+  carrier: { id: number; carrierName: string; companyName: string } | null;
+  advanceVouchers?: Array<{
+    id: number;
+    type: string;
+    items: Array<{ amount: string | number; kind?: string | null }>;
+  }>;
   debitNotes: DebitNoteItem[];
 }
 
 // Chuẩn tiền x100: DB lưu *100 (VD: 100.50 -> 10050), hiển thị chia 100
 const MONEY_SCALE = 100;
-function fmtMoney(v: string | number | null | undefined) {
-  if (v == null || v === '') return '-';
-  const n = Number(v);
-  return Number.isNaN(n) ? '-' : (n / MONEY_SCALE).toLocaleString('vi-VN');
-}
-function fmtMoneyWeight(v: string | number | null | undefined) {
-  if (v == null || v === '') return '-';
-  const n = Number(v);
-  return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN');
-}
-function fmtQty(v: string | null | undefined) {
-  if (v == null || v === '') return '-';
-  const n = Number(v);
-  return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-}
-function fmtPrice(v: string | null | undefined) {
-  if (v == null || v === '') return '-';
-  const n = Number(v);
-  return Number.isNaN(n) ? '-' : (n / MONEY_SCALE).toLocaleString('vi-VN');
-}
-// Định dạng ngày YYYY/MM/DD
-function fmtDateSlash(v: string | null | undefined) {
+// Định dạng ngày DD/MM/YYYY (khớp mẫu debit cũ)
+function fmtDateDMY(v: string | null | undefined) {
   if (!v) return '-';
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return '-';
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${y}/${m}/${dd}`;
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
-// Định dạng ngày YYYY/MM/DD
-function fmtDateSlashToday() {
-  const d = new Date();
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+// Số tiền nhóm chuẩn Anh: 6,849,000 (khớp mẫu cũ)
+function fmtEn(v: string | number | null | undefined, scale = 100) {
+  if (v == null || v === '') return '-';
+  const n = Number(v) / scale;
+  if (Number.isNaN(n)) return '-';
+  return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
-
+// Cân nặng: 19,928
+function fmtWt(v: string | number | null | undefined) {
+  if (v == null || v === '') return '-';
+  const n = Number(v);
+  if (Number.isNaN(n)) return '-';
+  return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+}
 // Tính VAT trên giá trị đã chia 100 (DB lưu *100)
 function computeVat(d: DebitNoteItem) {
   const qty = Number(d.quantity ?? 1);
@@ -112,18 +103,33 @@ function computeVat(d: DebitNoteItem) {
   return Math.round(pretax * (taxRate / 100) * 100) / 100;
 }
 
-// Component in một phiếu (layout khớp mẫu cũ)
+// Component in một phiếu (layout khớp mẫu debit cũ: đầu + cuối chỉ 1 lần,
+// sang trang khác chỉ lặp dòng items, không lặp header/footer)
 function DebitDocument({ sheet }: { sheet: SheetWithDebits }) {
-  const todaySlash = fmtDateSlashToday();
   let totalVat = 0;
   let totalAmt = 0;
   sheet.debitNotes.forEach((d) => {
     totalVat += computeVat(d);
-    totalAmt += Number(d.total ?? 0);
+    totalAmt += Number(d.total ?? 0) / MONEY_SCALE;
   });
+  totalVat = Math.round(totalVat * 100) / 100;
+  totalAmt = Math.round(totalAmt * 100) / 100;
+  const pretaxTotal = Math.round((totalAmt - totalVat) * 100) / 100;
+  // CHI HỘ = tổng tạm ứng (Chi tạm ứng, chỉ khoản Chi)
+  const tamUng = Math.round(
+    (sheet.advanceVouchers ?? [])
+      .filter((v) => v.type === 'Chi tạm ứng')
+      .reduce(
+        (sum, v) => sum + (v.items ?? []).filter((it: any) => it.kind !== 'Giảm trừ').reduce((s, it: any) => s + Number(it.amount ?? 0), 0),
+        0,
+      ) / 100 * 100,
+  ) / 100;
+  const serviceFee = Math.round((totalAmt - tamUng) * 100) / 100;
 
-  const contactName = sheet.docStaff?.fullName ?? sheet.deliveryStaff?.fullName ?? '-';
   const customer = sheet.customer;
+  const contactName = sheet.deliveryStaff?.fullName ?? sheet.docStaff?.fullName ?? '-';
+  const contactPhone = (sheet.deliveryStaff?.phone ?? sheet.docStaff?.phone) || '-';
+  const receiveDate = fmtDateDMY(sheet.declarationDate ?? sheet.createdAt);
 
   return (
     <div className="print-sheet">
@@ -141,45 +147,41 @@ function DebitDocument({ sheet }: { sheet: SheetWithDebits }) {
           <tr>
             <th colSpan={2} className="old-th-center">RECEIVE</th>
             <td className="old-label">Date:</td>
-            <td className="old-val-bold">{todaySlash}</td>
+            <td className="old-val-bold">{receiveDate}</td>
           </tr>
           <tr>
             <td className="old-label-sm">To:</td>
             <td className="old-val">{customer?.companyName ?? '-'}</td>
-            <td className="old-label">Debit Note No:</td>
-            <td className="old-val-bold">{sheet.sheetNumber}</td>
-          </tr>
-          <tr>
-            <td className="old-label-sm">Attn:</td>
-            <td className="old-val">{customer?.contactPerson ?? '-'}</td>
             <td className="old-label">Please Contact With:</td>
             <td className="old-val-bold">{contactName}</td>
           </tr>
           <tr>
-            <td className="old-label-sm">Add:</td>
-            <td className="old-val">{customer?.address ?? '-'}</td>
+            <td className="old-label-sm">Attn:</td>
+            <td className="old-val">{customer?.contactPerson ?? '-'}</td>
             <td className="old-label">Accountting:</td>
-            <td className="old-val-bold">2123123</td>
+            <td className="old-val-bold">{contactPhone}</td>
+          </tr>
+          <tr>
+            <td className="old-label-sm">Add:</td>
+            <td className="old-val" colSpan={3}>{customer?.address ?? '-'}</td>
           </tr>
           <tr>
             <td className="old-label-sm">Tel:</td>
             <td className="old-val">{customer?.phone ?? '-'}</td>
-            <td className="old-label" style={{ borderBottom: '1px solid #000' }}></td>
-            <td style={{ borderBottom: '1px solid #000' }}></td>
+            <td className="old-label"></td>
+            <td></td>
           </tr>
           <tr>
             <td className="old-label-sm">Fax:</td>
             <td className="old-val">{customer?.fax ?? '-'}</td>
-            <td className="old-label" style={{ borderBottom: '1px solid #000' }}></td>
-            <td style={{ borderBottom: '1px solid #000' }}></td>
+            <td className="old-label"></td>
+            <td></td>
           </tr>
         </tbody>
       </table>
 
-      <div className="old-note">We would like to make the Debit Note as follows:</div>
-
       {/* Details box */}
-      <table className="old-table">
+      <table className="old-table old-plain">
         <tbody>
           <tr>
             <td className="old-label">From:</td>
@@ -190,30 +192,30 @@ function DebitDocument({ sheet }: { sheet: SheetWithDebits }) {
           <tr>
             <td className="old-label">Customs No:</td>
             <td className="old-val">{sheet.customNo ?? '-'}</td>
-            <td className="old-label">Custom date:</td>
-            <td className="old-val">{fmtDateSlash(sheet.declarationDate)}</td>
+            <td className="old-label">Custom Date:</td>
+            <td className="old-val">{fmtDateDMY(sheet.declarationDate)}</td>
           </tr>
           <tr>
             <td className="old-label">NW:</td>
-            <td className="old-val">{sheet.nw != null ? `${fmtMoneyWeight(sheet.nw)} KGS` : '-'}</td>
+            <td className="old-val">{sheet.nw != null ? fmtWt(sheet.nw) : '-'}</td>
             <td className="old-label">GW:</td>
-            <td className="old-val">{sheet.gw != null ? `${fmtMoneyWeight(sheet.gw)} KGS` : '-'}</td>
+            <td className="old-val">{sheet.gw != null ? fmtWt(sheet.gw) : '-'}</td>
           </tr>
           <tr>
             <td className="old-label">Job Order:</td>
             <td className="old-val">{sheet.sheetNumber}</td>
             <td className="old-label">Note:</td>
-            <td className="old-val">{sheet.note ?? '-'}</td>
+            <td className="old-val">{sheet.carrier?.carrierName ?? sheet.note ?? '-'}</td>
           </tr>
           <tr>
             <td className="old-label">QTY:</td>
             <td className="old-val">{sheet.containerQuantity != null ? String(sheet.containerQuantity) : sheet.containerNumber ?? '-'}</td>
             <td className="old-label">Invoices No:</td>
-            <td className="old-val">{sheet.invoiceNumber ?? '-'}</td>
+            <td className="old-val">-</td>
           </tr>
           <tr>
             <td className="old-label">Po No:</td>
-            <td className="old-val">-</td>
+            <td className="old-val">{sheet.billNumber ?? '-'}</td>
             <td className="old-label">Bill No:</td>
             <td className="old-val">{sheet.billNumber ?? '-'}</td>
           </tr>
@@ -224,52 +226,68 @@ function DebitDocument({ sheet }: { sheet: SheetWithDebits }) {
         </tbody>
       </table>
 
-      {/* Items */}
+      {/* Items: header là dòng tbody đầu để sang trang không lặp lại */}
       <table className="old-table">
-        <thead>
-          <tr>
-            <th className="old-th">STT</th>
-            <th className="old-th">Descriptions</th>
-            <th className="old-th">Invoice No</th>
-            <th className="old-th">Unit</th>
-            <th className="old-th">Qty</th>
-            <th className="old-th">Price</th>
-            <th className="old-th">VAT Tax</th>
-            <th className="old-th">Total Amt</th>
-          </tr>
-        </thead>
         <tbody>
+          <tr>
+            <td className="old-th">STT</td>
+            <td className="old-th">Descriptions</td>
+            <td className="old-th">Invoice No</td>
+            <td className="old-th">Unit</td>
+            <td className="old-th">Qty</td>
+            <td className="old-th">Price</td>
+            <td className="old-th">VAT Tax</td>
+            <td className="old-th">Total Amt</td>
+          </tr>
           {sheet.debitNotes.map((d, idx) => {
             const vat = computeVat(d);
             let price = '-';
-            if (d.currency === 'USD' && d.priceUsd) price = (Number(d.priceUsd) / MONEY_SCALE).toLocaleString('en-US');
-            else if (d.priceVnd) price = fmtPrice(d.priceVnd);
+            if (d.currency === 'USD' && d.priceUsd) price = (Number(d.priceUsd) / MONEY_SCALE * Number(d.exchangeRate ?? 0)).toLocaleString('en-US', { maximumFractionDigits: 2 });
+            else if (d.priceVnd) price = fmtEn(d.priceVnd);
             return (
               <tr key={d.id}>
                 <td className="old-td-center">{idx + 1}</td>
                 <td className="old-td">{d.description ?? d.type}</td>
                 <td className="old-td">{d.invoiceNumber ?? ''}</td>
                 <td className="old-td-center">{d.unit ?? ''}</td>
-                <td className="old-td-right">{d.quantity != null ? fmtQty(d.quantity) : '-'}</td>
+                <td className="old-td-right">{d.quantity != null ? Number(d.quantity).toLocaleString('en-US') : '-'}</td>
                 <td className="old-td-right">{price}</td>
-                <td className="old-td-right">{vat ? vat.toLocaleString('vi-VN') : '-'}</td>
-                <td className="old-td-right">{fmtMoney(d.total)}</td>
+                <td className="old-td-right">{vat ? vat.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '-'}</td>
+                <td className="old-td-right">{fmtEn(d.total)}</td>
               </tr>
             );
           })}
           <tr className="old-total-row">
             <td colSpan={6} className="old-td-right old-bold">JOB AMT</td>
-            <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('vi-VN') : '-'}</td>
-            <td className="old-td-right old-bold">{fmtMoney(String(totalAmt))}</td>
+            <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '-'}</td>
+            <td className="old-td-right old-bold">{totalAmt.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
           </tr>
+          <tr className="old-total-row old-yellow-row">
+            <td colSpan={5} className="old-td-right old-bold">TỔNG CỘNG 合計</td>
+            <td className="old-td-right old-bold">{pretaxTotal.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+            <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '-'}</td>
+            <td className="old-td-right old-bold">{totalAmt.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+          </tr>
+          {tamUng > 0 && (
+            <>
+              <tr>
+                <td colSpan={7} className="old-td-right old-bold">CHI HỘ 代墊費</td>
+                <td className="old-td-right old-bold">{tamUng.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+              </tr>
+              <tr>
+                <td colSpan={7} className="old-td-right old-bold">PHÍ DỊCH VỤ IHT - 服務費</td>
+                <td className="old-td-right old-bold">{serviceFee.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+              </tr>
+            </>
+          )}
         </tbody>
       </table>
 
       <div className="old-footer-text">
-        <div>We are looking forwards to reiveiving your payment in the soonest time.</div>
+        <div>We are looking forwards to reveiving your payment in the soonest time.</div>
         <div>If you have further infomation, please do not hesitate to contact with us.</div>
         <div>Also you can settle the payment to:</div>
-        <div>Banker name: NGÂN HÀNG Á CHÂU- CN CHỢ LỚN</div>
+        <div>Banker name: NGÂN HÀNG Á CHÂU- PGD TẠ UYÊN</div>
         <div>Account no: 162000589</div>
         <div>Account name: CTY TNHH TM DV VẬN CHUYỂN I.H.T VIỆT NAM</div>
       </div>
@@ -362,6 +380,8 @@ function PrintContent() {
         .old-title { font-size: 22px; font-weight: 700; margin-top: 10px; margin-bottom: 8px; letter-spacing: 1px; }
         .old-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6px; }
         .old-table th, .old-table td { border: 1px solid #000; padding: 3px 6px; vertical-align: top; }
+        .old-table.old-plain td { border: none; padding: 1px 6px; }
+        .old-yellow-row td { background: #ffff00; }
         .old-th-center { text-align: center; font-weight: 700; background: #fff; font-size: 12px; }
         .old-th { text-align: center; font-weight: 700; background: #fff; font-size: 11px; white-space: nowrap; }
         .old-label { font-weight: 700; white-space: nowrap; width: 110px; background: #fff; font-size: 12px; }
@@ -383,6 +403,8 @@ function PrintContent() {
           .print-sheet { max-width: 100%; padding: 0; }
           .print-sheet { page-break-after: always; break-after: page; }
           .print-sheet:last-child { page-break-after: auto; break-after: auto; }
+          /* Đầu + cuối chỉ in 1 lần, sang trang chỉ lặp dòng items */
+          tr { page-break-inside: avoid; }
           /* In giấy: ép chữ đen đậm, tránh chữ xám in ra nhạt */
           .print-sheet, .print-sheet * { color: #000 !important; }
         }
