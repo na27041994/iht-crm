@@ -103,36 +103,15 @@ function computeVat(d: DebitNoteItem) {
   return Math.round(pretax * (taxRate / 100) * 100) / 100;
 }
 
-// Component in một phiếu (layout khớp mẫu debit cũ: đầu + cuối chỉ 1 lần,
-// sang trang khác chỉ lặp dòng items, không lặp header/footer)
-function DebitDocument({ sheet }: { sheet: SheetWithDebits }) {
-  let totalVat = 0;
-  let totalAmt = 0;
-  sheet.debitNotes.forEach((d) => {
-    totalVat += computeVat(d);
-    totalAmt += Number(d.total ?? 0) / MONEY_SCALE;
-  });
-  totalVat = Math.round(totalVat * 100) / 100;
-  totalAmt = Math.round(totalAmt * 100) / 100;
-  const pretaxTotal = Math.round((totalAmt - totalVat) * 100) / 100;
-  // CHI HỘ = tổng tạm ứng (Chi tạm ứng, chỉ khoản Chi)
-  const tamUng = Math.round(
-    (sheet.advanceVouchers ?? [])
-      .filter((v) => v.type === 'Chi tạm ứng')
-      .reduce(
-        (sum, v) => sum + (v.items ?? []).filter((it: any) => it.kind !== 'Giảm trừ').reduce((s, it: any) => s + Number(it.amount ?? 0), 0),
-        0,
-      ) / 100 * 100,
-  ) / 100;
-  const serviceFee = Math.round((totalAmt - tamUng) * 100) / 100;
-
+// Header chung 1 lần đầu: công ty + RECEIVE (lấy khách hàng job đầu, ngày = ngày in)
+function DebitDocHeader({ sheet }: { sheet: SheetWithDebits }) {
   const customer = sheet.customer;
   const contactName = sheet.deliveryStaff?.fullName ?? sheet.docStaff?.fullName ?? '-';
   const contactPhone = (sheet.deliveryStaff?.phone ?? sheet.docStaff?.phone) || '-';
-  const receiveDate = fmtDateDMY(sheet.declarationDate ?? sheet.createdAt);
-
+  const d = new Date();
+  const today = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   return (
-    <div className="print-sheet">
+    <>
       {/* Header */}
       <div className="old-header">
         <div className="old-company">I.H.T VIET NAM CO., LTD</div>
@@ -147,7 +126,7 @@ function DebitDocument({ sheet }: { sheet: SheetWithDebits }) {
           <tr>
             <th colSpan={2} className="old-th-center">RECEIVE</th>
             <td className="old-label">Date:</td>
-            <td className="old-val-bold">{receiveDate}</td>
+            <td className="old-val-bold">{today}</td>
           </tr>
           <tr>
             <td className="old-label-sm">To:</td>
@@ -179,7 +158,72 @@ function DebitDocument({ sheet }: { sheet: SheetWithDebits }) {
           </tr>
         </tbody>
       </table>
+    </>
+  );
+}
 
+// Footer chung 1 lần cuối: TOTAL AMT tổng + bank + chữ ký
+function DebitDocFooter({ pretax, vat, total }: { pretax: number; vat: number; total: number }) {
+  const f = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  return (
+    <>
+      <table className="old-table">
+        <tbody>
+          <tr className="old-total-row">
+            <td colSpan={5} className="old-td-right old-bold">TOTAL AMT</td>
+            <td className="old-td-right old-bold">{f(pretax)}</td>
+            <td className="old-td-right old-bold">{vat ? f(vat) : '-'}</td>
+            <td className="old-td-right old-bold">{f(total)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className="old-footer-text">
+        <div>We are looking forwards to reveiving your payment in the soonest time.</div>
+        <div>If you have further infomation, please do not hesitate to contact with us.</div>
+        <div>Also you can settle the payment to:</div>
+        <div>Banker name: NGÂN HÀNG Á CHÂU- PGD TẠ UYÊN</div>
+        <div>Account no: 162000589</div>
+        <div>Account name: CTY TNHH TM DV VẬN CHUYỂN I.H.T VIỆT NAM</div>
+      </div>
+
+      <div className="old-sigs">
+        <div className="old-sig">SALE</div>
+        <div className="old-sig">ACCOUNTANT</div>
+        <div className="old-sig">APPROVAL</div>
+      </div>
+    </>
+  );
+}
+
+// Component in một phiếu (layout khớp mẫu debit cũ: đầu + cuối chỉ 1 lần,
+// sang trang chỉ lặp dòng items, không lặp header/footer)
+// Nhiều job: 1 header chung + RECEIVE đầu, mỗi job 1 khối info + bảng items + JOB AMT,
+// cuối cùng TOTAL AMT tổng + bank + chữ ký
+function JobDebitBlock({ sheet }: { sheet: SheetWithDebits }) {
+  let totalVat = 0;
+  let totalAmt = 0;
+  sheet.debitNotes.forEach((d) => {
+    totalVat += computeVat(d);
+    totalAmt += Number(d.total ?? 0) / MONEY_SCALE;
+  });
+  totalVat = Math.round(totalVat * 100) / 100;
+  totalAmt = Math.round(totalAmt * 100) / 100;
+  const pretaxTotal = Math.round((totalAmt - totalVat) * 100) / 100;
+  // CHI HỘ = tổng tạm ứng (Chi tạm ứng, chỉ khoản Chi)
+  const tamUng = Math.round(
+    (sheet.advanceVouchers ?? [])
+      .filter((v) => v.type === 'Chi tạm ứng')
+      .reduce(
+        (sum, v) => sum + (v.items ?? []).filter((it: any) => it.kind !== 'Giảm trừ').reduce((s, it: any) => s + Number(it.amount ?? 0), 0),
+        0,
+      ) / 100 * 100,
+  ) / 100;
+  const serviceFee = Math.round((totalAmt - tamUng) * 100) / 100;
+
+// Khối 1 job: info + items + JOB AMT (STT đếm lại từ 1 mỗi job)
+  return (
+    <>
       {/* Details box */}
       <table className="old-table old-plain">
         <tbody>
@@ -283,21 +327,7 @@ function DebitDocument({ sheet }: { sheet: SheetWithDebits }) {
         </tbody>
       </table>
 
-      <div className="old-footer-text">
-        <div>We are looking forwards to reveiving your payment in the soonest time.</div>
-        <div>If you have further infomation, please do not hesitate to contact with us.</div>
-        <div>Also you can settle the payment to:</div>
-        <div>Banker name: NGÂN HÀNG Á CHÂU- PGD TẠ UYÊN</div>
-        <div>Account no: 162000589</div>
-        <div>Account name: CTY TNHH TM DV VẬN CHUYỂN I.H.T VIỆT NAM</div>
-      </div>
-
-      <div className="old-sigs">
-        <div className="old-sig">SALE</div>
-        <div className="old-sig">ACCOUNTANT</div>
-        <div className="old-sig">APPROVAL</div>
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -368,7 +398,33 @@ function PrintContent() {
           <Empty description={error} />
         </div>
       ) : (
-        (sheets ?? []).filter((s) => s.debitNotes.length > 0).map((s) => <DebitDocument key={s.id} sheet={s} />)
+        (() => {
+          const validSheets = (sheets ?? []).filter((s) => s.debitNotes.length > 0);
+          let gVat = 0;
+          let gTotal = 0;
+          validSheets.forEach((s) =>
+            s.debitNotes.forEach((d) => {
+              gVat += computeVat(d);
+              gTotal += Number(d.total ?? 0) / MONEY_SCALE;
+            }),
+          );
+          gVat = Math.round(gVat * 100) / 100;
+          gTotal = Math.round(gTotal * 100) / 100;
+          if (!validSheets.length) return null;
+          return (
+            <div className="print-sheet">
+              <DebitDocHeader sheet={validSheets[0]} />
+              {validSheets.map((s) => (
+                <JobDebitBlock key={s.id} sheet={s} />
+              ))}
+              <DebitDocFooter
+                pretax={Math.round((gTotal - gVat) * 100) / 100}
+                vat={gVat}
+                total={gTotal}
+              />
+            </div>
+          );
+        })()
       )}
       <style>{`
         body { background: #fff; font-family: "Times New Roman", Times, serif; }
