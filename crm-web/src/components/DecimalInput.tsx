@@ -47,8 +47,8 @@ export default function DecimalInput({ value, onChange, placeholder, style, disa
     // đang gõ phần thập phân dở (vi: ",xx" / en: ".xx") -> giữ nguyên text
     const partial =
       locale === 'en'
-        ? raw.includes('.') && /^[\d\s,]*\.\d{0,4}$/.test(raw)
-        : raw.includes(',') && /^[\d\s.]*,\d{0,4}$/.test(raw);
+        ? raw.includes('.') && /^[\d\s,]*\.\d*$/.test(raw)
+        : raw.includes(',') && /^[\d\s.]*,\d*$/.test(raw);
     if (partial) {
       textRef.current = raw;
       setText(raw);

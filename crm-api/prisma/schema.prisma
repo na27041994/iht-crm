@@ -235,7 +235,7 @@ model TrackingSheet {
   deliveryStaffId    Int?
   createdBy          User?     @relation("SheetCreatedBy", fields: [createdById], references: [id])
   createdById        Int?
-  nw                 Decimal?  @db.Decimal(12, 2)
+  nw                 Decimal?  @db.Decimal(14, 4)
   containerNumber    String?
   customer           Customer? @relation(fields: [customerId], references: [id])
   customerId         Int?
@@ -247,7 +247,7 @@ model TrackingSheet {
   toLocation         String?
   containerQuantity  String?
   etaDate            DateTime? @db.Date
-  gw                 Decimal?  @db.Decimal(12, 2)
+  gw                 Decimal?  @db.Decimal(14, 4)
   customNo           String?
   declarationDate    DateTime? @db.Date
   billNumber         String?
@@ -308,7 +308,7 @@ model JobBooking {
   type           String
   description    String?
   unit           String?
-  quantity       Decimal?       @db.Decimal(12, 2)
+  quantity       Decimal?       @db.Decimal(14, 4)
   pretaxAmount   Decimal?       @db.Decimal(15, 2)
   taxRate        Decimal?       @db.Decimal(5, 2)
   taxAmount      Decimal?       @db.Decimal(15, 2)
@@ -335,7 +335,7 @@ model DebitNote {
   description   String?
   unit          String?
   currency      String         @default("VND")
-  quantity      Decimal?       @db.Decimal(12, 2)
+  quantity      Decimal?       @db.Decimal(14, 4)
   priceVnd      Decimal?       @db.Decimal(15, 2)
   taxRate       Decimal?       @db.Decimal(5, 2)
   priceUsd      Decimal?       @db.Decimal(15, 2)
@@ -366,7 +366,7 @@ model AdvanceVoucher {
   orderFrom    String?
   orderTo      String?
   containerQty Int?
-  qty          Decimal?       @db.Decimal(12, 2)
+  qty          Decimal?       @db.Decimal(14, 4)
   note         String?
   isDelete     Int            @default(1)
   createdBy    User?          @relation("VoucherCreator", fields: [createdById], references: [id])
@@ -426,7 +426,7 @@ model QuoteItem {
   quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   quoteId     Int
   description String
-  quantity    Decimal  @default(1) @db.Decimal(12, 2)
+  quantity    Decimal  @default(1) @db.Decimal(14, 4)
   unit        String?
   unitPrice   Decimal  @default(0) @db.Decimal(15, 2)
   amount      Decimal  @db.Decimal(15, 2)
