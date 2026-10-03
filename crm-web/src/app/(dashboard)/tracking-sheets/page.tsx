@@ -284,7 +284,7 @@ function TrackingSheetsContent() {
         <>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
             <Input.Search
-              placeholder="Tìm theo mã phiếu, container, khách hàng, tuyến..."
+              placeholder="Tìm theo mã phiếu, container, khách hàng, tuyến, ghi chú..."
               allowClear
               enterButton={<SearchOutlined />}
               style={{ width: '100%', maxWidth: 420 }}

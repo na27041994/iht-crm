@@ -166,6 +166,7 @@ export async function listTrackingSheets(search?: string, page = 1, pageSize = 2
         { invoiceNumber: { contains: kw, mode: 'insensitive' } },
         { consignee: { contains: kw, mode: 'insensitive' } },
         { shipper: { contains: kw, mode: 'insensitive' } },
+        { note: { contains: kw, mode: 'insensitive' } },
       ];
     }
   }
@@ -247,6 +248,7 @@ export async function getTrackingSheetsForExport(opts: {
       { invoiceNumber: { contains: s, mode: 'insensitive' } },
       { consignee: { contains: s, mode: 'insensitive' } },
       { shipper: { contains: s, mode: 'insensitive' } },
+      { note: { contains: s, mode: 'insensitive' } },
       { pol: { contains: s, mode: 'insensitive' } },
       { pod: { contains: s, mode: 'insensitive' } },
       ];
