@@ -14,14 +14,24 @@ interface DecimalInputProps {
   locale?: 'vi' | 'en';
   format?: (v: any) => string;
   parse?: (v: any) => string;
+  // Giới hạn số thập phân (VD: 3 -> 1,000.567)
+  maxDecimals?: number;
 }
 
 // Nhập số thập phân kiểu VN (VD: 1.000,56):
 // - giữ nguyên dấu phẩy đang gõ dở (InputNumber thường ăn mất)
 // - blur mới format chuẩn, form luôn nhận number
-export default function DecimalInput({ value, onChange, placeholder, style, disabled, locale = 'vi', format, parse }: DecimalInputProps) {
+export default function DecimalInput({ value, onChange, placeholder, style, disabled, locale = 'vi', format, parse, maxDecimals }: DecimalInputProps) {
   const fmt = format ?? (locale === 'en' ? formatEnDecimalInput : formatMoneyInput);
   const prs = parse ?? (locale === 'en' ? parseEnDecimalInput : parseMoneyInput);
+  // Cắt phần thập phân theo maxDecimals (nếu có)
+  function capDec(parsed: string): string {
+    if (maxDecimals == null || parsed === '' || parsed === '-') return parsed;
+    const i = parsed.indexOf('.');
+    if (i < 0) return parsed;
+    return parsed.slice(0, i + 1 + maxDecimals);
+  }
+  const decRe = maxDecimals == null ? '\\d*' : `\\d{0,${maxDecimals}}`;
   const [text, setText] = useState(value == null ? '' : fmt(value));
   const focused = useRef(false);
   const textRef = useRef(text);
@@ -37,7 +47,7 @@ export default function DecimalInput({ value, onChange, placeholder, style, disa
   }, [value, fmt]);
 
   function pushNumber(raw: string) {
-    const parsed = prs(raw);
+    const parsed = capDec(prs(raw));
     const num = parsed === '' || parsed === '-' ? undefined : Number(parsed);
     onChange?.(num == null || Number.isNaN(num) ? undefined : num);
   }
@@ -47,13 +57,13 @@ export default function DecimalInput({ value, onChange, placeholder, style, disa
     // đang gõ phần thập phân dở (vi: ",xx" / en: ".xx") -> giữ nguyên text
     const partial =
       locale === 'en'
-        ? raw.includes('.') && /^[\d\s,]*\.\d*$/.test(raw)
-        : raw.includes(',') && /^[\d\s.]*,\d*$/.test(raw);
+        ? raw.includes('.') && new RegExp(`^[\\d\\s,]*\\.${decRe}$`).test(raw)
+        : raw.includes(',') && new RegExp(`^[\\d\\s.]*,${decRe}$`).test(raw);
     if (partial) {
       textRef.current = raw;
       setText(raw);
     } else {
-      const t = raw === '' ? '' : fmt(raw);
+      const t = raw === '' ? '' : fmt(capDec(prs(raw)));
       textRef.current = t;
       setText(t);
     }
@@ -73,7 +83,7 @@ export default function DecimalInput({ value, onChange, placeholder, style, disa
       }}
       onBlur={() => {
         focused.current = false;
-        const p = prs(textRef.current);
+        const p = capDec(prs(textRef.current));
         const t = p === '' || p === '-' ? '' : fmt(p);
         textRef.current = t;
         setText(t);

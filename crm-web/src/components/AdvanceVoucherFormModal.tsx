@@ -359,7 +359,7 @@ export default function AdvanceVoucherFormModal({
             <InputNumber min={1} precision={0} style={{ width: '100%' }} placeholder="Số container" />
           </Form.Item>
           <Form.Item label="Qty" name="qty">
-            <DecimalInput locale="vi" placeholder="Số lượng" style={{ width: '100%' }} />
+            <DecimalInput locale="en" maxDecimals={3} placeholder="VD: 1,000.567" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />

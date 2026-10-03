@@ -170,7 +170,7 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
             <Input placeholder="VD: Cont, Kg, Chuyến..." />
           </Form.Item>
           <Form.Item label="Số lượng" name="quantity">
-            <DecimalInput locale="vi" placeholder="Số lượng" style={{ width: '100%' }} />
+            <DecimalInput locale="en" maxDecimals={3} placeholder="VD: 1,000.567" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Trước thuế" name="pretaxAmount">
             <DecimalInput locale="en" placeholder="Số tiền trước thuế" style={{ width: '100%' }} />
