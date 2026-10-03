@@ -89,6 +89,24 @@ export default function DebitReportPage() {
     }
   }
 
+  // Xuất Excel các phiếu đã chọn theo đúng form bản in debit
+  async function handleExportTemplate() {
+    if (!selectedSheetIds.length) {
+      message.warning('Chưa chọn phiếu');
+      return;
+    }
+    setExporting(true);
+    try {
+      const blob = await apiDownload(`/reports/debit/template-export?ids=${selectedSheetIds.join(',')}`);
+      saveBlob(blob, `debit-mau-in_${selectedSheetIds.length}_phieu.xlsx`);
+      message.success(`Đã xuất mẫu in ${selectedSheetIds.length} phiếu`);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   // Hàm handleExportAll: xử lý handleExportAll
   async function handleExportAll() {
     setExporting(true);
@@ -164,6 +182,9 @@ export default function DebitReportPage() {
             </Button>
             <Button icon={<DownloadOutlined />} loading={exporting} disabled={!selectedSheetIds.length} onClick={handleExportSelected}>
               Xuất Excel đã chọn {selectedSheetIds.length ? `(${selectedSheetIds.length})` : ''}
+            </Button>
+            <Button icon={<DownloadOutlined />} loading={exporting} disabled={!selectedSheetIds.length} onClick={handleExportTemplate}>
+              Xuất mẫu in {selectedSheetIds.length ? `(${selectedSheetIds.length})` : ''}
             </Button>
             <Button loading={exporting} onClick={handleExportAll}>
               Xuất tất cả

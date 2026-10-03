@@ -357,6 +357,29 @@ reportRouter.get('/debit/batch', validateQuery(z.object({ ids: z.string().min(1)
   res.json(sheets);
 }));
 
+// Xuất Excel nhiều phiếu debit theo đúng form bản in (1 header + từng job + TOTAL cuối)
+reportRouter.get('/debit/template-export', validateQuery(z.object({ ids: z.string().min(1) })), requirePermission('report_debit', 'view'), asyncHandler(async (req, res) => {
+  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+  const { prisma } = await import('../../lib/prisma.js');
+  const sheets = await prisma.trackingSheet.findMany({
+    where: { id: { in: ids }, isDelete: 1 },
+    orderBy: { id: 'asc' },
+    include: {
+      customer: { select: { id: true, customerName: true, companyName: true, address: true, phone: true, fax: true, contactPerson: true } },
+      carrier: { select: { id: true, carrierName: true, companyName: true } },
+      docStaff: { select: { id: true, fullName: true, phone: true } },
+      deliveryStaff: { select: { id: true, fullName: true, phone: true } },
+      debitNotes: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
+      advanceVouchers: { where: { isDelete: 1 }, include: { items: { where: { isDelete: 1 } } } },
+    },
+  });
+  const { buildDebitMultiTemplateWorkbook } = await import('../tracking-sheets/trackingSheet.export.js');
+  const buf = await buildDebitMultiTemplateWorkbook(sheets);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="debit-mau-in_${ids.length}_phieu.xlsx"`);
+  res.send(buf);
+}));
+
 reportRouter.get('/profit', validateQuery(refundReportQuery), requirePermission('report_profit', 'view'), asyncHandler(async (req, res) => {
   const { from, to } = parseRefundRange(req);
   res.json(await getProfitReport(from ? new Date(from) : undefined, to ? new Date(to) : undefined));
