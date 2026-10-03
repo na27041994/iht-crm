@@ -75,10 +75,10 @@ function debitDataFromBooking(b: { type: string; description?: unknown; unit?: u
 }
 
 export const trackingSheetInclude = {
-  docStaff: { select: { id: true, fullName: true } },
-  deliveryStaff: { select: { id: true, fullName: true } },
+  docStaff: { select: { id: true, fullName: true, phone: true } },
+  deliveryStaff: { select: { id: true, fullName: true, phone: true } },
   createdBy: { select: { id: true, fullName: true } },
-  customer: { select: { id: true, code: true, customerName: true, companyName: true, taxCode: true } },
+  customer: { select: { id: true, code: true, customerName: true, companyName: true, taxCode: true, address: true, phone: true, fax: true, contactPerson: true } },
   carrier: { select: { id: true, carrierName: true, companyName: true } },
   agent: { select: { id: true, agentName: true, companyName: true } },
   jobOrders: {

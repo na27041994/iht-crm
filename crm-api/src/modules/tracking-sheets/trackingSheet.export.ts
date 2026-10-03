@@ -364,6 +364,185 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
 }
 
 // Tạo workbook Excel theo loại job
+// Tính VAT 1 dòng debit (đơn vị hiển thị, khớp bản in)
+function debitVatAmount(d: any): number {
+  const qty = Number(d.quantity ?? 1);
+  const taxRate = Number(d.taxRate ?? 0);
+  let unitPrice = 0;
+  if (d.currency === 'USD') unitPrice = (Number(d.priceUsd ?? 0) / MONEY_SCALE) * Number(d.exchangeRate ?? 0);
+  else unitPrice = Number(d.priceVnd ?? 0) / MONEY_SCALE;
+  if (unitPrice === 0 && d.total != null) {
+    const total = Number(d.total) / MONEY_SCALE;
+    const pretax = taxRate ? total / (1 + taxRate / 100) : total;
+    return Math.round((total - pretax) * 100) / 100;
+  }
+  return Math.round(unitPrice * qty * (taxRate / 100) * 100) / 100;
+}
+function debitUnitPrice(d: any): number | null {
+  if (d.currency === 'USD' && d.priceUsd != null) return (Number(d.priceUsd) / MONEY_SCALE) * Number(d.exchangeRate ?? 0);
+  if (d.priceVnd != null) return Number(d.priceVnd) / MONEY_SCALE;
+  return null;
+}
+function fmtDMY(v: any): string {
+  if (!v) return '';
+  const d = v instanceof Date ? v : new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+function fmtWtX(v: any): string {
+  if (v == null || v === '') return '';
+  const n = Number(v);
+  if (Number.isNaN(n)) return '';
+  return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+}
+
+const THIN_BORDER = {
+  top: { style: 'thin' as const },
+  left: { style: 'thin' as const },
+  bottom: { style: 'thin' as const },
+  right: { style: 'thin' as const },
+};
+
+interface XRowOpts {
+  bold?: boolean;
+  size?: number;
+  fill?: string;
+  center?: boolean;
+  right?: boolean;
+  money?: boolean;
+}
+// Thêm 1 dòng 8 cột có viền, căn lề + số tiền #,##0.00
+function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): ExcelJS.Row {
+  const row = ws.addRow(values);
+  row.eachCell({ includeEmpty: true }, (cell) => {
+    cell.border = THIN_BORDER;
+    if (o.bold || o.size) cell.font = { bold: !!o.bold, size: o.size ?? 11 };
+    if (o.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: o.fill } };
+    if (o.money && typeof cell.value === 'number') cell.numFmt = '#,##0.00';
+    cell.alignment = {
+      horizontal: o.center ? 'center' : o.right ? 'right' : 'left',
+      vertical: 'middle',
+      wrapText: true,
+    };
+  });
+  return row;
+}
+function xmerge(ws: ExcelJS.Worksheet, row: ExcelJS.Row, from: number, to: number) {
+  ws.mergeCells(row.number, from, row.number, to);
+}
+
+// Xuất Excel Debit Note theo đúng form bản in (1 job/khối, header 1 lần, TOTAL cuối)
+export async function buildDebitTemplateWorkbook(s: any): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'I.H.T Logistics';
+  wb.created = new Date();
+  const ws = wb.addWorksheet('Debit Note');
+  ws.columns = [
+    { width: 6 }, { width: 32 }, { width: 16 }, { width: 10 },
+    { width: 10 }, { width: 15 }, { width: 14 }, { width: 16 },
+  ];
+
+  const customer = s.customer ?? {};
+  const contactName = s.deliveryStaff?.fullName ?? s.docStaff?.fullName ?? '';
+  const contactPhone = s.deliveryStaff?.phone ?? s.docStaff?.phone ?? '';
+  const d = new Date();
+  const today = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+  let r = xrow(ws, ['I.H.T VIET NAM CO., LTD', '', '', '', '', '', '', ''], { bold: true, size: 14, center: true });
+  xmerge(ws, r, 1, 8);
+  r = xrow(ws, ['Add: 108 Ý Lan, Phường Phú Thạnh, TP.HCM', '', '', '', '', '', '', ''], { bold: true, center: true });
+  xmerge(ws, r, 1, 8);
+  r = xrow(ws, ['Tel: 08-38380888 / 08-39225100 ; Fax: 08-39225105 / 08-39225106', '', '', '', '', '', '', ''], { bold: true, center: true });
+  xmerge(ws, r, 1, 8);
+  r = xrow(ws, ['DEBIT NOTE', '', '', '', '', '', '', ''], { bold: true, size: 16, center: true });
+  xmerge(ws, r, 1, 8);
+
+  r = xrow(ws, ['RECEIVE', '', 'Date:', today, '', '', '', ''], { bold: true, center: true });
+  xmerge(ws, r, 1, 2);
+  r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', ''], { bold: true });
+  xmerge(ws, r, 2, 4);
+  xmerge(ws, r, 6, 8);
+  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', contactPhone, '', ''], { bold: true });
+  xmerge(ws, r, 2, 4);
+  xmerge(ws, r, 6, 8);
+  r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', ''], { bold: true });
+  xmerge(ws, r, 2, 8);
+  r = xrow(ws, ['Tel:', customer.phone ?? '', '', '', '', '', '', ''], { bold: true });
+  xmerge(ws, r, 2, 8);
+  r = xrow(ws, ['Fax:', customer.fax ?? '', '', '', '', '', '', ''], { bold: true });
+  xmerge(ws, r, 2, 8);
+
+  const jobInfo: Array<[string, string, string, string]> = [
+    ['From:', s.fromLocation ?? '', 'To:', s.toLocation ?? ''],
+    ['Customs No:', s.customNo ?? '', 'Custom Date:', fmtDMY(s.declarationDate)],
+    ['NW:', s.nw != null ? fmtWtX(s.nw) : '', 'GW:', s.gw != null ? fmtWtX(s.gw) : ''],
+    ['Job Order:', s.sheetNumber, 'Note:', s.carrier?.carrierName ?? s.note ?? ''],
+    ['QTY:', s.containerQuantity != null ? String(s.containerQuantity) : s.containerNumber ?? '', 'Invoices No:', ''],
+    ['Po No:', s.billNumber ?? '', 'Bill No:', s.billNumber ?? ''],
+    ['Container No:', s.containerNumber ?? '', '', ''],
+  ];
+  for (const [l1, v1, l2, v2] of jobInfo) {
+    r = xrow(ws, [l1, v1, '', '', l2, v2, '', ''], { bold: true });
+    xmerge(ws, r, 2, 4);
+    xmerge(ws, r, 6, 8);
+  }
+
+  r = xrow(ws, ['STT', 'Descriptions', 'Invoice No', 'Unit', 'Qty', 'Price', 'VAT Tax', 'Total Amt'], { bold: true, center: true });
+  const debits: any[] = s.debitNotes ?? [];
+  let totalVat = 0;
+  let totalAmt = 0;
+  debits.forEach((dd, idx) => {
+    const vat = debitVatAmount(dd);
+    const price = debitUnitPrice(dd);
+    const amt = Number(dd.total ?? 0) / MONEY_SCALE;
+    totalVat = Math.round((totalVat + vat) * 100) / 100;
+    totalAmt = Math.round((totalAmt + amt) * 100) / 100;
+    xrow(
+      ws,
+      [idx + 1, dd.description ?? dd.type, dd.invoiceNumber ?? '', dd.unit ?? '', dd.quantity != null ? Number(dd.quantity) : '', price, vat ? vat : '-', amt],
+      { money: true },
+    );
+  });
+  const pretaxTotal = Math.round((totalAmt - totalVat) * 100) / 100;
+  r = xrow(ws, ['', '', '', '', '', 'JOB AMT', totalVat ? totalVat : '-', totalAmt], { bold: true, right: true, money: true });
+  xmerge(ws, r, 1, 5);
+  const tamUng =
+    Math.round(
+      ((s.advanceVouchers ?? []) as any[])
+        .filter((v) => v.type === 'Chi tạm ứng')
+        .reduce(
+          (sum, v) => sum + ((v.items ?? []) as any[]).filter((it: any) => it.kind !== 'Giảm trừ').reduce((a, it: any) => a + Number(it.amount ?? 0), 0),
+          0,
+        ) / 100 * 100,
+    ) / 100;
+  if (tamUng > 0) {
+    const serviceFee = Math.round((totalAmt - tamUng) * 100) / 100;
+    r = xrow(ws, ['', '', '', '', 'TỔNG CỘNG 合計', pretaxTotal, totalVat ? totalVat : '-', totalAmt], { bold: true, right: true, money: true, fill: 'FFFFFF00' });
+    xmerge(ws, r, 1, 4);
+    r = xrow(ws, ['', '', '', '', '', '', 'CHI HỘ 代墊費', tamUng], { bold: true, right: true, money: true });
+    xmerge(ws, r, 1, 6);
+    r = xrow(ws, ['', '', '', '', '', '', 'PHÍ DỊCH VỤ IHT - 服務費', serviceFee], { bold: true, right: true, money: true });
+    xmerge(ws, r, 1, 6);
+  }
+
+  const bankLines = [
+    'We are looking forwards to reveiving your payment in the soonest time.',
+    'If you have further infomation, please do not hesitate to contact with us.',
+    'Also you can settle the payment to:',
+    'Banker name: NGÂN HÀNG Á CHÂU- PGD TẠ UYÊN',
+    'Account no: 162000589',
+    'Account name: CTY TNHH TM DV VẬN CHUYỂN I.H.T VIỆT NAM',
+  ];
+  for (const line of bankLines) {
+    r = xrow(ws, [line, '', '', '', '', '', '', ''], { bold: true });
+    xmerge(ws, r, 1, 8);
+  }
+  r = xrow(ws, ['', 'SALE', '', '', 'ACCOUNTANT', '', 'APPROVAL', ''], { bold: true, center: true });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return Buffer.from(buffer as ArrayBuffer);
+}
+
 export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 'debit'): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'I.H.T Logistics';
@@ -457,39 +636,8 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       });
     }
   } else {
-    const ws = wb.addWorksheet('Debit Note');
-    setup(ws, [
-      { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
-      { header: 'Khách hàng', key: 'customer', width: 30 },
-      { header: 'Loại', key: 'type', width: 18 },
-      { header: 'Invoice No', key: 'invoiceNumber', width: 17 },
-      { header: 'Mô tả', key: 'description', width: 28 },
-      { header: 'Unit', key: 'unit', width: 10 },
-      { header: 'Current', key: 'currency', width: 9 },
-      { header: 'Số lượng', key: 'quantity', width: 10 },
-      { header: 'Giá VND', key: 'priceVnd', width: 15, style: { numFmt: '#,##0.00' } },
-      { header: 'Giá USD', key: 'priceUsd', width: 13, style: { numFmt: '#,##0.00' } },
-      { header: 'Tỷ giá', key: 'exchangeRate', width: 12, style: { numFmt: '#,##0.00' } },
-      { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-      { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#,##0.00' } },
-    ]);
-    for (const d of sheet.debitNotes) {
-      ws.addRow({
-        sheetNumber: sheet.sheetNumber,
-        customer: sheet.customer ? `${sheet.customer.companyName} (#${sheet.customer.id})` : '',
-        type: d.type,
-        invoiceNumber: d.invoiceNumber ?? '',
-        description: d.description ?? '',
-        unit: d.unit ?? '',
-        currency: d.currency,
-        quantity: num(d.quantity),
-        priceVnd: numMoney(d.priceVnd),
-        priceUsd: numMoney(d.priceUsd),
-        exchangeRate: num(d.exchangeRate),
-        taxRate: num(d.taxRate),
-        total: numMoney(d.total),
-      });
-    }
+    // Debit theo đúng form bản in
+    return buildDebitTemplateWorkbook(sheet);
   }
 
   const buffer = await wb.xlsx.writeBuffer();
