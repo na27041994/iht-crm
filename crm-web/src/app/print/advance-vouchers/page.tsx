@@ -2,7 +2,7 @@
 // Trang in Phiếu chi trực tiếp khớp mẫu cũ: header PHIẾU CHI TRỰC TIẾP / bảng thông tin 4 hàng / bảng tiền + tổng / 6 ô ký. Dùng batch?ids=.
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Button } from 'antd';
+import { Button, Checkbox } from 'antd';
 import { PrinterOutlined } from '@ant-design/icons';
 import { apiFetch } from '@/lib/api';
 
@@ -180,6 +180,10 @@ function PrintAdvanceVouchersContent() {
   const [vouchers, setVouchers] = useState<AdvanceVoucher[]>([]);
   const [loading, setLoading] = useState(true);
   const printedRef = useRef(false);
+  // Giấy A4 cắt đôi = A5 nên bản in giấy bắt buộc xoay ngược 180°.
+  // Mặc định bật (in giấy đúng); tắt để xem preview đúng chiều khi cần đọc lại.
+  // Có thể mở với ?flip=0 để mặc định tắt.
+  const [flip, setFlip] = useState(() => searchParams.get('flip') !== '0');
 
   useEffect(() => {
     const ids = searchParams.get('ids');
@@ -211,14 +215,18 @@ function PrintAdvanceVouchersContent() {
   if (!vouchers.length) return <div style={{ padding: 24 }}>Không có dữ liệu để in</div>;
 
   return (
-    <div className="print-wrap" style={{ padding: 12, background: '#fff' }}>
+    <div className={`print-wrap${flip ? ' flip-180' : ''}`} style={{ padding: 12, background: '#fff' }}>
       <div className="no-print" style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <Button type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>
           In phiếu
         </Button>
         <Button onClick={() => window.close()}>Đóng</Button>
+        <Checkbox checked={flip} onChange={(e) => setFlip(e.target.checked)}>
+          Xoay 180° khi in (giấy A4 cắt đôi)
+        </Checkbox>
         <span style={{ fontSize: 13, color: '#888' }}>
-          Giấy <strong>A4 đứng</strong>, phiếu in cỡ A5 nằm trên đầu trang
+          Giấy <strong>A4 đứng</strong>, phiếu in cỡ A5 nằm trên đầu trang.
+          Bỏ tick để xem đúng chiều khi đọc lại, tick lại trước khi in ra giấy.
         </span>
       </div>
 
@@ -254,6 +262,8 @@ function PrintAdvanceVouchersContent() {
           .print-wrap { padding: 0 !important; }
           .page-break { page-break-after: always; break-after: page; }
           .print-sheet { max-width: 170mm !important; margin: 0 auto !important; }
+          /* Giấy A4 cắt đôi nên bản in giấy xoay ngược 180°; tắt tick "Xoay 180°" để xem/in đúng chiều */
+          .flip-180 .print-sheet { transform: rotate(180deg); transform-origin: center; }
           .old-header { margin-bottom: 4px; }
           .old-title { font-size: 15px; }
           .old-subtitle { font-size: 12px; }
