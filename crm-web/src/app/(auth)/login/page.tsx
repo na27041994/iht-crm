@@ -6,6 +6,7 @@ import { Button, Card, Form, Input, Typography, App, Space } from 'antd';
 import { LockOutlined, MailOutlined, RocketOutlined } from '@ant-design/icons';
 import { apiFetch } from '@/lib/api';
 import { setToken } from '@/lib/auth';
+import { clearApiCache } from '@/lib/cachedApi';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function LoginPage() {
         { method: 'POST', body: JSON.stringify(values) },
       );
       setToken(data.token);
+      clearApiCache();
       message.success('Đăng nhập thành công');
       router.push('/dashboard');
       router.refresh();

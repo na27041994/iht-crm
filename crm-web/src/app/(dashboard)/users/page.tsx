@@ -29,6 +29,7 @@ import {
   UploadOutlined,
 } from '@ant-design/icons';
 import { apiFetch, apiUpload } from '@/lib/api';
+import { getMe } from '@/lib/cachedApi';
 import Avatar from '@/components/Avatar';
 import { usePermissions } from '@/hooks/usePermission';
 import { RESOURCES, REPORT_SUB_RESOURCES, TRACKING_SHEET_SUB_RESOURCES, MASTER_DATA_RESOURCES, RESOURCE_LABELS, ACTION_LABELS, type Resource, type Action, type PermissionMap } from '@/lib/permissions';
@@ -127,10 +128,10 @@ export default function UsersPage() {
     try {
       const [userList, meInfo] = await Promise.all([
         apiFetch<User[]>('/auth/users'),
-        apiFetch<{ sub: number; role: string }>('/auth/me'),
+        getMe(),
       ]);
       setUsers(userList);
-      setMe(meInfo);
+      setMe(meInfo && meInfo.sub != null && meInfo.role != null ? { sub: meInfo.sub, role: meInfo.role } : null);
     } catch (err) {
       message.error(err instanceof Error ? err.message : 'Không tải được danh sách nhân viên');
     } finally {

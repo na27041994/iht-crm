@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { App, Button, Empty, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd';
 import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { apiFetch } from '@/lib/api';
+import { getMeId } from '@/lib/cachedApi';
 import { usePermission } from '@/hooks/usePermission';
 import LeaveRequestFormModal, { LeaveItem } from '@/components/LeaveRequestFormModal';
 import dayjs from 'dayjs';
@@ -60,13 +61,13 @@ export default function LeaveRequestsPage() {
       try {
         const params = new URLSearchParams({ page: String(pg) });
         if (st) params.set('status', st);
-        const [res, me, q] = await Promise.all([
+        const [res, meId, q] = await Promise.all([
           apiFetch<ListResponse>(`/leave-requests?${params}`),
-          apiFetch<{ sub: number }>('/auth/me'),
+          getMeId(),
           apiFetch<{ year: number; quota: number; used: number; pending: number; remaining: number }>('/leave-requests/quota').catch(() => null),
         ]);
         setData(res);
-        setMeId(me.sub);
+        setMeId(meId);
         setQuota(q);
       } catch (err) {
         message.error(err instanceof Error ? err.message : 'Không tải được danh sách nghỉ phép');

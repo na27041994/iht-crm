@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { App, Form, Input, Modal, Select, Spin } from 'antd';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
+import { getMeId, getStaffOptions } from '@/lib/cachedApi';
 import DecimalInput from '@/components/DecimalInput';
 import { SlashDatePicker } from '@/components/SlashDatePicker';
 
@@ -95,15 +96,14 @@ export default function ReceiptVoucherFormModal({
     setLoading(true);
     Promise.all([
       apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=100'),
-      apiFetch<StaffOption[]>('/auth/staff-options').catch(() => [] as StaffOption[]),
-      apiFetch<{ sub: number } | { id: number }>('/auth/me').catch(() => null),
+      getStaffOptions(),
+      getMeId(),
     ])
-      .then(([cs, st, me]) => {
+      .then(([cs, st, meId]) => {
         setCustomers(cs.items);
         setStaffList(st);
         form.resetFields();
-        const meId = me ? ('sub' in me ? me.sub : me.id) : undefined;
-        form.setFieldsValue({ payerType: 'Khách Hàng', currency: 'VND', receiptDate: dayjs(), staffId: meId, transFee: 0 });
+        form.setFieldsValue({ payerType: 'Khách Hàng', currency: 'VND', receiptDate: dayjs(), staffId: meId ?? undefined, transFee: 0 });
         if (editingId) {
           return apiFetch<
             ReceiptVoucherFormValues & {

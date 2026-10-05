@@ -5,6 +5,7 @@ import { App, Button, Form, Input, InputNumber, Modal, Select, Space, Spin } fro
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
+import { getMeId, getStaffOptions } from '@/lib/cachedApi';
 import DecimalInput from '@/components/DecimalInput';
 import { ADVANCE_TYPES } from '@/lib/advanceTypes';
 import { ADVANCE_ITEM_KINDS } from '@/components/AdvanceItemModal';
@@ -132,17 +133,16 @@ export default function AdvanceVoucherFormModal({
     Promise.all([
       apiFetch<{ items: SheetOption[] }>('/tracking-sheets?pageSize=100'),
       apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=100'),
-      apiFetch<StaffOption[]>('/auth/staff-options').catch(() => [] as StaffOption[]),
-      apiFetch<{ sub: number } | { id: number }>('/auth/me').catch(() => null),
+      getStaffOptions(),
+      getMeId(),
     ])
-      .then(([sh, cs, st, me]) => {
+      .then(([sh, cs, st, meId]) => {
         setSheets(sh.items);
         setCustomers(cs.items);
         setStaffList(st);
         form.resetFields();
         setItems([]);
-        const meId = me ? ('sub' in me ? me.sub : me.id) : undefined;
-        form.setFieldsValue({ currency: 'VND', advanceDate: dayjs(), type: 'Chi tạm ứng', advanceStaffId: meId });
+        form.setFieldsValue({ currency: 'VND', advanceDate: dayjs(), type: 'Chi tạm ứng', advanceStaffId: meId ?? undefined });
         if (editingId) {
           return apiFetch<
             AdvanceVoucherFormValues & {

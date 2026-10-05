@@ -37,6 +37,7 @@ import {
 import { usePathname, useRouter } from 'next/navigation';
 import { clearToken } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
+import { clearApiCache } from '@/lib/cachedApi';
 import { usePermissions } from '@/hooks/usePermission';
 import { RESOURCE_LABELS } from '@/lib/permissions';
 import type { Resource } from '@/lib/permissions';
@@ -294,6 +295,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   function handleLogout() {
     setDrawerOpen(false);
     clearToken();
+    clearApiCache();
     router.push('/login');
     router.refresh();
   }
