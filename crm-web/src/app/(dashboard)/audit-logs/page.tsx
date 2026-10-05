@@ -60,6 +60,7 @@ const ENTITY_LABELS: Record<string, string> = {
   'job-bookings': 'Job Book tàu',
   'debit-notes': 'Debit Note',
   'advance-vouchers': 'Phiếu tạm ứng',
+  'receipt-vouchers': 'Phiếu thu',
   items: 'Chi tiết phiếu tạm ứng',
   reports: 'Báo cáo',
   upload: 'Tệp đính kèm',

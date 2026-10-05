@@ -57,6 +57,8 @@ model User {
   sheetsCreated    TrackingSheet[] @relation("SheetCreatedBy")
   advanceVouchers  AdvanceVoucher[] @relation("VoucherCreator")
   advancesTaken  AdvanceVoucher[] @relation("VoucherAdvanceStaff")
+  receiptsCreated ReceiptVoucher[] @relation("ReceiptCreator")
+  receiptsTaken  ReceiptVoucher[] @relation("ReceiptStaff")
   jobOrderDeliveries JobOrder[] @relation("JobOrderDeliveryStaff")
   permissions      UserPermission[]
   leaveRequests    LeaveRequest[] @relation("LeaveRequester")
@@ -146,6 +148,7 @@ model Customer {
   activities Activity[]
   trackingSheets TrackingSheet[]
   advanceVouchers AdvanceVoucher[]
+  receiptVouchers ReceiptVoucher[]
 
   @@index([companyName])
   @@index([deletedAt])
@@ -399,6 +402,33 @@ model AdvanceVoucherItem {
 
   @@index([voucherId])
   @@map("advance_voucher_items")
+}
+
+model ReceiptVoucher {
+  id           Int       @id @default(autoincrement())
+  receiptNo    String    @unique
+  payerType    String
+  receiptDate  DateTime  @db.Date
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  customerId   Int?
+  payerName    String?
+  staff        User?     @relation("ReceiptStaff", fields: [staffId], references: [id])
+  staffId      Int?
+  currency     String    @default("VND")
+  amount       Decimal   @db.Decimal(15, 2)
+  transFee     Decimal   @default(0) @db.Decimal(15, 2)
+  note         String?
+  isDelete     Int       @default(1)
+  createdBy    User?     @relation("ReceiptCreator", fields: [createdById], references: [id])
+  createdById  Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([receiptNo])
+  @@index([customerId])
+  @@index([receiptDate])
+  @@index([staffId])
+  @@map("receipt_vouchers")
 }
 
 model Quote {

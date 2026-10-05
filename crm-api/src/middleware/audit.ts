@@ -12,6 +12,7 @@ const RESOURCE_LABELS: Record<string, string> = {
   'job-bookings': 'Job Book tàu',
   'debit-notes': 'Debit Note',
   'advance-vouchers': 'Phiếu tạm ứng',
+  'receipt-vouchers': 'Phiếu thu',
 };
 
 // Hàm deriveEntity: xử lý deriveEntity
