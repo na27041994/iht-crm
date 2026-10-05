@@ -4,12 +4,12 @@ import { AppError } from '../../middleware/error.js';
 import { toScaled } from '../../lib/money.js';
 import type { ReceiptVoucherInput } from './receiptVoucher.schema.js';
 
-// Tien hien thi -> scale x100 truoc khi luu (chuan money)
-function scaleReceipt(input: ReceiptVoucherInput): ReceiptVoucherInput {
+// Tien hien thi -> scale x100 truoc khi luu (chuan money). transFee luon ra number (khong null) cho khop type Prisma.
+function scaleReceipt(input: ReceiptVoucherInput) {
   return {
     ...input,
-    amount: (toScaled(input.amount as unknown as number) as unknown as number) ?? input.amount,
-    transFee: input.transFee == null ? 0 : ((toScaled(input.transFee as unknown as number) as unknown as number) ?? input.transFee),
+    amount: toScaled(input.amount) as unknown as number,
+    transFee: input.transFee == null ? 0 : (toScaled(input.transFee) as unknown as number),
   };
 }
 
