@@ -366,7 +366,7 @@ model AdvanceVoucher {
   orderFrom    String?
   orderTo      String?
   containerQty Int?
-  qty          Decimal?       @db.Decimal(14, 4)
+  qty          String?
   note         String?
   isDelete     Int            @default(1)
   createdBy    User?          @relation("VoucherCreator", fields: [createdById], references: [id])

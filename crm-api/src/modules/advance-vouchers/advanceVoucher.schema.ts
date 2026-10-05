@@ -11,7 +11,7 @@ export const advanceVoucherSchema = z.object({
   orderFrom: z.string().optional().nullable(),
   orderTo: z.string().optional().nullable(),
   containerQty: z.number().int().optional().nullable(),
-  qty: z.coerce.number().optional().nullable(),
+  qty: z.coerce.string().optional().nullable(),
   note: z.string().optional().nullable(),
   advanceStaffId: z.number().int().optional().nullable(),
 }).superRefine((data, ctx) => {

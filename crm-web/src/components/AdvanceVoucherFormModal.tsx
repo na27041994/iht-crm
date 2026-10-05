@@ -42,7 +42,7 @@ export interface AdvanceVoucherFormValues {
   orderFrom?: string;
   orderTo?: string;
   containerQty?: number;
-  qty?: number;
+  qty?: string;
   note?: string;
   advanceStaffId?: number;
 }
@@ -162,7 +162,7 @@ export default function AdvanceVoucherFormModal({
               orderFrom: v.orderFrom ?? '',
               orderTo: v.orderTo ?? '',
               containerQty: v.containerQty ?? undefined,
-              qty: v.qty == null ? undefined : Number(v.qty),
+              qty: v.qty == null ? undefined : String(v.qty),
               note: v.note ?? '',
               advanceStaffId: v.advanceStaff?.id ?? undefined,
             });
@@ -214,7 +214,7 @@ export default function AdvanceVoucherFormModal({
         orderFrom: values.orderFrom && String(values.orderFrom).trim() !== '' ? String(values.orderFrom).trim() : null,
         orderTo: values.orderTo && String(values.orderTo).trim() !== '' ? String(values.orderTo).trim() : null,
         containerQty: values.containerQty ?? null,
-        qty: values.qty ?? null,
+        qty: values.qty != null && String(values.qty).trim() !== '' ? String(values.qty).trim() : null,
         note: values.note && String(values.note).trim() !== '' ? String(values.note).trim() : null,
         advanceStaffId: values.advanceStaffId ?? null,
       };
@@ -253,7 +253,7 @@ export default function AdvanceVoucherFormModal({
   const selectedSheet = sheets.find((s) => s.id === watchedSheetId);
   const isChiTamUng = (watchedType ?? form.getFieldValue('type') ?? '') === 'Chi tạm ứng';
 
-  // Chọn Job -> lấy thông tin job qua (khách hàng, tuyến, số cont)
+  // Chọn Job -> lấy thông tin job qua (khách hàng, tuyến, số cont + Qty)
   async function handleSheetChange(sheetId?: number) {
     if (!sheetId) return;
     try {
@@ -265,11 +265,17 @@ export default function AdvanceVoucherFormModal({
         containerQuantity?: string | number | null;
       }>(`/tracking-sheets/${sheetId}`);
       const custId = detail.customerId ?? detail.customer?.id ?? undefined;
+      // Container Qty chỉ nhận số nguyên; Qty nhận nguyên text SL (số hoặc chữ, vd 4.47CBM)
+      const sheetQty =
+        detail.containerQuantity != null && String(detail.containerQuantity).trim() !== '' && !Number.isNaN(Number(detail.containerQuantity))
+          ? Number(detail.containerQuantity)
+          : undefined;
       form.setFieldsValue({
         customerId: custId,
         orderFrom: detail.fromLocation ?? '',
         orderTo: detail.toLocation ?? '',
-        containerQty: detail.containerQuantity != null && String(detail.containerQuantity).trim() !== '' && !Number.isNaN(Number(detail.containerQuantity)) ? Number(detail.containerQuantity) : undefined,
+        containerQty: sheetQty != null && Number.isInteger(sheetQty) ? sheetQty : undefined,
+        qty: detail.containerQuantity != null && String(detail.containerQuantity).trim() !== '' ? String(detail.containerQuantity).trim() : undefined,
       });
       // đảm bảo khách của Job có trong list để hiện tên, không hiện ID
       if (custId != null) {
@@ -359,7 +365,7 @@ export default function AdvanceVoucherFormModal({
             <InputNumber min={1} precision={0} style={{ width: '100%' }} placeholder="Số container" />
           </Form.Item>
           <Form.Item label="Qty" name="qty">
-            <DecimalInput locale="en" maxDecimals={3} placeholder="VD: 1,000.567" style={{ width: '100%' }} />
+            <Input placeholder="VD: 2 / 4.47CBM" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />
