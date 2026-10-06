@@ -46,7 +46,7 @@ export function parseMoneyInput(value: any): string {
   return dec ? `${int}.${dec}` : int;
 }
 
-// Chuẩn Anh cho NW/GW: nghìn = ,, thập phân = . (VD: 1000.56 -> "1,000.56")
+// Chuẩn Anh cho ô số lượng: nghìn = ,, thập phân = . (VD: 1000.567 -> "1,000.567")
 export function formatEnDecimalInput(value: any): string {
   if (value == null || value === '') return '';
   const str = `${value}`.trim();

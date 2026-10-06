@@ -159,8 +159,8 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
     { header: 'Từ (From)', key: 'fromLocation', width: 22 },
     { header: 'Đến (To)', key: 'toLocation', width: 22 },
     { header: 'Phân Luồng', key: 'phanLuong', width: 14 },
-    { header: 'NW (kg)', key: 'nw', width: 11 },
-    { header: 'GW (kg)', key: 'gw', width: 11 },
+    { header: 'NW (kg)', key: 'nw', width: 11, style: { numFmt: '#.##0,##' } },
+    { header: 'GW (kg)', key: 'gw', width: 11, style: { numFmt: '#.##0,##' } },
     { header: 'Ngày ETA/ETD', key: 'etaDate', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
     { header: 'Custom No', key: 'customNo', width: 15 },
     { header: 'Ngày tờ khai', key: 'declarationDate', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
@@ -509,6 +509,9 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     const r = xrow(ws, [l1, v1, '', '', l2, v2, '', ''], { bold: true });
     xmerge(ws, r, 2, 4);
     xmerge(ws, r, 6, 8);
+    // NW/GW số thuần hiển thị chuẩn Việt (#.##0,##)
+    if (typeof v1 === 'number') r.getCell(2).numFmt = '#.##0,##';
+    if (typeof v2 === 'number') r.getCell(6).numFmt = '#.##0,##';
   }
   ws.addRow(['', '', '', '', '', '', '', '']);
 

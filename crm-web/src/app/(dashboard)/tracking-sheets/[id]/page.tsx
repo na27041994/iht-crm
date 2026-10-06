@@ -86,7 +86,7 @@ function fmtMoney(v: string | null) {
 function fmtWeight(v: string | null) {
   if (v == null) return '-';
   const n = Number(v);
-  return Number.isNaN(n) ? '-' : n.toLocaleString('en-US');
+  return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN');
 }
 
 // Định dạng ngày YYYY/MM/DD

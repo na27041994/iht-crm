@@ -317,10 +317,10 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
             <Input placeholder="VD: Shanghai Port" />
           </Form.Item>
           <Form.Item label="NW (kg)" name="nw">
-            <DecimalInput locale="en" placeholder="VD: 1,000.56" style={{ width: '100%' }} />
+            <DecimalInput placeholder="VD: 1.000,56" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="GW (kg)" name="gw">
-            <DecimalInput locale="en" placeholder="VD: 1,000.56" style={{ width: '100%' }} />
+            <DecimalInput placeholder="VD: 1.000,56" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Ngày ETA/ETD" name="etaDate">
             <SlashDatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />

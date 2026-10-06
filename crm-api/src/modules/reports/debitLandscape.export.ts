@@ -51,7 +51,7 @@ const HEADERS = [
 ];
 const WIDTHS = [13, 12, 8, 8, 14, 17, 10, 19, 11, 14, 10, 8, 12, 13, 34, 8, 9, 13, 13, 14];
 
-// Thêm 1 dòng 20 cột (money: Price/Tax/Total dạng #.##0,00; GW dạng châu Âu #.##0,00)
+// Thêm 1 dòng 20 cột (money: Price/Tax/Total dạng #.##0,00; GW chuẩn Việt #.##0,##)
 function lrow(ws: ExcelJS.Worksheet, values: unknown[], o: { bold?: boolean } = {}): ExcelJS.Row {
   const row = ws.addRow(values);
   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
@@ -62,9 +62,9 @@ function lrow(ws: ExcelJS.Worksheet, values: unknown[], o: { bold?: boolean } = 
     if ((colNumber === 18 || colNumber === 19 || colNumber === 20) && typeof cell.value === 'number') {
       cell.numFmt = '#.##0,00';
     }
-    // GW(11) kiểu mẫu cũ: 19.413,77
+    // GW(11) chuẩn Việt: 19.413,77
     if (colNumber === 11 && typeof cell.value === 'number') {
-      cell.numFmt = '#.##0,00';
+      cell.numFmt = '#.##0,##';
     }
   });
   return row;
