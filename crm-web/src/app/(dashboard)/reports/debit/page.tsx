@@ -1,8 +1,8 @@
 ﻿'use client';
 const MONEY_SCALE = 100;
 
-import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Card, Input, Select, Space, Table, Tag, Typography } from 'antd';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { App, Button, Card, Input, Select, Space, Spin, Table, Tag, Typography } from 'antd';
 import { DownloadOutlined, PrinterOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
@@ -19,6 +19,8 @@ export default function DebitReportPage() {
   const [sheetSearch, setSheetSearch] = useState('');
   const [sheetCustomerId, setSheetCustomerId] = useState<number | undefined>(undefined);
   const [customers, setCustomers] = useState<{ id: number; companyName: string; customerName: string }[]>([]);
+  const [fetchingCustomers, setFetchingCustomers] = useState(false);
+  const customerSearchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [sheets, setSheets] = useState<any[]>([]);
   const [sheetsTotal, setSheetsTotal] = useState(0);
   const [sheetsPage, setSheetsPage] = useState(1);
@@ -30,6 +32,25 @@ export default function DebitReportPage() {
       .then((r) => setCustomers(r.items))
       .catch(() => {});
   }, []);
+
+  // Tìm khách hàng phía server (list 100 dòng đầu không đủ khi KH nằm ngoài top 100)
+  async function fetchCustomers(search: string) {
+    setFetchingCustomers(true);
+    try {
+      const params = new URLSearchParams({ pageSize: '50' });
+      if (search) params.set('search', search);
+      const res = await apiFetch<{ items: { id: number; companyName: string; customerName: string }[] }>(`/customers?${params}`);
+      setCustomers(res.items);
+    } catch {
+      // ignore
+    } finally {
+      setFetchingCustomers(false);
+    }
+  }
+  function handleCustomerSearch(value: string) {
+    if (customerSearchTimeout.current) clearTimeout(customerSearchTimeout.current);
+    customerSearchTimeout.current = setTimeout(() => fetchCustomers(value), 300);
+  }
 
   const loadSheets = useCallback(
     async (pg = 1) => {
@@ -152,9 +173,11 @@ export default function DebitReportPage() {
             value={sheetCustomerId}
             onChange={(v) => setSheetCustomerId(v)}
             style={{ width: 220 }}
-            placeholder="Khách hàng"
+            placeholder="Gõ để tìm khách hàng..."
             showSearch
-            optionFilterProp="label"
+            filterOption={false}
+            onSearch={handleCustomerSearch}
+            notFoundContent={fetchingCustomers ? <Spin size="small" /> : null}
             options={customers.map((c) => ({ value: c.id, label: c.companyName || c.customerName }))}
             allowClear
           />

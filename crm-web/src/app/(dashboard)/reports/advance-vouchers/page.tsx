@@ -1,8 +1,8 @@
 'use client';
 const MONEY_SCALE = 100;
 
-import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Card, Input, Select, Space, Table, Tag, Typography } from 'antd';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { App, Button, Card, Input, Select, Space, Spin, Table, Tag, Typography } from 'antd';
 import { DownloadOutlined, PrinterOutlined, SearchOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
@@ -46,6 +46,8 @@ export default function AdvanceVoucherReportPage() {
   const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
   const [customerId, setCustomerId] = useState<number | undefined>(undefined);
   const [customers, setCustomers] = useState<CustomerRef[]>([]);
+  const [fetchingCustomers, setFetchingCustomers] = useState(false);
+  const customerSearchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [data, setData] = useState<ListResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -59,6 +61,25 @@ export default function AdvanceVoucherReportPage() {
       setCustomers(res.items);
     } catch {}
   }, []);
+
+  // Tìm khách hàng phía server (list 200 dòng đầu không đủ khi KH nằm ngoài top 200)
+  async function fetchCustomers(search: string) {
+    setFetchingCustomers(true);
+    try {
+      const params = new URLSearchParams({ pageSize: '50' });
+      if (search) params.set('search', search);
+      const res = await apiFetch<{ items: CustomerRef[] }>(`/customers?${params}`);
+      setCustomers(res.items);
+    } catch {
+      // ignore
+    } finally {
+      setFetchingCustomers(false);
+    }
+  }
+  function handleCustomerSearch(value: string) {
+    if (customerSearchTimeout.current) clearTimeout(customerSearchTimeout.current);
+    customerSearchTimeout.current = setTimeout(() => fetchCustomers(value), 300);
+  }
 
   useEffect(() => {
     loadCustomers();
@@ -207,9 +228,11 @@ export default function AdvanceVoucherReportPage() {
             value={customerId}
             onChange={(v) => setCustomerId(v)}
             style={{ width: 220 }}
-            placeholder="Khách hàng"
+            placeholder="Gõ để tìm khách hàng..."
             showSearch
-            optionFilterProp="label"
+            filterOption={false}
+            onSearch={handleCustomerSearch}
+            notFoundContent={fetchingCustomers ? <Spin size="small" /> : null}
             options={customers.map((c) => ({ value: c.id, label: c.companyName || c.customerName }))}
             allowClear
           />
