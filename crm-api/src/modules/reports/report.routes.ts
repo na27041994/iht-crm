@@ -380,6 +380,24 @@ reportRouter.get('/debit/template-export', validateQuery(z.object({ ids: z.strin
   res.send(buf);
 }));
 
+// Xuất Excel debit khổ ngang theo mẫu cũ (1 bảng rộng, subtotal từng job + TOTAL AMT cuối)
+reportRouter.get('/debit/landscape-export', validateQuery(z.object({ ids: z.string().min(1) })), requirePermission('report_debit', 'view'), asyncHandler(async (req, res) => {
+  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+  const { prisma } = await import('../../lib/prisma.js');
+  const sheets = await prisma.trackingSheet.findMany({
+    where: { id: { in: ids }, isDelete: 1 },
+    orderBy: { id: 'asc' },
+    include: {
+      debitNotes: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
+    },
+  });
+  const { buildDebitLandscapeWorkbook } = await import('./debitLandscape.export.js');
+  const buf = await buildDebitLandscapeWorkbook(sheets);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="debit-ngang_${ids.length}_phieu.xlsx"`);
+  res.send(buf);
+}));
+
 reportRouter.get('/profit', validateQuery(refundReportQuery), requirePermission('report_profit', 'view'), asyncHandler(async (req, res) => {
   const { from, to } = parseRefundRange(req);
   res.json(await getProfitReport(from ? new Date(from) : undefined, to ? new Date(to) : undefined));

@@ -110,6 +110,24 @@ export default function DebitReportPage() {
     }
   }
 
+  // Xuất Excel các phiếu đã chọn theo mẫu ngang (bảng rộng, subtotal từng job + TOTAL AMT)
+  async function handleExportLandscape() {
+    if (!selectedSheetIds.length) {
+      message.warning('Chưa chọn phiếu');
+      return;
+    }
+    setExporting(true);
+    try {
+      const blob = await apiDownload(`/reports/debit/landscape-export?ids=${selectedSheetIds.join(',')}`);
+      saveBlob(blob, `debit-ngang_${selectedSheetIds.length}_phieu.xlsx`);
+      message.success(`Đã xuất mẫu ngang ${selectedSheetIds.length} phiếu`);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   // Xuất Excel các phiếu đã chọn theo đúng form bản in debit
   async function handleExportTemplate() {
     if (!selectedSheetIds.length) {
@@ -208,6 +226,9 @@ export default function DebitReportPage() {
             </Button>
             <Button icon={<DownloadOutlined />} loading={exporting} disabled={!selectedSheetIds.length} onClick={handleExportTemplate}>
               Xuất mẫu in {selectedSheetIds.length ? `(${selectedSheetIds.length})` : ''}
+            </Button>
+            <Button icon={<DownloadOutlined />} loading={exporting} disabled={!selectedSheetIds.length} onClick={handleExportLandscape}>
+              Xuất ngang {selectedSheetIds.length ? `(${selectedSheetIds.length})` : ''}
             </Button>
             <Button loading={exporting} onClick={handleExportAll}>
               Xuất tất cả
