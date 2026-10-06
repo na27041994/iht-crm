@@ -396,13 +396,7 @@ function fmtWtX(v: any): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
 
-const THIN_BORDER = {
-  top: { style: 'thin' as const },
-  left: { style: 'thin' as const },
-  bottom: { style: 'thin' as const },
-  right: { style: 'thin' as const },
-};
-
+// Thêm 1 dòng 8 cột không viền (khớp PDF mẫu), căn lề + số tiền #,##0.00
 interface XRowOpts {
   bold?: boolean;
   size?: number;
@@ -411,11 +405,9 @@ interface XRowOpts {
   right?: boolean;
   money?: boolean;
 }
-// Thêm 1 dòng 8 cột có viền, căn lề + số tiền #,##0.00
 function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): ExcelJS.Row {
   const row = ws.addRow(values);
   row.eachCell({ includeEmpty: true }, (cell) => {
-    cell.border = THIN_BORDER;
     if (o.bold || o.size) cell.font = { bold: !!o.bold, size: o.size ?? 11 };
     if (o.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: o.fill } };
     if (o.money && typeof cell.value === 'number') cell.numFmt = '#,##0.00';
