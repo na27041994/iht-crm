@@ -77,11 +77,11 @@ function fmtVi(v: string | number | null | undefined, scale = 100) {
   if (Number.isNaN(n)) return '-';
   return n.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
-// Cân nặng chuẩn Việt: 19.928
+// Cân nặng chuẩn Việt: 19.928 (text nhiều dòng giữ nguyên)
 function fmtWt(v: string | number | null | undefined) {
   if (v == null || v === '') return '-';
-  const n = Number(v);
-  if (Number.isNaN(n)) return '-';
+  const n = Number(String(v).replace(/\s/g, ''));
+  if (Number.isNaN(n)) return String(v);
   return n.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
 // Tính VAT trên giá trị đã chia 100 (DB lưu *100)

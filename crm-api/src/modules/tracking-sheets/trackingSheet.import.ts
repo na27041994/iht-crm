@@ -11,7 +11,7 @@ interface ImportSheetRow {
   containerQuantity?: string | null;
   etaDate?: Date | string | null;
   nw?: number | null;
-  gw?: number | null;
+  gw?: string | null;
   customNo?: string | null;
   declarationDate?: Date | string | null;
   billNumber?: string | null;
@@ -85,6 +85,13 @@ function toNumber(v: unknown): number | null {
   if (v == null || v === '') return null;
   const n = Number(v);
   return Number.isNaN(n) ? null : n;
+}
+
+// Hàm toText: xử lý toText (giữ nguyên text, số -> chuỗi, trống -> null)
+function toText(v: unknown): string | null {
+  if (v == null) return null;
+  const s = String(v).trim();
+  return s === '' ? null : s;
 }
 
 // Hàm toDate: xử lý toDate
@@ -231,7 +238,7 @@ export async function parseImportExcel(buffer: Buffer): Promise<ParsedImportData
         containerQuantity: String(getCellValue(row, SHEET_COLS, 'containerQuantity') ?? '').trim() || null,
         etaDate: toDate(getCellValue(row, SHEET_COLS, 'etaDate')),
         nw: toNumber(getCellValue(row, SHEET_COLS, 'nw')),
-        gw: toNumber(getCellValue(row, SHEET_COLS, 'gw')),
+        gw: toText(getCellValue(row, SHEET_COLS, 'gw')),
         customNo: String(getCellValue(row, SHEET_COLS, 'customNo') ?? '').trim() || null,
         declarationDate: toDate(getCellValue(row, SHEET_COLS, 'declarationDate')),
         billNumber: String(getCellValue(row, SHEET_COLS, 'billNumber') ?? '').trim() || null,

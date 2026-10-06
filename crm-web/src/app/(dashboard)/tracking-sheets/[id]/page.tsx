@@ -84,9 +84,10 @@ function fmtMoney(v: string | null) {
   return Number.isNaN(n) ? '-' : (n / MONEY_SCALE).toLocaleString('vi-VN');
 }
 function fmtWeight(v: string | null) {
-  if (v == null) return '-';
-  const n = Number(v);
-  return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN');
+  if (v == null || v === '') return '-';
+  const n = Number(String(v).replace(/\s/g, ''));
+  if (Number.isNaN(n)) return String(v);
+  return n.toLocaleString('vi-VN');
 }
 
 // Định dạng ngày YYYY/MM/DD

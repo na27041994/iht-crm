@@ -38,7 +38,7 @@ export interface TrackingSheetFormValues {
   toLocation?: string;
   containerQuantity?: string;
   etaDate?: string;
-  gw?: number;
+  gw?: string;
   customNo?: string;
   declarationDate?: string;
   billNumber?: string;
@@ -173,7 +173,7 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
               toLocation: s.toLocation ?? '',
               containerQuantity: (s as any).containerQuantity ?? '',
               etaDate: s.etaDate ? dayjs(s.etaDate) : undefined,
-              gw: s.gw == null ? undefined : Number(s.gw),
+              gw: (s as any).gw ?? '',
               customNo: s.customNo ?? '',
               declarationDate: s.declarationDate ? dayjs(s.declarationDate) : undefined,
               billNumber: s.billNumber ?? '',
@@ -217,7 +217,7 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
         toLocation: values.toLocation && String(values.toLocation).trim() !== '' ? String(values.toLocation).trim() : null,
         containerQuantity: values.containerQuantity && String(values.containerQuantity).trim() !== '' ? String(values.containerQuantity).trim() : null,
         etaDate: values.etaDate ? dayjs(values.etaDate).format('YYYY-MM-DD') : null,
-        gw: values.gw ?? null,
+        gw: values.gw && String(values.gw).trim() !== '' ? String(values.gw).trim() : null,
         customNo: values.customNo && String(values.customNo).trim() !== '' ? String(values.customNo).trim() : null,
         declarationDate: values.declarationDate ? dayjs(values.declarationDate).format('YYYY-MM-DD') : null,
         billNumber: values.billNumber && String(values.billNumber).trim() !== '' ? String(values.billNumber).trim() : null,
@@ -319,8 +319,8 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
           <Form.Item label="NW (kg)" name="nw">
             <DecimalInput placeholder="VD: 1.000,56" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item label="GW (kg)" name="gw">
-            <DecimalInput placeholder="VD: 1.000,56" style={{ width: '100%' }} />
+          <Form.Item label="GW (kg, mỗi dòng 1 số)" name="gw">
+            <Input.TextArea rows={2} placeholder={'VD:\n5.147,70\n5.176,70'} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Ngày ETA/ETD" name="etaDate">
             <SlashDatePicker style={{ width: '100%' }} placeholder="dd/mm/yyyy" format="DD/MM/YYYY" />

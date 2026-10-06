@@ -12,7 +12,7 @@ export const trackingSheetSchema = z.object({
   toLocation: z.string().optional().nullable(),
   containerQuantity: z.string().optional().nullable(),
   etaDate: z.coerce.date().optional().nullable(),
-  gw: z.coerce.number().nonnegative().optional().nullable(),
+  gw: z.string().optional().nullable(),
   customNo: z.string().optional().nullable(),
   declarationDate: z.coerce.date().optional().nullable(),
   billNumber: z.string().optional().nullable(),

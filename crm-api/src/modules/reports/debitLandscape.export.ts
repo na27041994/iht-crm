@@ -14,6 +14,12 @@ function numMoney(v: unknown): number | null {
   const n = Number(v);
   return Number.isNaN(n) ? null : n / MONEY_SCALE;
 }
+// GW text nhiều dòng: số -> number, text -> giữ nguyên
+function numOrText(v: unknown): number | string | null {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? String(v) : n;
+}
 
 // VAT 1 dòng debit (đơn vị hiển thị)
 function vatAmount(d: any): number {
@@ -100,7 +106,7 @@ export async function buildDebitLandscapeWorkbook(sheets: any[]): Promise<Buffer
       s.customNo ?? '',
       fmtYMD(s.declarationDate),
       s.containerNumber ?? '',
-      s.gw != null && s.gw !== '' ? Number(s.gw) : '',
+      numOrText(s.gw) ?? '',
       s.containerQuantity ?? '',
     ];
     let jVat = 0;

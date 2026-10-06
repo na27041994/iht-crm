@@ -250,7 +250,7 @@ model TrackingSheet {
   toLocation         String?
   containerQuantity  String?
   etaDate            DateTime? @db.Date
-  gw                 Decimal?  @db.Decimal(14, 4)
+  gw                 String?
   customNo           String?
   declarationDate    DateTime? @db.Date
   billNumber         String?

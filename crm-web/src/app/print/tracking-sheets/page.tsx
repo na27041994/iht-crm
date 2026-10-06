@@ -101,11 +101,12 @@ function fmtNum(v: string | null | undefined) {
   return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN');
 }
 
-// NW/GW hiển thị chuẩn Việt: 1.000,56
+// NW/GW hiển thị chuẩn Việt: 1.000,56 (text nhiều dòng giữ nguyên)
 function fmtWeightEn(v: string | null | undefined) {
   if (v == null || v === '') return '-';
-  const n = Number(v);
-  return Number.isNaN(n) ? '-' : n.toLocaleString('vi-VN');
+  const n = Number(String(v).replace(/\s/g, ''));
+  if (Number.isNaN(n)) return String(v);
+  return n.toLocaleString('vi-VN');
 }
 
 // Định dạng ngày YYYY/MM/DD

@@ -34,6 +34,12 @@ function numMoney(v: unknown): number | null {
   const n = Number(v);
   return Number.isNaN(n) ? null : n / MONEY_SCALE;
 }
+// GW text nhiều dòng: số -> number, text -> giữ nguyên
+function numOrText(v: unknown): number | string | null {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? String(v) : n;
+}
 
 // Hàm dateCell: xử lý dateCell
 function dateCell(v: Date | string | null): Date | string | null {
@@ -184,7 +190,7 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
       toLocation: s.toLocation ?? '',
       phanLuong: (s as any).phanLuong ?? '',
       nw: num(s.nw),
-      gw: num(s.gw),
+      gw: numOrText(s.gw),
       etaDate: dateCell(s.etaDate),
       customNo: s.customNo ?? '',
       declarationDate: dateCell(s.declarationDate),
@@ -499,7 +505,7 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
   const jobInfo: Array<[string, string, string, string]> = [
     ['From:', s.fromLocation ?? '', 'To:', s.toLocation ?? ''],
     ['Customs No:', s.customNo ?? '', 'Custom Date:', fmtDMY(s.declarationDate)],
-    ['NW:', s.nw != null && s.nw !== '' ? Number(s.nw) : '', 'GW:', s.gw != null && s.gw !== '' ? Number(s.gw) : ''],
+    ['NW:', s.nw != null && s.nw !== '' ? Number(s.nw) : '', 'GW:', numOrText(s.gw) ?? ''],
     ['Job Order:', s.sheetNumber, 'Note:', s.carrier?.carrierName ?? s.note ?? ''],
     ['QTY:', s.containerQuantity != null ? String(s.containerQuantity) : s.containerNumber ?? '', 'Invoices No:', ''],
     ['Po No:', s.billNumber ?? '', 'Bill No:', s.billNumber ?? ''],
