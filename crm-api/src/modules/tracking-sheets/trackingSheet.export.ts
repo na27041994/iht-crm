@@ -472,7 +472,7 @@ function writeDebitHeader(ws: ExcelJS.Worksheet, s: any) {
   ws.addRow(['', '', '', '', '', '', '', '']);
 
   r = xrow(ws, ['RECEIVE', '', '', '', 'Date:', today, '', ''], { bold: true, center: true, border: true });
-  xmerge(ws, r, 1, 2);
+  xmerge(ws, r, 1, 4);
   xmerge(ws, r, 6, 8);
   // Hàng Date nền đỏ (khớp mẫu)
   for (let c = 3; c <= 8; c++) {
