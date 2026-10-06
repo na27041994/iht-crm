@@ -2,9 +2,9 @@ import ExcelJS from 'exceljs';
 
 // Xuất Excel debit khổ ngang khớp mẫu cũ:
 // Job No | Consignee | From | To | Note | Bill No | ETD/ETA | Customs No | Customs Date |
-// Container No | GW | QTY | Invoice No | Ser No | Red Invoice No | Description | Unit |
+// Container No | GW | QTY | Invoice No | Red Invoice No | Description | Unit |
 // Quantity | Price | Tax Amt | Total Amt
-// Mỗi job: dòng info + từng dòng debit (Ser No chạy lại từ 1) + dòng subtotal;
+// Mỗi job: dòng info + từng dòng debit + dòng subtotal;
 // cuối cùng dòng TOTAL AMT.
 
 // Chuẩn tiền x100: DB lưu *100, xuất chia 100
@@ -46,20 +46,20 @@ function fmtYMD(v: any): string {
 
 const HEADERS = [
   'Job No', 'Consignee', 'From', 'To', 'Note', 'Bill No', 'ETD/ETA', 'Customs No', 'Customs Date',
-  'Container No', 'GW', 'QTY', 'Invoice No', 'Ser No', 'Red Invoice No', 'Description', 'Unit',
+  'Container No', 'GW', 'QTY', 'Invoice No', 'Red Invoice No', 'Description', 'Unit',
   'Quantity', 'Price', 'Tax Amt', 'Total Amt',
 ];
-const WIDTHS = [13, 12, 8, 8, 14, 17, 10, 19, 11, 14, 10, 8, 12, 7, 13, 34, 8, 9, 13, 13, 14];
+const WIDTHS = [13, 12, 8, 8, 14, 17, 10, 19, 11, 14, 10, 8, 12, 13, 34, 8, 9, 13, 13, 14];
 
-// Thêm 1 dòng 21 cột (money: Price/Tax/Total dạng #,##0.00; GW dạng châu Âu #.##0,00)
+// Thêm 1 dòng 20 cột (money: Price/Tax/Total dạng #,##0.00; GW dạng châu Âu #.##0,00)
 function lrow(ws: ExcelJS.Worksheet, values: unknown[], o: { bold?: boolean } = {}): ExcelJS.Row {
   const row = ws.addRow(values);
   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
     if (o.bold) cell.font = { bold: true, size: 10 };
     else cell.font = { size: 10 };
     cell.alignment = { vertical: 'middle', wrapText: true };
-    // Price(19) / Tax Amt(20) / Total Amt(21)
-    if ((colNumber === 19 || colNumber === 20 || colNumber === 21) && typeof cell.value === 'number') {
+    // Price(18) / Tax Amt(19) / Total Amt(20)
+    if ((colNumber === 18 || colNumber === 19 || colNumber === 20) && typeof cell.value === 'number') {
       cell.numFmt = '#,##0.00';
     }
     // GW(11) kiểu mẫu cũ: 19.413,77
@@ -114,7 +114,6 @@ export async function buildDebitLandscapeWorkbook(sheets: any[]): Promise<Buffer
       lrow(ws, [
         ...(idx === 0 ? jobInfo : Array(12).fill('')),
         dd.invoiceNumber ?? '',
-        idx + 1,
         '',
         dd.description ?? dd.type,
         dd.unit ?? '',
@@ -125,16 +124,16 @@ export async function buildDebitLandscapeWorkbook(sheets: any[]): Promise<Buffer
       ]);
     });
     if (!debits.length) {
-      lrow(ws, [...jobInfo, '', '', '', '', '', '', '', '', '']);
+      lrow(ws, [...jobInfo, '', '', '', '', '', '', '', '']);
     }
     // Subtotal từng job dưới cột Tax Amt / Total Amt
-    lrow(ws, [...Array(18).fill(''), '', jVat, jTotal], { bold: true });
+    lrow(ws, [...Array(17).fill(''), '', jVat, jTotal], { bold: true });
     gVat = Math.round((gVat + jVat) * 100) / 100;
     gTotal = Math.round((gTotal + jTotal) * 100) / 100;
   }
 
   // TOTAL AMT cuối (nhãn ở cột Description)
-  lrow(ws, [...Array(15).fill(''), 'TOTAL AMT', '', '', '', gVat, gTotal], { bold: true });
+  lrow(ws, [...Array(14).fill(''), 'TOTAL AMT', '', '', '', gVat, gTotal], { bold: true });
 
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer as ArrayBuffer);
