@@ -568,7 +568,6 @@ function writeDebitBankSign(ws: ExcelJS.Worksheet) {
   xmerge(ws, sr, 4, 6);
   xmerge(ws, sr, 7, 10);
 }
-}
 
 // Xuất Excel Debit Note theo đúng form bản in (1 job/khối, header 1 lần, TOTAL cuối)
 export async function buildDebitTemplateWorkbook(s: any): Promise<Buffer> {
