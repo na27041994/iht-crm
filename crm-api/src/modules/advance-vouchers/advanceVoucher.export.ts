@@ -42,7 +42,7 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
     { header: 'Khách hàng', key: 'customer', width: 28 },
     { header: 'Người tạo', key: 'createdBy', width: 18 },
     { header: 'NV ứng tiền', key: 'advanceStaff', width: 18 },
-    { header: 'Tổng tiền', key: 'totalAmount', width: 16, style: { numFmt: '#,##0.00' } },
+    { header: 'Tổng tiền', key: 'totalAmount', width: 16, style: { numFmt: '#.##0,00' } },
     { header: 'Ghi chú', key: 'note', width: 24 },
   ]);
 
@@ -78,7 +78,7 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
       { header: 'Loại', key: 'type', width: 16 },
       { header: 'Khoản', key: 'kind', width: 12 },
       { header: 'Mô tả', key: 'description', width: 28 },
-      { header: 'Số tiền', key: 'amount', width: 16, style: { numFmt: '#,##0.00' } },
+      { header: 'Số tiền', key: 'amount', width: 16, style: { numFmt: '#.##0,00' } },
       { header: 'Ghi chú', key: 'note', width: 30 },
     ]);
     for (const v of vouchers) {

@@ -618,7 +618,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             { title: 'Current', dataIndex: 'currency', align: 'center' as const, render: (v: string) => <Tag color={v === 'USD' ? 'green' : 'default'}>{v}</Tag> },
             { title: 'Số lượng', dataIndex: 'quantity', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
             { title: 'Giá VND', dataIndex: 'priceVnd', align: 'right' as const, render: fmtMoney },
-            { title: 'Giá USD', dataIndex: 'priceUsd', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : (Number(v) / MONEY_SCALE).toLocaleString('en-US')) },
+            { title: 'Giá USD', dataIndex: 'priceUsd', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : (Number(v) / MONEY_SCALE).toLocaleString('vi-VN')) },
             { title: 'Tỷ giá', dataIndex: 'exchangeRate', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v).toLocaleString('vi-VN')) },
             { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
             { title: 'Tổng tiền', dataIndex: 'total', align: 'right' as const, render: (v: string | null) => <span className="font-medium">{fmtMoney(v)}</span> },

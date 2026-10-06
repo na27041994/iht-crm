@@ -310,7 +310,7 @@ function SheetDocument({
                 <td>{d.currency}</td>
                 <td className="right">{d.quantity == null ? '-' : Number(d.quantity)}</td>
                 <td className="right">{fmtMoney(d.priceVnd)}</td>
-                <td className="right">{d.priceUsd == null ? '-' : (Number(d.priceUsd) / MONEY_SCALE).toLocaleString('en-US')}</td>
+                <td className="right">{d.priceUsd == null ? '-' : (Number(d.priceUsd) / MONEY_SCALE).toLocaleString('vi-VN')}</td>
                 <td className="right">{fmtNum(d.exchangeRate)}</td>
                 <td className="right">{d.taxRate == null ? '-' : `${Number(d.taxRate)}%`}</td>
                 <td className="right">{fmtMoney(d.total)}</td>

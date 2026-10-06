@@ -41,8 +41,8 @@ export async function buildReceiptVouchersWorkbook(vouchers: any[]): Promise<Buf
     { header: 'Người nộp', key: 'payer', width: 32 },
     { header: 'Người tạo', key: 'createdBy', width: 18 },
     { header: 'NV thu', key: 'staff', width: 18 },
-    { header: 'Số tiền', key: 'amount', width: 16, style: { numFmt: '#,##0.00' } },
-    { header: 'Phí chuyển khoản', key: 'transFee', width: 16, style: { numFmt: '#,##0.00' } },
+    { header: 'Số tiền', key: 'amount', width: 16, style: { numFmt: '#.##0,00' } },
+    { header: 'Phí chuyển khoản', key: 'transFee', width: 16, style: { numFmt: '#.##0,00' } },
     { header: 'Lý do nộp', key: 'note', width: 30 },
   ]);
 

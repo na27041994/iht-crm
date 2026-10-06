@@ -84,7 +84,7 @@ export default function AdvanceItemModal({ open, voucherId, editing, onClose, on
           <Select options={ADVANCE_ITEM_KINDS.map((k) => ({ value: k, label: k === 'Giảm trừ' ? 'Giảm trừ (trừ vào tổng)' : 'Chi' }))} />
         </Form.Item>
         <Form.Item label="Tiền (luôn nhập dương)" name="amount" rules={[{ required: true, message: 'Nhập số tiền' }]}>
-          <DecimalInput locale="en" placeholder="Số tiền chi" style={{ width: '100%' }} />
+          <DecimalInput placeholder="Số tiền chi" style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item label="Mô tả" name="description">
           <DescriptionAutocomplete type="advance" placeholder="Gõ để tìm mô tả đã từng nhập..." />

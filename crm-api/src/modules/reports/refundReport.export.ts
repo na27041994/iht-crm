@@ -32,7 +32,7 @@ const SUMMARY_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Đối tượng', key: 'name', width: 34 },
   { header: 'Số dòng', key: 'rowCount', width: 10 },
   { header: 'Số phiếu', key: 'sheetCount', width: 10 },
-  { header: 'Tổng tiền hoàn', key: 'totalAmount', width: 18, style: { numFmt: '#,##0.00' } },
+  { header: 'Tổng tiền hoàn', key: 'totalAmount', width: 18, style: { numFmt: '#.##0,00' } },
 ];
 
 const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
@@ -42,7 +42,7 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'Khách hàng', key: 'customerName', width: 30 },
   { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
-  { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#.##0,00' } },
 ];
 
 // Chuẩn tiền x100: DB lưu *100, xuất chia 100

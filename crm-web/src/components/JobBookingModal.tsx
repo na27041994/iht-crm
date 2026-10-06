@@ -173,16 +173,16 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
             <DecimalInput locale="en" maxDecimals={3} placeholder="VD: 1,000.567" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Trước thuế" name="pretaxAmount">
-            <DecimalInput locale="en" placeholder="Số tiền trước thuế" style={{ width: '100%' }} />
+            <DecimalInput locale="vi" placeholder="Số tiền trước thuế" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
           </Form.Item>
           <Form.Item label="Tiền thuế" name="taxAmount">
-            <DecimalInput locale="en" disabled style={{ width: '100%' }} />
+            <DecimalInput locale="vi" disabled style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Sau thuế" name="afterTaxAmount">
-            <DecimalInput locale="en" disabled style={{ width: '100%' }} />
+            <DecimalInput locale="vi" disabled style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             label={isFivePercent ? 'Tổng tiền (nhập để suy ngược Trước thuế + Thuế 5%)' : 'Tổng tiền'}
@@ -190,7 +190,7 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
             className="sm:col-span-2"
           >
             <DecimalInput
-              locale="en"
+              locale="vi"
               disabled={!isFivePercent}
               placeholder={isFivePercent ? 'Nhập tổng để tự tính ngược' : 'Tự tính = (trước thuế + thuế) x SL'}
               style={{ width: '100%' }}

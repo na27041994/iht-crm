@@ -243,10 +243,10 @@ export default function ReceiptVoucherFormModal({
             />
           </Form.Item>
           <Form.Item label="Số tiền" name="amount" rules={[{ required: true, message: 'Nhập số tiền' }]}>
-            <DecimalInput locale="en" placeholder="Số tiền thu" style={{ width: '100%' }} />
+            <DecimalInput placeholder="Số tiền thu" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Phí chuyển khoản" name="transFee">
-            <DecimalInput locale="en" placeholder="0" style={{ width: '100%' }} />
+            <DecimalInput placeholder="0" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Lý do nộp" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="VD: TT CÔNG NỢ THÁNG 9/2026" />

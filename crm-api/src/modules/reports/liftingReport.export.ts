@@ -32,7 +32,7 @@ const SUMMARY_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Đối tượng', key: 'name', width: 34 },
   { header: 'Số dòng', key: 'rowCount', width: 10 },
   { header: 'Số phiếu', key: 'sheetCount', width: 10 },
-  { header: 'Tổng tiền nâng hạ', key: 'totalAmount', width: 18, style: { numFmt: '#,##0.00' } },
+  { header: 'Tổng tiền nâng hạ', key: 'totalAmount', width: 18, style: { numFmt: '#.##0,00' } },
 ];
 
 const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
@@ -42,7 +42,7 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'Khách hàng', key: 'customerName', width: 30 },
   { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
-  { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#.##0,00' } },
 ];
 
 const MONEY_SCALE = 100;
@@ -110,7 +110,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
     { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
     { header: 'Khách hàng', key: 'customer', width: 28 },
     { header: 'Số dòng nâng hạ', key: 'count', width: 14 },
-    { header: 'Tổng tiền', key: 'total', width: 16, style: { numFmt: '#,##0.00' } },
+    { header: 'Tổng tiền', key: 'total', width: 16, style: { numFmt: '#.##0,00' } },
   ]);
 
   sheets.forEach((s: any, i: number) => {
@@ -149,7 +149,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
     { header: 'Mô tả', key: 'description', width: 28 },
     { header: 'Khách hàng', key: 'customerName', width: 30 },
     { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
-    { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#,##0.00' } },
+    { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#.##0,00' } },
   ]);
   for (const s of sheets) {
     for (const o of s.jobOrders || []) {

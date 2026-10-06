@@ -191,13 +191,13 @@ export default function JobOrderModal({ open, sheetId, editing, onClose, onSaved
             />
           </Form.Item>
           <Form.Item label="Trước thuế" name="pretaxAmount">
-            <DecimalInput locale="en" placeholder="Số tiền trước thuế" style={{ width: '100%' }} />
+            <DecimalInput placeholder="Số tiền trước thuế" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
           </Form.Item>
           <Form.Item label="Thành Tiền (sau thuế, nhập để suy ngược trước thuế)" name="portAmt" className="sm:col-span-2">
-            <DecimalInput locale="en" placeholder="Nhập sau thuế để tự tính ngược, hoặc để trống tự tính" style={{ width: '100%' }} />
+            <DecimalInput placeholder="Nhập sau thuế để tự tính ngược, hoặc để trống tự tính" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Ghi chú" name="note" className="sm:col-span-2">
             <Input.TextArea rows={3} placeholder="Ghi chú" />

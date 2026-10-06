@@ -33,7 +33,7 @@ const SUMMARY_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Số dòng', key: 'rowCount', width: 10 },
   { header: 'Số phiếu', key: 'sheetCount', width: 10 },
   { header: 'Số job', key: 'rowCount', width: 10 },
-  { header: 'Tổng tiền', key: 'totalAmount', width: 18, style: { numFmt: '#,##0.00' } },
+  { header: 'Tổng tiền', key: 'totalAmount', width: 18, style: { numFmt: '#.##0,00' } },
 ];
 
 const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
@@ -45,7 +45,7 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'SL', key: 'quantity', width: 8 },
   { header: 'Tiền tệ', key: 'currency', width: 10 },
   { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
-  { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#.##0,00' } },
 ];
 
 const MONEY_SCALE = 100;
@@ -115,7 +115,7 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
     { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
     { header: 'Khách hàng', key: 'customer', width: 28 },
     { header: 'Số Debit', key: 'count', width: 10 },
-    { header: 'Tổng tiền', key: 'total', width: 16, style: { numFmt: '#,##0.00' } },
+    { header: 'Tổng tiền', key: 'total', width: 16, style: { numFmt: '#.##0,00' } },
   ]);
 
   sheets.forEach((s: any, i: number) => {

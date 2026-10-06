@@ -70,12 +70,12 @@ function fmtDateDMY(v: string | null | undefined) {
   if (Number.isNaN(d.getTime())) return '-';
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
-// Số tiền nhóm chuẩn Anh: 6,849,000 (khớp mẫu cũ)
-function fmtEn(v: string | number | null | undefined, scale = 100) {
+// Số tiền chuẩn Việt: 6.849.000 (dấu chấm nghìn, phẩy thập phân)
+function fmtVi(v: string | number | null | undefined, scale = 100) {
   if (v == null || v === '') return '-';
   const n = Number(v) / scale;
   if (Number.isNaN(n)) return '-';
-  return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return n.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 // Cân nặng: 19,928
 function fmtWt(v: string | number | null | undefined) {
@@ -164,7 +164,7 @@ function DebitDocHeader({ sheet }: { sheet: SheetWithDebits }) {
 
 // Footer chung 1 lần cuối: TOTAL AMT tổng + bank + chữ ký
 function DebitDocFooter({ pretax, vat, total }: { pretax: number; vat: number; total: number }) {
-  const f = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  const f = (n: number) => n.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
   return (
     <>
       <table className="old-table">
@@ -286,8 +286,8 @@ function JobDebitBlock({ sheet }: { sheet: SheetWithDebits }) {
           {sheet.debitNotes.map((d, idx) => {
             const vat = computeVat(d);
             let price = '-';
-            if (d.currency === 'USD' && d.priceUsd) price = (Number(d.priceUsd) / MONEY_SCALE * Number(d.exchangeRate ?? 0)).toLocaleString('en-US', { maximumFractionDigits: 2 });
-            else if (d.priceVnd) price = fmtEn(d.priceVnd);
+            if (d.currency === 'USD' && d.priceUsd) price = (Number(d.priceUsd) / MONEY_SCALE * Number(d.exchangeRate ?? 0)).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+            else if (d.priceVnd) price = fmtVi(d.priceVnd);
             return (
               <tr key={d.id}>
                 <td className="old-td-center">{idx + 1}</td>
@@ -296,31 +296,31 @@ function JobDebitBlock({ sheet }: { sheet: SheetWithDebits }) {
                 <td className="old-td-center">{d.unit ?? ''}</td>
                 <td className="old-td-right">{d.quantity != null ? Number(d.quantity).toLocaleString('en-US') : '-'}</td>
                 <td className="old-td-right">{price}</td>
-                <td className="old-td-right">{vat ? vat.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '-'}</td>
-                <td className="old-td-right">{fmtEn(d.total)}</td>
+                <td className="old-td-right">{vat ? vat.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '-'}</td>
+                <td className="old-td-right">{fmtVi(d.total)}</td>
               </tr>
             );
           })}
           <tr className="old-total-row">
             <td colSpan={6} className="old-td-right old-bold">JOB AMT</td>
-            <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '-'}</td>
-            <td className="old-td-right old-bold">{totalAmt.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+            <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '-'}</td>
+            <td className="old-td-right old-bold">{totalAmt.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
           </tr>
           <tr className="old-total-row old-yellow-row">
             <td colSpan={5} className="old-td-right old-bold">TỔNG CỘNG 合計</td>
-            <td className="old-td-right old-bold">{pretaxTotal.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
-            <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '-'}</td>
-            <td className="old-td-right old-bold">{totalAmt.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+            <td className="old-td-right old-bold">{pretaxTotal.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
+            <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '-'}</td>
+            <td className="old-td-right old-bold">{totalAmt.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
           </tr>
           {tamUng > 0 && (
             <>
               <tr>
                 <td colSpan={7} className="old-td-right old-bold">CHI HỘ 代墊費</td>
-                <td className="old-td-right old-bold">{tamUng.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+                <td className="old-td-right old-bold">{tamUng.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
               </tr>
               <tr>
                 <td colSpan={7} className="old-td-right old-bold">PHÍ DỊCH VỤ IHT - 服務費</td>
-                <td className="old-td-right old-bold">{serviceFee.toLocaleString('en-US', { maximumFractionDigits: 2 })}</td>
+                <td className="old-td-right old-bold">{serviceFee.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
               </tr>
             </>
           )}

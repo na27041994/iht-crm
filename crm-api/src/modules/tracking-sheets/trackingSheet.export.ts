@@ -53,9 +53,9 @@ const JOB_ORDER_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Phân loại', key: 'type', width: 18 },
   { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'NV giao nhận', key: 'deliveryStaff', width: 18 },
-  { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
   { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-  { header: 'Thành Tiền', key: 'portAmt', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Thành Tiền', key: 'portAmt', width: 15, style: { numFmt: '#.##0,00' } },
   { header: 'Ghi chú', key: 'note', width: 26 },
 ];
 
@@ -66,11 +66,11 @@ const JOB_BOOKING_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'Đơn vị tính', key: 'unit', width: 12 },
   { header: 'Số lượng', key: 'quantity', width: 10 },
-  { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
   { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-  { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#,##0.00' } },
-  { header: 'Sau thuế', key: 'afterTaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
-  { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Sau thuế', key: 'afterTaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#.##0,00' } },
   { header: 'Ghi chú', key: 'note', width: 26 },
 ];
 
@@ -83,11 +83,11 @@ const DEBIT_NOTE_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Unit', key: 'unit', width: 10 },
   { header: 'Current', key: 'currency', width: 9 },
   { header: 'Số lượng', key: 'quantity', width: 10 },
-  { header: 'Giá VND', key: 'priceVnd', width: 15, style: { numFmt: '#,##0.00' } },
-  { header: 'Giá USD', key: 'priceUsd', width: 13, style: { numFmt: '#,##0.00' } },
-  { header: 'Tỷ giá', key: 'exchangeRate', width: 12, style: { numFmt: '#,##0.00' } },
+  { header: 'Giá VND', key: 'priceVnd', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Giá USD', key: 'priceUsd', width: 13, style: { numFmt: '#.##0,00' } },
+  { header: 'Tỷ giá', key: 'exchangeRate', width: 12, style: { numFmt: '#.##0,00' } },
   { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-  { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#,##0.00' } },
+  { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#.##0,00' } },
 ];
 
 // Hàm jobOrderRow: xử lý jobOrderRow
@@ -396,7 +396,7 @@ function fmtWtX(v: any): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
 
-// Thêm 1 dòng 8 cột không viền (khớp PDF mẫu), căn lề + số tiền #,##0.00
+// Thêm 1 dòng 8 cột không viền (khớp PDF mẫu), căn lề + số tiền #.##0,00
 interface XRowOpts {
   bold?: boolean;
   size?: number;
@@ -416,7 +416,7 @@ function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): Excel
     }
     if (o.bold || o.size) cell.font = { bold: !!o.bold, size: o.size ?? 11 };
     if (o.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: o.fill } };
-    if (o.money && typeof cell.value === 'number') cell.numFmt = '#,##0';
+    if (o.money && typeof cell.value === 'number') cell.numFmt = '#.##0';
     cell.alignment = {
       horizontal: o.center ? 'center' : o.right ? 'right' : 'left',
       vertical: 'middle',
@@ -660,9 +660,9 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       { header: 'Mô tả', key: 'description', width: 28 },
       { header: 'Hãng tàu / Đại lý', key: 'partner', width: 22 },
       { header: 'NV giao nhận', key: 'deliveryStaff', width: 18 },
-      { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
+      { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
       { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-      { header: 'Thành Tiền', key: 'portAmt', width: 15, style: { numFmt: '#,##0.00' } },
+      { header: 'Thành Tiền', key: 'portAmt', width: 15, style: { numFmt: '#.##0,00' } },
       { header: 'Ghi chú', key: 'note', width: 26 },
     ]);
     for (const o of sheet.jobOrders) {
@@ -689,11 +689,11 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       { header: 'Hãng tàu / Đại lý', key: 'partner', width: 22 },
       { header: 'Đơn vị tính', key: 'unit', width: 12 },
       { header: 'Số lượng', key: 'quantity', width: 10 },
-      { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
+      { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
       { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-      { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#,##0.00' } },
-      { header: 'Sau thuế', key: 'afterTaxAmount', width: 15, style: { numFmt: '#,##0.00' } },
-      { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#,##0.00' } },
+      { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#.##0,00' } },
+      { header: 'Sau thuế', key: 'afterTaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
+      { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#.##0,00' } },
       { header: 'Ghi chú', key: 'note', width: 26 },
     ]);
     for (const b of sheet.jobBookings) {

@@ -224,23 +224,23 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
           </Form.Item>
           {currency === 'VND' ? (
             <Form.Item label="Giá VND" name="priceVnd">
-              <DecimalInput locale="en" placeholder="Giá theo VND" style={{ width: '100%' }} />
+              <DecimalInput locale="vi" placeholder="Giá theo VND" style={{ width: '100%' }} />
             </Form.Item>
           ) : (
             <>
               <Form.Item label="Giá (USD)" name="priceUsd">
-                <DecimalInput locale="en" placeholder="Giá theo USD" style={{ width: '100%' }} />
+                <DecimalInput locale="vi" placeholder="Giá theo USD" style={{ width: '100%' }} />
               </Form.Item>
-              <Form.Item label="Tỷ giá" name="exchangeRate">
-                <DecimalInput locale="en" placeholder="VD: 25,400" style={{ width: '100%' }} />
-              </Form.Item>
+                <Form.Item label="Tỷ giá" name="exchangeRate">
+                  <DecimalInput locale="vi" placeholder="VD: 25.400" style={{ width: '100%' }} />
+                </Form.Item>
             </>
           )}
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế" options={[{ value: 0, label: '0%' }, { value: 8, label: '8%' }, { value: 10, label: '10%' }]} />
           </Form.Item>
           <Form.Item label="Tổng tiền" name="total" className="sm:col-span-2">
-            <DecimalInput locale="en" disabled style={{ width: '100%' }} />
+            <DecimalInput locale="vi" disabled style={{ width: '100%' }} />
           </Form.Item>
         </div>
       </Form>
@@ -276,19 +276,19 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
                   name="pretaxAmount"
                   rules={[{ required: true, message: 'Nhập số tiền trước thuế' }]}
                 >
-                  <DecimalInput locale="en" style={{ width: '100%' }} />
+                  <DecimalInput locale="vi" style={{ width: '100%' }} />
                 </Form.Item>
                 <Form.Item label="Thuế (%)" name="taxRate" initialValue={0}>
                   <Select placeholder="Chọn thuế" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
                 </Form.Item>
                 <Form.Item label="Tiền thuế" name="taxAmount">
-                  <DecimalInput locale="en" disabled style={{ width: '100%' }} />
+                  <DecimalInput locale="vi" disabled style={{ width: '100%' }} />
                 </Form.Item>
                 <Form.Item label="Sau thuế" name="afterTaxAmount">
-                  <DecimalInput locale="en" disabled style={{ width: '100%' }} />
+                  <DecimalInput locale="vi" disabled style={{ width: '100%' }} />
                 </Form.Item>
                 <Form.Item label="Tổng tiền" name="total" className="sm:col-span-2">
-                  <DecimalInput locale="en" disabled style={{ width: '100%' }} />
+                  <DecimalInput locale="vi" disabled style={{ width: '100%' }} />
                 </Form.Item>
               </div>
             </Form>

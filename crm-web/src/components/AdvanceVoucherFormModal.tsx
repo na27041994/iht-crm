@@ -393,7 +393,6 @@ export default function AdvanceVoucherFormModal({
                   style={{ width: 200 }}
                 />
                 <DecimalInput
-                  locale="en"
                   style={{ width: 150 }}
                   placeholder="Số tiền dương"
                   value={it.amount}
