@@ -78,7 +78,6 @@ export async function buildDebitLandscapeWorkbook(sheets: any[]): Promise<Buffer
   const ws = wb.addWorksheet('Debit ngang');
   ws.columns = WIDTHS.map((width) => ({ width }));
   ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } as any;
-  ws.sheetProperties.pageSetUpPr = { fitToPage: true };
 
   const header = ws.addRow(HEADERS);
   header.font = { bold: true, size: 10 };
