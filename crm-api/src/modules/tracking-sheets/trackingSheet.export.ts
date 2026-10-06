@@ -404,10 +404,16 @@ interface XRowOpts {
   center?: boolean;
   right?: boolean;
   money?: boolean;
+  border?: boolean;
+  borderCols?: [number, number];
 }
 function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): ExcelJS.Row {
   const row = ws.addRow(values);
-  row.eachCell({ includeEmpty: true }, (cell) => {
+  const thin = { style: 'thin' as const };
+  row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    if (o.border || (o.borderCols && colNumber >= o.borderCols[0] && colNumber <= o.borderCols[1])) {
+      cell.border = { top: thin, left: thin, bottom: thin, right: thin };
+    }
     if (o.bold || o.size) cell.font = { bold: !!o.bold, size: o.size ?? 11 };
     if (o.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: o.fill } };
     if (o.money && typeof cell.value === 'number') cell.numFmt = '#,##0.00';
@@ -461,24 +467,24 @@ function writeDebitHeader(ws: ExcelJS.Worksheet, s: any) {
   r = xrow(ws, ['DEBIT NOTE', '', '', '', '', '', '', ''], { bold: true, size: 16, center: true });
   xmerge(ws, r, 1, 8);
 
-  r = xrow(ws, ['RECEIVE', '', 'Date:', today, '', '', '', ''], { bold: true, center: true });
+  r = xrow(ws, ['RECEIVE', '', 'Date:', today, '', '', '', ''], { bold: true, center: true, border: true });
   xmerge(ws, r, 1, 2);
   // Hàng Date nền đỏ (khớp mẫu)
   for (let c = 3; c <= 8; c++) {
     const cell = r.getCell(c);
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
   }
-  r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', ''], { bold: true });
+  r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', ''], { bold: true, border: true });
   xmerge(ws, r, 2, 4);
   xmerge(ws, r, 6, 8);
-  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', contactPhone, '', ''], { bold: true });
+  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', contactPhone, '', ''], { bold: true, border: true });
   xmerge(ws, r, 2, 4);
   xmerge(ws, r, 6, 8);
-  r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', ''], { bold: true });
+  r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', ''], { bold: true, border: true });
   xmerge(ws, r, 2, 8);
-  r = xrow(ws, ['Tel:', customer.phone ?? '', '', '', '', '', '', ''], { bold: true });
+  r = xrow(ws, ['Tel:', customer.phone ?? '', '', '', '', '', '', ''], { bold: true, border: true });
   xmerge(ws, r, 2, 8);
-  r = xrow(ws, ['Fax:', customer.fax ?? '', '', '', '', '', '', ''], { bold: true });
+  r = xrow(ws, ['Fax:', customer.fax ?? '', '', '', '', '', '', ''], { bold: true, border: true });
   xmerge(ws, r, 2, 8);
 }
 
@@ -499,7 +505,7 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     xmerge(ws, r, 6, 8);
   }
 
-  xrow(ws, ['STT', 'Descriptions', 'Invoice No', 'Unit', 'Qty', 'Price', 'VAT Tax', 'Total Amt'], { bold: true, center: true });
+  xrow(ws, ['STT', 'Descriptions', 'Invoice No', 'Unit', 'Qty', 'Price', 'VAT Tax', 'Total Amt'], { bold: true, center: true, border: true });
   const debits: any[] = s.debitNotes ?? [];
   const t = debitSheetTotals(s);
   debits.forEach((dd, idx) => {
@@ -509,18 +515,18 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     xrow(
       ws,
       [idx + 1, dd.description ?? dd.type, dd.invoiceNumber ?? '', dd.unit ?? '', dd.quantity != null ? Number(dd.quantity) : '', price, vat ? vat : '-', amt],
-      { money: true },
+      { money: true, border: true },
     );
   });
   const pretaxTotal = Math.round((t.total - t.vat) * 100) / 100;
-  let r = xrow(ws, ['', '', '', '', '', 'JOB AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true });
+  let r = xrow(ws, ['', '', '', '', '', 'JOB AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, borderCols: [6, 8] });
   xmerge(ws, r, 1, 5);
   if (t.tamUng > 0) {
-    r = xrow(ws, ['', '', '', '', 'TỔNG CỘNG 合計', pretaxTotal, t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true, fill: 'FFFFFF00' });
+    r = xrow(ws, ['', '', '', '', 'TỔNG CỘNG 合計', pretaxTotal, t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true, fill: 'FFFFFF00', borderCols: [5, 8] });
     xmerge(ws, r, 1, 4);
-    r = xrow(ws, ['', '', '', '', '', '', 'CHI HỘ 代墊費', t.tamUng], { bold: true, right: true, money: true });
+    r = xrow(ws, ['', '', '', '', '', '', 'CHI HỘ 代墊費', t.tamUng], { bold: true, right: true, money: true, borderCols: [7, 8] });
     xmerge(ws, r, 1, 6);
-    r = xrow(ws, ['', '', '', '', '', '', 'PHÍ DỊCH VỤ IHT - 服務費', t.serviceFee], { bold: true, right: true, money: true });
+    r = xrow(ws, ['', '', '', '', '', '', 'PHÍ DỊCH VỤ IHT - 服務費', t.serviceFee], { bold: true, right: true, money: true, borderCols: [7, 8] });
     xmerge(ws, r, 1, 6);
   }
   return { vat: t.vat, total: t.total };
@@ -586,7 +592,7 @@ export async function buildDebitMultiTemplateWorkbook(sheets: any[]): Promise<Bu
   }
   const gPretax = Math.round((gTotal - gVat) * 100) / 100;
   const f = (n: number) => n;
-  const r = xrow(ws, ['', '', '', '', 'TOTAL AMT', f(gPretax), gVat ? gVat : '-', f(gTotal)], { bold: true, right: true, money: true });
+  const r = xrow(ws, ['', '', '', '', 'TOTAL AMT', f(gPretax), gVat ? gVat : '-', f(gTotal)], { bold: true, right: true, money: true, borderCols: [5, 8] });
   xmerge(ws, r, 1, 4);
   writeDebitBankSign(ws);
 
