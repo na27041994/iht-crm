@@ -575,7 +575,8 @@ export async function* iterateDebitItems(
 ): AsyncGenerator<DebitItem> {
   let offset = 0;
   for (;;) {
-    const { rows } = await getDebitItems({ dim: 'customer', from, to, offset, limit: batchSize });
+    // Không lọc dim: lấy tất cả dòng (dim customer + id null sẽ chỉ lấy phiếu không khách)
+    const { rows } = await getDebitItems({ from, to, offset, limit: batchSize });
     for (const r of rows) yield r;
     if (rows.length < batchSize) break;
     offset += batchSize;
