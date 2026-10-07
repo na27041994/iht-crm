@@ -41,8 +41,6 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
   { header: 'Mã KH', key: 'customerCode', width: 12 },
   { header: 'Khách hàng', key: 'customerName', width: 30 },
-  { header: 'Loại (gộp)', key: 'types', width: 28 },
-  { header: 'Số dòng', key: 'rowCount', width: 10 },
   { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
   { header: 'Tiền trước thuế', key: 'pretaxAmount', width: 16 },
   { header: 'Tiền thuế', key: 'taxAmount', width: 15 },
@@ -91,8 +89,6 @@ export async function buildDebitReportWorkbook(
     sheetNumber: string;
     customerCode: string;
     customerName: string;
-    types: string[];
-    rowCount: number;
     date: Date;
     pretax: number;
     tax: number;
@@ -105,8 +101,6 @@ export async function buildDebitReportWorkbook(
         sheetNumber: it.sheetNumber,
         customerCode: it.customerCode ?? '',
         customerName: it.customerName,
-        types: [],
-        rowCount: 0,
         date: new Date(it.date),
         pretax: 0,
         tax: 0,
@@ -114,8 +108,6 @@ export async function buildDebitReportWorkbook(
       };
       groups.set(it.sheetId, g);
     }
-    if (it.type && !g.types.includes(it.type)) g.types.push(it.type);
-    g.rowCount += 1;
     g.pretax += it.pretaxAmount;
     g.tax += it.taxAmount;
     g.total += it.amount;
@@ -125,8 +117,6 @@ export async function buildDebitReportWorkbook(
       sheetNumber: g.sheetNumber,
       customerCode: g.customerCode,
       customerName: g.customerName,
-      types: g.types.join(', '),
-      rowCount: g.rowCount,
       date: g.date,
       pretaxAmount: vndText(g.pretax / MONEY_SCALE),
       taxAmount: vndText(g.tax / MONEY_SCALE),
@@ -137,7 +127,6 @@ export async function buildDebitReportWorkbook(
   if (groups.size) {
     const sumRow = wsDetail.addRow({
       customerName: 'Tổng cộng',
-      rowCount: [...groups.values()].reduce((s, g) => s + g.rowCount, 0),
       pretaxAmount: vndText([...groups.values()].reduce((s, g) => s + g.pretax, 0) / MONEY_SCALE),
       taxAmount: vndText([...groups.values()].reduce((s, g) => s + g.tax, 0) / MONEY_SCALE),
       amount: vndText(gTotal / MONEY_SCALE),
