@@ -25,3 +25,12 @@ export function formatScaled(v: number | string | null | undefined): string {
   if (Number.isNaN(n)) return '-';
   return (n / MONEY_SCALE).toLocaleString('vi-VN');
 }
+
+/** Text tiền chuẩn Việt để ghi thẳng vào Excel (viewer không render đúng numFmt châu Âu).
+ * 30000 -> "30.000", 1292.21 -> "1.292,21", 0 -> "0", text giữ nguyên. */
+export function vndText(v: unknown): string {
+  if (v == null || v === '') return '';
+  const n = Number(v);
+  if (Number.isNaN(n)) return String(v);
+  return n.toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+}

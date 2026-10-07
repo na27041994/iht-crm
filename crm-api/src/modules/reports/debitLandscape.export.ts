@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { vndText } from '../../lib/money.js';
 
 // Xuất Excel debit khổ ngang khớp mẫu cũ:
 // Job No | Consignee | From | To | Note | Bill No | ETD/ETA | Customs No | Customs Date |
@@ -57,20 +58,16 @@ const HEADERS = [
 ];
 const WIDTHS = [13, 12, 8, 8, 14, 17, 10, 19, 11, 14, 10, 8, 12, 13, 34, 8, 9, 13, 13, 14];
 
-// Thêm 1 dòng 20 cột (money: Price/Tax/Total dạng #.##0,00; GW chuẩn Việt #.##0,##)
+// Thêm 1 dòng 20 cột (tiền/GW ghi text chuẩn Việt, viewer không render đúng numFmt châu Âu)
 function lrow(ws: ExcelJS.Worksheet, values: unknown[], o: { bold?: boolean } = {}): ExcelJS.Row {
   const row = ws.addRow(values);
   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
     if (o.bold) cell.font = { bold: true, size: 10 };
     else cell.font = { size: 10 };
     cell.alignment = { vertical: 'middle', wrapText: true };
-    // Price(18) / Tax Amt(19) / Total Amt(20)
-    if ((colNumber === 18 || colNumber === 19 || colNumber === 20) && typeof cell.value === 'number') {
-      cell.numFmt = '#.##0,00';
-    }
-    // GW(11) chuẩn Việt: 19.413,77
-    if (colNumber === 11 && typeof cell.value === 'number') {
-      cell.numFmt = '#.##0,##';
+    // Price(18) / Tax Amt(19) / Total Amt(20) / GW(11): số -> text chuẩn Việt
+    if ((colNumber === 18 || colNumber === 19 || colNumber === 20 || colNumber === 11) && typeof cell.value === 'number') {
+      cell.value = vndText(cell.value);
     }
   });
   return row;

@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { vndText } from '../../lib/money.js';
 
 const HEADER_FILL = 'FF1F4E79';
 
@@ -42,7 +43,7 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
     { header: 'Khách hàng', key: 'customer', width: 28 },
     { header: 'Người tạo', key: 'createdBy', width: 18 },
     { header: 'NV ứng tiền', key: 'advanceStaff', width: 18 },
-    { header: 'Tổng tiền', key: 'totalAmount', width: 16, style: { numFmt: '#.##0,00' } },
+    { header: 'Tổng tiền', key: 'totalAmount', width: 16 },
     { header: 'Ghi chú', key: 'note', width: 24 },
   ]);
 
@@ -57,12 +58,12 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
       customer: v.customer ? v.customer.companyName || v.customer.customerName : '',
       createdBy: v.createdBy?.fullName ?? '',
       advanceStaff: v.advanceStaff?.fullName ?? v.createdBy?.fullName ?? '',
-      totalAmount: Number(v.totalAmount ?? 0) / 100,
+      totalAmount: vndText(Number(v.totalAmount ?? 0) / 100),
       note: v.note ?? '',
     });
   });
 
-  const total = vouchers.reduce((s, v) => s + Number(v.totalAmount ?? 0) / 100, 0);
+  const total = vndText(vouchers.reduce((s, v) => s + Number(v.totalAmount ?? 0) / 100, 0));
   const sumRow = ws.addRow({
     customer: 'Tổng cộng',
     totalAmount: total,
@@ -78,7 +79,7 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
       { header: 'Loại', key: 'type', width: 16 },
       { header: 'Khoản', key: 'kind', width: 12 },
       { header: 'Mô tả', key: 'description', width: 28 },
-      { header: 'Số tiền', key: 'amount', width: 16, style: { numFmt: '#.##0,00' } },
+      { header: 'Số tiền', key: 'amount', width: 16 },
       { header: 'Ghi chú', key: 'note', width: 30 },
     ]);
     for (const v of vouchers) {
@@ -88,7 +89,7 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
           type: v.type,
           kind: (it as any).kind ?? 'Chi',
           description: (it as any).description ?? '',
-          amount: Number(it.amount) / 100,
+          amount: vndText(Number(it.amount) / 100),
           note: it.note ?? '',
         });
       }

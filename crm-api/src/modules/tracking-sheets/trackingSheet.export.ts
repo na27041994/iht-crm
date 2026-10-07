@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { vndText } from '../../lib/money.js';
 import type { TrackingSheetWithRelations } from './trackingSheet.service.js';
 import type { Prisma } from '@prisma/client';
 
@@ -59,9 +60,9 @@ const JOB_ORDER_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Phân loại', key: 'type', width: 18 },
   { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'NV giao nhận', key: 'deliveryStaff', width: 18 },
-  { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Trước thuế', key: 'pretaxAmount', width: 15 },
   { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-  { header: 'Thành Tiền', key: 'portAmt', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Thành Tiền', key: 'portAmt', width: 15 },
   { header: 'Ghi chú', key: 'note', width: 26 },
 ];
 
@@ -72,11 +73,11 @@ const JOB_BOOKING_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'Đơn vị tính', key: 'unit', width: 12 },
   { header: 'Số lượng', key: 'quantity', width: 10 },
-  { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Trước thuế', key: 'pretaxAmount', width: 15 },
   { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-  { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#.##0,00' } },
-  { header: 'Sau thuế', key: 'afterTaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
-  { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Tiền thuế', key: 'taxAmount', width: 15 },
+  { header: 'Sau thuế', key: 'afterTaxAmount', width: 15 },
+  { header: 'Tổng tiền', key: 'total', width: 15 },
   { header: 'Ghi chú', key: 'note', width: 26 },
 ];
 
@@ -89,11 +90,11 @@ const DEBIT_NOTE_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Unit', key: 'unit', width: 10 },
   { header: 'Current', key: 'currency', width: 9 },
   { header: 'Số lượng', key: 'quantity', width: 10 },
-  { header: 'Giá VND', key: 'priceVnd', width: 15, style: { numFmt: '#.##0,00' } },
-  { header: 'Giá USD', key: 'priceUsd', width: 13, style: { numFmt: '#.##0,00' } },
-  { header: 'Tỷ giá', key: 'exchangeRate', width: 12, style: { numFmt: '#.##0,00' } },
+  { header: 'Giá VND', key: 'priceVnd', width: 15 },
+  { header: 'Giá USD', key: 'priceUsd', width: 13 },
+  { header: 'Tỷ giá', key: 'exchangeRate', width: 12 },
   { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-  { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Tổng tiền', key: 'total', width: 15 },
 ];
 
 // Hàm jobOrderRow: xử lý jobOrderRow
@@ -104,9 +105,9 @@ function jobOrderRow(s: TrackingSheetWithRelations, o: TrackingSheetWithRelation
     type: o.type,
     description: o.description ?? '',
     deliveryStaff: (o as any).deliveryStaff?.fullName ?? '',
-    pretaxAmount: numMoney((o as any).pretaxAmount),
+    pretaxAmount: vndText(numMoney((o as any).pretaxAmount)),
     taxRate: num((o as any).taxRate),
-    portAmt: numMoney(o.portAmt),
+    portAmt: vndText(numMoney(o.portAmt)),
     note: o.note ?? '',
   };
 }
@@ -120,11 +121,11 @@ function jobBookingRow(s: TrackingSheetWithRelations, b: TrackingSheetWithRelati
     description: b.description ?? '',
     unit: b.unit ?? '',
     quantity: num(b.quantity),
-    pretaxAmount: numMoney(b.pretaxAmount),
+    pretaxAmount: vndText(numMoney(b.pretaxAmount)),
     taxRate: num(b.taxRate),
-    taxAmount: numMoney(b.taxAmount),
-    afterTaxAmount: numMoney(b.afterTaxAmount),
-    total: numMoney(b.total),
+    taxAmount: vndText(numMoney(b.taxAmount)),
+    afterTaxAmount: vndText(numMoney(b.afterTaxAmount)),
+    total: vndText(numMoney(b.total)),
     note: (b as any).note ?? '',
   };
 }
@@ -140,11 +141,11 @@ function debitNoteRow(s: TrackingSheetWithRelations, d: TrackingSheetWithRelatio
     unit: d.unit ?? '',
     currency: d.currency,
     quantity: num(d.quantity),
-    priceVnd: numMoney(d.priceVnd),
-    priceUsd: numMoney(d.priceUsd),
-    exchangeRate: num(d.exchangeRate),
+    priceVnd: vndText(numMoney(d.priceVnd)),
+    priceUsd: vndText(numMoney(d.priceUsd)),
+    exchangeRate: vndText(num(d.exchangeRate)),
     taxRate: num(d.taxRate),
-    total: numMoney(d.total),
+    total: vndText(numMoney(d.total)),
   };
 }
 
@@ -165,8 +166,8 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
     { header: 'Từ (From)', key: 'fromLocation', width: 22 },
     { header: 'Đến (To)', key: 'toLocation', width: 22 },
     { header: 'Phân Luồng', key: 'phanLuong', width: 14 },
-    { header: 'NW (kg)', key: 'nw', width: 11, style: { numFmt: '#.##0,##' } },
-    { header: 'GW (kg)', key: 'gw', width: 11, style: { numFmt: '#.##0,##' } },
+    { header: 'NW (kg)', key: 'nw', width: 11 },
+    { header: 'GW (kg)', key: 'gw', width: 11 },
     { header: 'Ngày ETA/ETD', key: 'etaDate', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
     { header: 'Custom No', key: 'customNo', width: 15 },
     { header: 'Ngày tờ khai', key: 'declarationDate', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
@@ -189,8 +190,8 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
       fromLocation: s.fromLocation ?? '',
       toLocation: s.toLocation ?? '',
       phanLuong: (s as any).phanLuong ?? '',
-      nw: num(s.nw),
-      gw: numOrText(s.gw),
+      nw: vndText(s.nw),
+      gw: vndText(s.gw),
       etaDate: dateCell(s.etaDate),
       customNo: s.customNo ?? '',
       declarationDate: dateCell(s.declarationDate),
@@ -402,7 +403,7 @@ function fmtWtX(v: any): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
 
-// Thêm 1 dòng 8 cột không viền (khớp PDF mẫu), căn lề + số tiền #.##0,00
+// Thêm 1 dòng 8 cột, căn lề + tiền ghi text chuẩn Việt (viewer không render đúng numFmt châu Âu)
 interface XRowOpts {
   bold?: boolean;
   size?: number;
@@ -422,7 +423,7 @@ function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): Excel
     }
     if (o.bold || o.size) cell.font = { bold: !!o.bold, size: o.size ?? 11 };
     if (o.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: o.fill } };
-    if (o.money && typeof cell.value === 'number') cell.numFmt = '#.##0';
+    if (o.money && typeof cell.value === 'number') cell.value = vndText(cell.value);
     cell.alignment = {
       horizontal: o.center ? 'center' : o.right ? 'right' : 'left',
       vertical: 'middle',
@@ -505,7 +506,7 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
   const jobInfo: Array<[string, string, string, string]> = [
     ['From:', s.fromLocation ?? '', 'To:', s.toLocation ?? ''],
     ['Customs No:', s.customNo ?? '', 'Custom Date:', fmtDMY(s.declarationDate)],
-    ['NW:', s.nw != null && s.nw !== '' ? Number(s.nw) : '', 'GW:', numOrText(s.gw) ?? ''],
+    ['NW:', s.nw != null && s.nw !== '' ? vndText(Number(s.nw)) : '', 'GW:', vndText(s.gw)],
     ['Job Order:', s.sheetNumber, 'Note:', s.carrier?.carrierName ?? s.note ?? ''],
     ['QTY:', s.containerQuantity != null ? String(s.containerQuantity) : s.containerNumber ?? '', 'Invoices No:', ''],
     ['Po No:', s.billNumber ?? '', 'Bill No:', s.billNumber ?? ''],
@@ -515,9 +516,6 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     const r = xrow(ws, [l1, v1, '', '', l2, v2, '', ''], { bold: true });
     xmerge(ws, r, 2, 4);
     xmerge(ws, r, 6, 8);
-    // NW/GW số thuần hiển thị chuẩn Việt (#.##0,##)
-    if (typeof v1 === 'number') r.getCell(2).numFmt = '#.##0,##';
-    if (typeof v2 === 'number') r.getCell(6).numFmt = '#.##0,##';
   }
   ws.addRow(['', '', '', '', '', '', '', '']);
 
@@ -669,9 +667,9 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       { header: 'Mô tả', key: 'description', width: 28 },
       { header: 'Hãng tàu / Đại lý', key: 'partner', width: 22 },
       { header: 'NV giao nhận', key: 'deliveryStaff', width: 18 },
-      { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
+      { header: 'Trước thuế', key: 'pretaxAmount', width: 15 },
       { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-      { header: 'Thành Tiền', key: 'portAmt', width: 15, style: { numFmt: '#.##0,00' } },
+      { header: 'Thành Tiền', key: 'portAmt', width: 15 },
       { header: 'Ghi chú', key: 'note', width: 26 },
     ]);
     for (const o of sheet.jobOrders) {
@@ -682,9 +680,9 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
         description: o.description ?? '',
         partner: (o as any).carrier?.carrierName ?? (o as any).agent?.agentName ?? (sheet as any).carrier?.carrierName ?? '',
         deliveryStaff: (o as any).deliveryStaff?.fullName ?? '',
-        pretaxAmount: numMoney((o as any).pretaxAmount),
+        pretaxAmount: vndText(numMoney((o as any).pretaxAmount)),
         taxRate: num((o as any).taxRate),
-        portAmt: numMoney(o.portAmt),
+        portAmt: vndText(numMoney(o.portAmt)),
         note: o.note ?? '',
       });
     }
@@ -698,11 +696,11 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       { header: 'Hãng tàu / Đại lý', key: 'partner', width: 22 },
       { header: 'Đơn vị tính', key: 'unit', width: 12 },
       { header: 'Số lượng', key: 'quantity', width: 10 },
-      { header: 'Trước thuế', key: 'pretaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
+      { header: 'Trước thuế', key: 'pretaxAmount', width: 15 },
       { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-      { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#.##0,00' } },
-      { header: 'Sau thuế', key: 'afterTaxAmount', width: 15, style: { numFmt: '#.##0,00' } },
-      { header: 'Tổng tiền', key: 'total', width: 15, style: { numFmt: '#.##0,00' } },
+      { header: 'Tiền thuế', key: 'taxAmount', width: 15 },
+      { header: 'Sau thuế', key: 'afterTaxAmount', width: 15 },
+      { header: 'Tổng tiền', key: 'total', width: 15 },
       { header: 'Ghi chú', key: 'note', width: 26 },
     ]);
     for (const b of sheet.jobBookings) {
@@ -714,11 +712,11 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
         partner: (b as any).carrier?.carrierName ?? (b as any).agent?.agentName ?? (sheet as any).carrier?.carrierName ?? '',
         unit: b.unit ?? '',
         quantity: num(b.quantity),
-        pretaxAmount: numMoney(b.pretaxAmount),
+        pretaxAmount: vndText(numMoney(b.pretaxAmount)),
         taxRate: num(b.taxRate),
-        taxAmount: numMoney(b.taxAmount),
-        afterTaxAmount: numMoney(b.afterTaxAmount),
-        total: numMoney(b.total),
+        taxAmount: vndText(numMoney(b.taxAmount)),
+        afterTaxAmount: vndText(numMoney(b.afterTaxAmount)),
+        total: vndText(numMoney(b.total)),
         note: (b as any).note ?? '',
       });
     }

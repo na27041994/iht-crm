@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { vndText } from '../../lib/money.js';
 import { iterateLiftingItems } from './report.service.js';
 import type { RefundGroup } from './report.service.js';
 
@@ -32,7 +33,7 @@ const SUMMARY_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Đối tượng', key: 'name', width: 34 },
   { header: 'Số dòng', key: 'rowCount', width: 10 },
   { header: 'Số phiếu', key: 'sheetCount', width: 10 },
-  { header: 'Tổng tiền nâng hạ', key: 'totalAmount', width: 18, style: { numFmt: '#.##0,00' } },
+  { header: 'Tổng tiền nâng hạ', key: 'totalAmount', width: 18 },
 ];
 
 const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
@@ -42,7 +43,7 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'Khách hàng', key: 'customerName', width: 30 },
   { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
-  { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Số tiền', key: 'amount', width: 15 },
 ];
 
 const MONEY_SCALE = 100;
@@ -52,14 +53,14 @@ function addSummarySheet(wb: ExcelJS.Workbook, title: string, entityLabel: strin
   setupSheet(ws, SUMMARY_COLUMNS);
   ws.getColumn('name').header = entityLabel;
   groups.forEach((g, i) => {
-    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: g.totalAmount / MONEY_SCALE });
+    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: vndText(g.totalAmount / MONEY_SCALE) });
   });
   const total = groups.reduce((s, g) => s + g.totalAmount / MONEY_SCALE, 0);
   const sumRow = ws.addRow({
     name: 'Tổng cộng',
     rowCount: groups.reduce((s, g) => s + g.rowCount, 0),
     sheetCount: groups.reduce((s, g) => s + g.sheetCount, 0),
-    totalAmount: total,
+    totalAmount: vndText(total),
   });
   sumRow.font = { bold: true };
 }
@@ -90,7 +91,7 @@ export async function buildLiftingReportWorkbook(
       description: it.description ?? '',
       customerName: it.customerName,
       date: new Date(it.date),
-      amount: it.amount / MONEY_SCALE,
+      amount: vndText(it.amount / MONEY_SCALE),
     });
   }
 
@@ -110,7 +111,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
     { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
     { header: 'Khách hàng', key: 'customer', width: 28 },
     { header: 'Số dòng nâng hạ', key: 'count', width: 14 },
-    { header: 'Tổng tiền', key: 'total', width: 16, style: { numFmt: '#.##0,00' } },
+    { header: 'Tổng tiền', key: 'total', width: 16 },
   ]);
 
   sheets.forEach((s: any, i: number) => {
@@ -124,7 +125,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
       sheetNumber: s.sheetNumber,
       customer: s.customer ? s.customer.companyName || s.customer.customerName : '',
       count: all.length,
-      total,
+      total: vndText(total),
     });
   });
 
@@ -136,7 +137,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
       ];
       return sum + all.reduce((a, r) => a + Number(r.total ?? r.portAmt ?? 0) / MONEY_SCALE, 0);
     }, 0);
-    const sumRow = ws.addRow({ customer: 'Tổng cộng', total });
+    const sumRow = ws.addRow({ customer: 'Tổng cộng', total: vndText(total) });
     sumRow.font = { bold: true };
   }
 
@@ -149,7 +150,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
     { header: 'Mô tả', key: 'description', width: 28 },
     { header: 'Khách hàng', key: 'customerName', width: 30 },
     { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
-    { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#.##0,00' } },
+    { header: 'Số tiền', key: 'amount', width: 15 },
   ]);
   for (const s of sheets) {
     for (const o of s.jobOrders || []) {

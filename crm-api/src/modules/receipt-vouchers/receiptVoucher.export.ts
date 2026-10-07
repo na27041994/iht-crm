@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { vndText } from '../../lib/money.js';
 
 const HEADER_FILL = 'FF1F4E79';
 
@@ -41,8 +42,8 @@ export async function buildReceiptVouchersWorkbook(vouchers: any[]): Promise<Buf
     { header: 'Người nộp', key: 'payer', width: 32 },
     { header: 'Người tạo', key: 'createdBy', width: 18 },
     { header: 'NV thu', key: 'staff', width: 18 },
-    { header: 'Số tiền', key: 'amount', width: 16, style: { numFmt: '#.##0,00' } },
-    { header: 'Phí chuyển khoản', key: 'transFee', width: 16, style: { numFmt: '#.##0,00' } },
+    { header: 'Số tiền', key: 'amount', width: 16 },
+    { header: 'Phí chuyển khoản', key: 'transFee', width: 16 },
     { header: 'Lý do nộp', key: 'note', width: 30 },
   ]);
 
@@ -56,13 +57,13 @@ export async function buildReceiptVouchersWorkbook(vouchers: any[]): Promise<Buf
       payer: v.payerDisplay ?? (v.customer ? v.customer.companyName || v.customer.customerName : v.payerName ?? ''),
       createdBy: v.createdBy?.fullName ?? '',
       staff: v.staff?.fullName ?? v.createdBy?.fullName ?? '',
-      amount: Number(v.amount ?? 0) / 100,
-      transFee: Number(v.transFee ?? 0) / 100,
+      amount: vndText(Number(v.amount ?? 0) / 100),
+      transFee: vndText(Number(v.transFee ?? 0) / 100),
       note: v.note ?? '',
     });
   });
 
-  const total = vouchers.reduce((s, v) => s + Number(v.amount ?? 0) / 100, 0);
+  const total = vndText(vouchers.reduce((s, v) => s + Number(v.amount ?? 0) / 100, 0));
   const sumRow = ws.addRow({
     payer: 'Tổng cộng',
     amount: total,

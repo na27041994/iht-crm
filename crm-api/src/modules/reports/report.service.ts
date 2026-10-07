@@ -187,7 +187,8 @@ export async function* iterateRefundItems(
 ): AsyncGenerator<RefundItem> {
   let offset = 0;
   for (;;) {
-    const { rows } = await getRefundItems({ dim: 'customer', type, from, to, offset, limit: batchSize });
+    // Không lọc dim: lấy tất cả dòng (dim customer + id null sẽ chỉ lấy phiếu không khách)
+    const { rows } = await getRefundItems({ type, from, to, offset, limit: batchSize });
     for (const r of rows) yield r;
     if (rows.length < batchSize) break;
     offset += batchSize;
@@ -438,7 +439,8 @@ export async function* iterateLiftingItems(
 ): AsyncGenerator<RefundItem> {
   let offset = 0;
   for (;;) {
-    const { rows } = await getLiftingItems({ dim: 'customer', from, to, offset, limit: batchSize });
+    // Không lọc dim: lấy tất cả dòng (dim customer + id null sẽ chỉ lấy phiếu không khách)
+    const { rows } = await getLiftingItems({ from, to, offset, limit: batchSize });
     for (const r of rows) yield r;
     if (rows.length < batchSize) break;
     offset += batchSize;

@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { vndText } from '../../lib/money.js';
 import { iterateDebitItems, splitDebitTax } from './report.service.js';
 import type { DebitGroup } from './report.service.js';
 
@@ -33,7 +34,7 @@ const SUMMARY_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Số dòng', key: 'rowCount', width: 10 },
   { header: 'Số phiếu', key: 'sheetCount', width: 10 },
   { header: 'Số job', key: 'rowCount', width: 10 },
-  { header: 'Tổng tiền', key: 'totalAmount', width: 18, style: { numFmt: '#.##0,00' } },
+  { header: 'Tổng tiền', key: 'totalAmount', width: 18 },
 ];
 
 const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
@@ -46,9 +47,9 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'SL', key: 'quantity', width: 8 },
   { header: 'Tiền tệ', key: 'currency', width: 10 },
   { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
-  { header: 'Tiền trước thuế', key: 'pretaxAmount', width: 16, style: { numFmt: '#.##0,00' } },
-  { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#.##0,00' } },
-  { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#.##0,00' } },
+  { header: 'Tiền trước thuế', key: 'pretaxAmount', width: 16 },
+  { header: 'Tiền thuế', key: 'taxAmount', width: 15 },
+  { header: 'Số tiền', key: 'amount', width: 15 },
 ];
 
 const MONEY_SCALE = 100;
@@ -58,14 +59,14 @@ function addSummarySheet(wb: ExcelJS.Workbook, title: string, entityLabel: strin
   setupSheet(ws, SUMMARY_COLUMNS);
   ws.getColumn('name').header = entityLabel;
   groups.forEach((g, i) => {
-    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: g.totalAmount / MONEY_SCALE });
+    ws.addRow({ stt: i + 1, name: g.name, rowCount: g.rowCount, sheetCount: g.sheetCount, totalAmount: vndText(g.totalAmount / MONEY_SCALE) });
   });
   const total = groups.reduce((s, g) => s + g.totalAmount / MONEY_SCALE, 0);
   const sumRow = ws.addRow({
     name: 'Tổng cộng',
     rowCount: groups.reduce((s, g) => s + g.rowCount, 0),
     sheetCount: groups.reduce((s, g) => s + g.sheetCount, 0),
-    totalAmount: total,
+    totalAmount: vndText(total),
   });
   sumRow.font = { bold: true };
 }
@@ -99,9 +100,9 @@ export async function buildDebitReportWorkbook(
       quantity: it.quantity ?? '',
       currency: it.currency ?? '',
       date: new Date(it.date),
-      pretaxAmount: it.pretaxAmount / MONEY_SCALE,
-      taxAmount: it.taxAmount / MONEY_SCALE,
-      amount: it.amount / MONEY_SCALE,
+      pretaxAmount: vndText(it.pretaxAmount / MONEY_SCALE),
+      taxAmount: vndText(it.taxAmount / MONEY_SCALE),
+      amount: vndText(it.amount / MONEY_SCALE),
     });
   }
 
@@ -121,7 +122,7 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
     { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
     { header: 'Khách hàng', key: 'customer', width: 28 },
     { header: 'Số Debit', key: 'count', width: 10 },
-    { header: 'Tổng tiền', key: 'total', width: 16, style: { numFmt: '#.##0,00' } },
+    { header: 'Tổng tiền', key: 'total', width: 16 },
   ]);
 
   sheets.forEach((s: any, i: number) => {
@@ -132,13 +133,13 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
       sheetNumber: s.sheetNumber,
       customer: s.customer ? s.customer.companyName || s.customer.customerName : '',
       count: s.debitNotes?.length ?? 0,
-      total,
+      total: vndText(total),
     });
   });
 
   if (sheets.length) {
     const total = sheets.reduce((sum: number, s: any) => sum + (s.debitNotes || []).reduce((a: number, d: any) => a + Number(d.total ?? 0) / MONEY_SCALE, 0), 0);
-    const sumRow = ws.addRow({ customer: 'Tổng cộng', total });
+    const sumRow = ws.addRow({ customer: 'Tổng cộng', total: vndText(total) });
     sumRow.font = { bold: true };
   }
 
@@ -158,9 +159,9 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
         quantity: d.quantity ? Number(d.quantity) : '',
         currency: d.currency ?? '',
         date: d.createdAt ? new Date(d.createdAt) : new Date(),
-        pretaxAmount: pretax / MONEY_SCALE,
-        taxAmount: tax / MONEY_SCALE,
-        amount: Number(d.total ?? 0) / MONEY_SCALE,
+        pretaxAmount: vndText(pretax / MONEY_SCALE),
+        taxAmount: vndText(tax / MONEY_SCALE),
+        amount: vndText(Number(d.total ?? 0) / MONEY_SCALE),
       });
     }
   }
