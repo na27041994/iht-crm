@@ -209,7 +209,6 @@ function JobDebitBlock({ sheet }: { sheet: SheetWithDebits }) {
   });
   totalVat = Math.round(totalVat * 100) / 100;
   totalAmt = Math.round(totalAmt * 100) / 100;
-  const pretaxTotal = Math.round((totalAmt - totalVat) * 100) / 100;
   // CHI HỘ = tổng tạm ứng (Chi tạm ứng, chỉ khoản Chi)
   const tamUng = Math.round(
     (sheet.advanceVouchers ?? [])
@@ -303,12 +302,6 @@ function JobDebitBlock({ sheet }: { sheet: SheetWithDebits }) {
           })}
           <tr className="old-total-row">
             <td colSpan={6} className="old-td-right old-bold">JOB AMT</td>
-            <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '-'}</td>
-            <td className="old-td-right old-bold">{totalAmt.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
-          </tr>
-          <tr className="old-total-row old-yellow-row">
-            <td colSpan={5} className="old-td-right old-bold">TỔNG CỘNG 合計</td>
-            <td className="old-td-right old-bold">{pretaxTotal.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
             <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '-'}</td>
             <td className="old-td-right old-bold">{totalAmt.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
           </tr>
