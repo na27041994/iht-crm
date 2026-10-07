@@ -344,8 +344,8 @@ const DEBIT_ROWS = Prisma.sql`
   SELECT dn.id AS "rowId", dn.type, dn.description, dn."invoiceNumber", dn."total"::float8 AS amount,
     COALESCE(s."etaDate", s."createdAt"::date) AS d,
     s.id AS "sheetId", s."sheetNumber", s."customerId",
-    cu."companyName", cu."customerName",
-    dn.currency, dn."quantity"::float8 AS quantity
+    cu."companyName", cu."customerName", cu."code" AS "customerCode",
+    dn.currency, dn."quantity"::float8 AS quantity, dn."taxRate"::float8 AS "taxRate"
   FROM debit_notes dn
   JOIN tracking_sheets s ON s.id = dn."sheetId" AND s."isDelete" = 1
   LEFT JOIN customers cu ON cu.id = s."customerId"
@@ -453,10 +453,13 @@ export type DebitItem = {
   description: string | null;
   invoiceNumber: string | null;
   amount: number;
+  pretaxAmount: number;
+  taxAmount: number;
   quantity: number | null;
   currency: string | null;
   date: string;
   customerId: number | null;
+  customerCode: string | null;
   customerName: string;
 };
 
@@ -477,16 +480,28 @@ interface RawDebitRow {
   amount: number;
   quantity: number | null;
   currency: string | null;
+  taxRate: number | null;
   d: Date | string;
   sheetId: number;
   sheetNumber: string;
   customerId: number | null;
+  customerCode: string | null;
   companyName: string | null;
   customerName: string | null;
 }
 
+// Tách tiền thuế / trước thuế từ tổng (đơn vị x100): pretax = total/(1+rate), tax = total-pretax
+export function splitDebitTax(totalScaled: number, taxRate: unknown): { pretax: number; tax: number } {
+  const total = Number(totalScaled ?? 0);
+  const rate = Number(taxRate ?? 0);
+  if (!rate) return { pretax: total, tax: 0 };
+  const pretax = Math.round(total / (1 + rate / 100));
+  return { pretax, tax: total - pretax };
+}
+
 // Hàm mapDebitRow: xử lý mapDebitRow
 function mapDebitRow(r: RawDebitRow): DebitItem {
+  const { pretax, tax } = splitDebitTax(r.amount, r.taxRate);
   return {
     sheetId: Number(r.sheetId),
     sheetNumber: r.sheetNumber,
@@ -495,10 +510,13 @@ function mapDebitRow(r: RawDebitRow): DebitItem {
     description: r.description,
     invoiceNumber: r.invoiceNumber,
     amount: Number(r.amount ?? 0),
+    pretaxAmount: pretax,
+    taxAmount: tax,
     quantity: r.quantity == null ? null : Number(r.quantity),
     currency: r.currency,
     date: new Date(r.d).toISOString(),
     customerId: r.customerId == null ? null : Number(r.customerId),
+    customerCode: r.customerCode ?? null,
     customerName: r.customerId == null ? 'Chưa có khách hàng' : (r.companyName || r.customerName || '-'),
   };
 }

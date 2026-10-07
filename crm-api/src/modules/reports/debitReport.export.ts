@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { iterateDebitItems } from './report.service.js';
+import { iterateDebitItems, splitDebitTax } from './report.service.js';
 import type { DebitGroup } from './report.service.js';
 
 const HEADER_FILL = 'FF1F4E79';
@@ -38,6 +38,7 @@ const SUMMARY_COLUMNS: Partial<ExcelJS.Column>[] = [
 
 const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
+  { header: 'Mã KH', key: 'customerCode', width: 12 },
   { header: 'Loại', key: 'type', width: 18 },
   { header: 'Invoice No', key: 'invoiceNumber', width: 16 },
   { header: 'Mô tả', key: 'description', width: 28 },
@@ -45,6 +46,8 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'SL', key: 'quantity', width: 8 },
   { header: 'Tiền tệ', key: 'currency', width: 10 },
   { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
+  { header: 'Tiền trước thuế', key: 'pretaxAmount', width: 16, style: { numFmt: '#.##0,00' } },
+  { header: 'Tiền thuế', key: 'taxAmount', width: 15, style: { numFmt: '#.##0,00' } },
   { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#.##0,00' } },
 ];
 
@@ -88,6 +91,7 @@ export async function buildDebitReportWorkbook(
   for await (const it of iterateDebitItems(from, to)) {
     wsDetail.addRow({
       sheetNumber: it.sheetNumber,
+      customerCode: it.customerCode ?? '',
       type: it.type,
       invoiceNumber: it.invoiceNumber ?? '',
       description: it.description ?? '',
@@ -95,6 +99,8 @@ export async function buildDebitReportWorkbook(
       quantity: it.quantity ?? '',
       currency: it.currency ?? '',
       date: new Date(it.date),
+      pretaxAmount: it.pretaxAmount / MONEY_SCALE,
+      taxAmount: it.taxAmount / MONEY_SCALE,
       amount: it.amount / MONEY_SCALE,
     });
   }
@@ -141,8 +147,10 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
   setupSheet(ws2, DETAIL_COLUMNS);
   for (const s of sheets) {
     for (const d of s.debitNotes || []) {
+      const { pretax, tax } = splitDebitTax(d.total, d.taxRate);
       ws2.addRow({
         sheetNumber: s.sheetNumber,
+        customerCode: s.customer?.code ?? '',
         type: d.type,
         invoiceNumber: d.invoiceNumber ?? '',
         description: d.description ?? '',
@@ -150,6 +158,8 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
         quantity: d.quantity ? Number(d.quantity) : '',
         currency: d.currency ?? '',
         date: d.createdAt ? new Date(d.createdAt) : new Date(),
+        pretaxAmount: pretax / MONEY_SCALE,
+        taxAmount: tax / MONEY_SCALE,
         amount: Number(d.total ?? 0) / MONEY_SCALE,
       });
     }

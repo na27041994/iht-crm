@@ -290,7 +290,7 @@ reportRouter.get('/debit/export', validateQuery(debitExportQuery), requirePermis
     const sheets = await prisma.trackingSheet.findMany({
       where: { id: { in: idList }, isDelete: 1 },
       include: {
-        customer: { select: { id: true, customerName: true, companyName: true } },
+        customer: { select: { id: true, code: true, customerName: true, companyName: true } },
         debitNotes: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
       },
     });
