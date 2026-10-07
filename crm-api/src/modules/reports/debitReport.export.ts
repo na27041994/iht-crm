@@ -40,12 +40,9 @@ const SUMMARY_COLUMNS: Partial<ExcelJS.Column>[] = [
 const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
   { header: 'Mã KH', key: 'customerCode', width: 12 },
-  { header: 'Loại', key: 'type', width: 18 },
-  { header: 'Invoice No', key: 'invoiceNumber', width: 16 },
-  { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'Khách hàng', key: 'customerName', width: 30 },
-  { header: 'SL', key: 'quantity', width: 8 },
-  { header: 'Tiền tệ', key: 'currency', width: 10 },
+  { header: 'Loại (gộp)', key: 'types', width: 28 },
+  { header: 'Số dòng', key: 'rowCount', width: 10 },
   { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
   { header: 'Tiền trước thuế', key: 'pretaxAmount', width: 16 },
   { header: 'Tiền thuế', key: 'taxAmount', width: 15 },
@@ -87,23 +84,65 @@ export async function buildDebitReportWorkbook(
   addSummarySheet(wb, 'Khach hang', 'Khách hàng', data.customers);
   if (data.types?.length) addSummarySheet(wb, 'Loai', 'Loại', data.types);
 
+  // Gộp 1 phiếu nhiều loại thành 1 dòng (không liệt kê từng dòng chi tiết)
   const wsDetail = wb.addWorksheet('Chi tiet');
   setupSheet(wsDetail, DETAIL_COLUMNS);
+  const groups = new Map<number, {
+    sheetNumber: string;
+    customerCode: string;
+    customerName: string;
+    types: string[];
+    rowCount: number;
+    date: Date;
+    pretax: number;
+    tax: number;
+    total: number;
+  }>();
   for await (const it of iterateDebitItems(from, to)) {
+    let g = groups.get(it.sheetId);
+    if (!g) {
+      g = {
+        sheetNumber: it.sheetNumber,
+        customerCode: it.customerCode ?? '',
+        customerName: it.customerName,
+        types: [],
+        rowCount: 0,
+        date: new Date(it.date),
+        pretax: 0,
+        tax: 0,
+        total: 0,
+      };
+      groups.set(it.sheetId, g);
+    }
+    if (it.type && !g.types.includes(it.type)) g.types.push(it.type);
+    g.rowCount += 1;
+    g.pretax += it.pretaxAmount;
+    g.tax += it.taxAmount;
+    g.total += it.amount;
+  }
+  for (const g of groups.values()) {
     wsDetail.addRow({
-      sheetNumber: it.sheetNumber,
-      customerCode: it.customerCode ?? '',
-      type: it.type,
-      invoiceNumber: it.invoiceNumber ?? '',
-      description: it.description ?? '',
-      customerName: it.customerName,
-      quantity: it.quantity ?? '',
-      currency: it.currency ?? '',
-      date: new Date(it.date),
-      pretaxAmount: vndText(it.pretaxAmount / MONEY_SCALE),
-      taxAmount: vndText(it.taxAmount / MONEY_SCALE),
-      amount: vndText(it.amount / MONEY_SCALE),
+      sheetNumber: g.sheetNumber,
+      customerCode: g.customerCode,
+      customerName: g.customerName,
+      types: g.types.join(', '),
+      rowCount: g.rowCount,
+      date: g.date,
+      pretaxAmount: vndText(g.pretax / MONEY_SCALE),
+      taxAmount: vndText(g.tax / MONEY_SCALE),
+      amount: vndText(g.total / MONEY_SCALE),
     });
+  }
+  const gTotal = [...groups.values()].reduce((s, g) => s + g.total, 0);
+  if (groups.size) {
+    const sumRow = wsDetail.addRow({
+      customerName: 'Tổng cộng',
+      rowCount: [...groups.values()].reduce((s, g) => s + g.rowCount, 0),
+      pretaxAmount: vndText([...groups.values()].reduce((s, g) => s + g.pretax, 0) / MONEY_SCALE),
+      taxAmount: vndText([...groups.values()].reduce((s, g) => s + g.tax, 0) / MONEY_SCALE),
+      amount: vndText(gTotal / MONEY_SCALE),
+    });
+    sumRow.font = { bold: true };
   }
 
   const buf = await wb.xlsx.writeBuffer();
