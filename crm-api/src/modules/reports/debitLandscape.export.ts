@@ -64,13 +64,13 @@ const HEADERS = [
 ];
 const WIDTHS = [13, 12, 8, 8, 14, 17, 10, 19, 11, 14, 10, 8, 12, 13, 34, 8, 9, 13, 13, 14];
 
-// Thêm 1 dòng 20 cột (tiền/GW ghi text chuẩn Việt, viewer không render đúng numFmt châu Âu)
+// Thêm 1 dòng 20 cột, dòng dữ liệu không xuống dòng (tiền/GW ghi text chuẩn Việt)
 function lrow(ws: ExcelJS.Worksheet, values: unknown[], o: { bold?: boolean } = {}): ExcelJS.Row {
   const row = ws.addRow(values);
   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
     if (o.bold) cell.font = { bold: true, size: 10 };
     else cell.font = { size: 10 };
-    cell.alignment = { vertical: 'middle', wrapText: true };
+    cell.alignment = { vertical: 'middle', wrapText: false };
     // Price(18) / Tax Amt(19) / Total Amt(20) / GW(11): số -> text chuẩn Việt
     if ((colNumber === 18 || colNumber === 19 || colNumber === 20 || colNumber === 11) && typeof cell.value === 'number') {
       cell.value = vndText(cell.value);
