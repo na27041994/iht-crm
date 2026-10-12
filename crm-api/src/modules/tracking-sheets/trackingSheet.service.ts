@@ -36,13 +36,15 @@ function pickDefined<T extends Record<string, unknown>>(obj?: T | null): Partial
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as Partial<T>;
 }
 
-// Tính booking (đơn vị hiển thị) từ debit: pretax = total/(1+thuế), total = (pretax+thuế)*SL
+// Tính booking (đơn vị hiển thị) từ debit.
+// Thuế 5% theo hóa đơn thực tế: thuế = tổng x 5% (trước thuế = tổng x 95%), làm tròn đồng.
+// Các mức % khác: trước thuế = tổng/(1+thuế), thuế = trước thuế x thuế%.
 function bookingDataFromDebit(d: { type: string; description?: unknown; unit?: unknown; quantity?: unknown; taxRate?: unknown; total?: unknown }) {
   const total = Number(d.total ?? 0);
   const tax = Number(d.taxRate ?? 0);
   const qty = Number(d.quantity ?? 1) || 1;
-  const pretax = tax > 0 ? Math.round((total / (1 + tax / 100)) * 100) / 100 : total;
-  const taxAmount = Math.round(pretax * tax) / 100;
+  const pretax = tax === 5 ? Math.round(total * 95 / 100) : tax > 0 ? Math.round((total / (1 + tax / 100)) * 100) / 100 : total;
+  const taxAmount = tax === 5 ? Math.round((total - pretax) * 100) / 100 : Math.round(pretax * tax) / 100;
   const afterTax = Math.round((pretax + taxAmount) * 100) / 100;
   return {
     type: d.type,
@@ -363,9 +365,10 @@ export async function updateJobBooking(sheetId: number, id: number, input: JobBo
       patch.total = Number(updated.total ?? 0) / 100;
     } else {
       // Debit USD: giữ đơn giá + tỷ giá cũ, tính lại tổng theo SL/thuế mới
+      // Thuế 5% theo hóa đơn thực tế: tổng = quy đổi x 100/95, làm tròn đồng
       const pusd = Number(linked.priceUsd ?? 0) / 100;
       const rate = Number(linked.exchangeRate ?? 0);
-      patch.total = Math.round(qty * pusd * rate * (1 + tax / 100) * 100) / 100;
+      patch.total = tax === 5 ? Math.round(qty * pusd * rate * 100 / 95) : Math.round(qty * pusd * rate * (1 + tax / 100) * 100) / 100;
     }
     await prisma.debitNote.update({ where: { id: linked.id }, data: scaleDebitNote(patch as any) });
   }

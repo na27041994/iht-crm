@@ -73,7 +73,7 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
   const rate = Form.useWatch('taxRate', form);
   const isFivePercent = Number(rate ?? 0) === 5;
 
-  // Chỉ thuế 5% mới tính ngược từ Tổng tiền (5/105): Tổng -> Trước thuế + Thuế
+  // Thuế 5% theo hóa đơn thực tế: thuế = tổng x 5% (trước thuế = tổng x 95%), làm tròn đồng.
   // Các mức % khác chỉ tính xuôi: Trước thuế -> Tổng
   const lastEdit = useRef<'pretax' | 'total' | null>(null);
   useEffect(() => {
@@ -87,13 +87,15 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
       lastEdit.current = 'total';
       const total = Number(changed.total ?? 0);
       const after = q > 0 ? total / q : total;
-      const pre = Math.round((after / (1 + r / 100)) * 100) / 100;
+      // Thuế 5% theo hóa đơn thực tế: trước thuế = tổng x 95%, thuế = tổng - trước thuế
+      const pre = Math.round(after * 95 / 100);
       const tax = Math.round((after - pre) * 100) / 100;
       form.setFieldsValue({ pretaxAmount: pre, taxAmount: tax, afterTaxAmount: Math.round(after * 100) / 100 });
     } else if ('pretaxAmount' in changed || 'taxRate' in changed || 'quantity' in changed) {
       lastEdit.current = 'pretax';
       const p = Number(all.pretaxAmount ?? 0);
-      const tax = (p * r) / 100;
+      // Thuế 5% theo hóa đơn thực tế: thuế = trước thuế x 5/95, làm tròn đồng
+      const tax = r === 5 ? Math.round(p * 5 / 95) : (p * r) / 100;
       const after = p + tax;
       const total = after * q;
       const cur = form.getFieldsValue(['taxAmount', 'afterTaxAmount', 'total']);

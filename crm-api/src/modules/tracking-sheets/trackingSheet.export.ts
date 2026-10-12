@@ -371,7 +371,8 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
 }
 
 // Tạo workbook Excel theo loại job
-// Tính VAT 1 dòng debit (đơn vị hiển thị, khớp bản in)
+// Tính VAT 1 dòng debit (đơn vị hiển thị, khớp bản in).
+// Thuế 5% theo hóa đơn thực tế: thuế = tổng x 5% (trước thuế = tổng x 95%), làm tròn đồng.
 function debitVatAmount(d: any): number {
   const qty = Number(d.quantity ?? 1);
   const taxRate = Number(d.taxRate ?? 0);
@@ -380,9 +381,14 @@ function debitVatAmount(d: any): number {
   else unitPrice = Number(d.priceVnd ?? 0) / MONEY_SCALE;
   if (unitPrice === 0 && d.total != null) {
     const total = Number(d.total) / MONEY_SCALE;
+    if (taxRate === 5) {
+      const pretax = Math.round(total * 95 / 100);
+      return Math.round((total - pretax) * 100) / 100;
+    }
     const pretax = taxRate ? total / (1 + taxRate / 100) : total;
     return Math.round((total - pretax) * 100) / 100;
   }
+  if (taxRate === 5) return Math.round(unitPrice * qty * 5 / 95);
   return Math.round(unitPrice * qty * (taxRate / 100) * 100) / 100;
 }
 function debitUnitPrice(d: any): number | null {

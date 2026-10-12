@@ -473,8 +473,9 @@ async function upsertJobBooking(
 
   const pretax = row.pretaxAmount ?? 0;
   const rate = row.taxRate ?? 0;
-  const taxAmt = Math.round(pretax * rate / 100 * 100) / 100;
-  const afterTax = Math.round(pretax * (1 + rate / 100) * 100) / 100;
+  // Thuế 5% theo hóa đơn thực tế: thuế = trước thuế x 5/95, làm tròn đồng
+  const taxAmt = rate === 5 ? Math.round(pretax * 5 / 95) : Math.round(pretax * rate / 100 * 100) / 100;
+  const afterTax = Math.round((pretax + taxAmt) * 100) / 100;
   const total = Math.round(afterTax * (row.quantity ?? 1) * 100) / 100;
 
   const data = {

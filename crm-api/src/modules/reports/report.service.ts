@@ -492,11 +492,18 @@ interface RawDebitRow {
   customerName: string | null;
 }
 
-// Tách tiền thuế / trước thuế từ tổng (đơn vị x100): pretax = total/(1+rate), tax = total-pretax
+// Tách tiền thuế / trước thuế từ tổng (đơn vị x100).
+// Thuế 5% theo hóa đơn thực tế: thuế = tổng x 5% (trước thuế = tổng x 95%).
+// Các mức % khác: pretax = total/(1+rate), tax = total-pretax
 export function splitDebitTax(totalScaled: number, taxRate: unknown): { pretax: number; tax: number } {
   const total = Number(totalScaled ?? 0);
   const rate = Number(taxRate ?? 0);
   if (!rate) return { pretax: total, tax: 0 };
+  if (rate === 5) {
+    // Làm tròn tới đồng (bội 100 cents) để khớp hóa đơn: 812647400 -> 772015000 + 40632400
+    const pretax = Math.round(total * 95 / 100 / 100) * 100;
+    return { pretax, tax: total - pretax };
+  }
   const pretax = Math.round(total / (1 + rate / 100));
   return { pretax, tax: total - pretax };
 }

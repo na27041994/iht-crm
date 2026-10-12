@@ -95,7 +95,9 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
     } else {
       base = q * Number(priceVnd ?? 0);
     }
-    form.setFieldsValue({ total: base * taxFactor });
+    // Thuế 5% theo hóa đơn thực tế: tổng = trước thuế x 100/95, làm tròn đồng
+    const total = t === 5 ? Math.round(base * 100 / 95) : base * taxFactor;
+    form.setFieldsValue({ total });
   }, [open, currency, quantity, priceVnd, priceUsd, exchangeRate, taxRate, form]);
 
   // Auto-fill Job Booking from Debit Note when checkbox is toggled
@@ -110,8 +112,8 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
     const dQty = Number(quantity ?? 1);
     const dUnit = form.getFieldValue('unit') || 'Cont';
     const dTotal = Number(debitTotal ?? 0);
-    // pretax = total / (1 + tax%) to get pre-tax amount
-    const pretax = dTax > 0 ? Math.round((dTotal / (1 + dTax / 100)) * 100) / 100 : dTotal;
+    // Thuế 5% theo hóa đơn thực tế: trước thuế = tổng x 95%, làm tròn đồng
+    const pretax = dTax === 5 ? Math.round(dTotal * 95 / 100) : dTax > 0 ? Math.round((dTotal / (1 + dTax / 100)) * 100) / 100 : dTotal;
     jbForm.setFieldsValue({
       taxRate: dTax,
       quantity: dQty,
@@ -126,7 +128,8 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
     const p = Number(jbPretax ?? 0);
     const r = Number(jbTax ?? 0);
     const q = Number(jbQty ?? 1);
-    const tax = (p * r) / 100;
+    // Thuế 5% theo hóa đơn thực tế: thuế = trước thuế x 5/95, làm tròn đồng
+    const tax = r === 5 ? Math.round(p * 5 / 95) : (p * r) / 100;
     const after = p + tax;
     const total = after * q;
     jbForm.setFieldsValue({

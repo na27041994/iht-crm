@@ -84,7 +84,8 @@ function fmtWt(v: string | number | null | undefined) {
   if (Number.isNaN(n)) return String(v);
   return n.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
-// Tính VAT trên giá trị đã chia 100 (DB lưu *100)
+// Tính VAT trên giá trị đã chia 100 (DB lưu *100).
+// Thuế 5% theo hóa đơn thực tế: thuế = tổng x 5% (trước thuế = tổng x 95%), làm tròn đồng.
 function computeVat(d: DebitNoteItem) {
   const qty = Number(d.quantity ?? 1);
   const taxRate = Number(d.taxRate ?? 0);
@@ -96,10 +97,15 @@ function computeVat(d: DebitNoteItem) {
   }
   if (unitPrice === 0 && d.total != null) {
     const total = Number(d.total) / MONEY_SCALE;
+    if (taxRate === 5) {
+      const pretax = Math.round(total * 95 / 100);
+      return Math.round((total - pretax) * 100) / 100;
+    }
     const pretax = taxRate ? total / (1 + taxRate / 100) : total;
     return Math.round((total - pretax) * 100) / 100;
   }
   const pretax = unitPrice * qty;
+  if (taxRate === 5) return Math.round(pretax * 5 / 95);
   return Math.round(pretax * (taxRate / 100) * 100) / 100;
 }
 
