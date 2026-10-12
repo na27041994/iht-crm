@@ -435,11 +435,10 @@ reportRouter.post('/debit/upload-export', requirePermission('report_debit', 'vie
     if (s) ordered.push(s);
   }
 
-  // Phiếu có dòng debit chưa nhập Invoice No (cả cấp dòng lẫn cấp phiếu)
+  // Phiếu có dòng debit chưa nhập Số hoá đơn
   const missingInv: string[] = [];
   for (const s of ordered) {
-    const sheetInv = String((s as any).invoiceNumber ?? '').trim();
-    const n = (s.debitNotes || []).filter((d) => !String(d.invoiceNumber ?? '').trim() && !sheetInv).length;
+    const n = (s.debitNotes || []).filter((d) => !String(d.invoiceNumber ?? '').trim()).length;
     if (n > 0) missingInv.push(`${s.sheetNumber} (${n})`);
   }
 

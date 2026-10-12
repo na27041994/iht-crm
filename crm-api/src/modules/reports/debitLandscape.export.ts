@@ -3,7 +3,7 @@ import { vndText } from '../../lib/money.js';
 
 // Xuất Excel debit khổ ngang khớp mẫu cũ:
 // Mã phiếu | Consignee | Từ (From) | Đến (To) | Ghi chú | Số bill | Ngày ETA/ETD | Custom No | Ngày tờ khai |
-// Số container | GW (kg) | Số lượng container | Invoice No | Mô tả | Unit |
+// Số container | GW (kg) | Số lượng container | Invoice No (phiếu) | Số hoá đơn (debit) | Mô tả | Unit |
 // Số lượng | Giá VND | Tiền thuế | Tổng tiền
 // Mỗi job: dòng info + từng dòng debit liền mạch (không dòng subtotal ngăn cách);
 // cuối cùng dòng TOTAL AMT.
@@ -60,10 +60,10 @@ function fmtYMD(v: any): string {
 // Tên cột theo đúng nhãn nhập liệu trên web (bỏ cột Red Invoice No vì luôn trống)
 const HEADERS = [
   'Mã phiếu', 'Consignee', 'Từ (From)', 'Đến (To)', 'Ghi chú', 'Số bill', 'Ngày ETA/ETD', 'Custom No', 'Ngày tờ khai',
-  'Số container', 'GW (kg)', 'Số lượng container', 'Invoice No', 'Mô tả', 'Unit',
+  'Số container', 'GW (kg)', 'Số lượng container', 'Invoice No', 'Số hoá đơn', 'Mô tả', 'Unit',
   'Số lượng', 'Giá VND', 'Tiền thuế', 'Tổng tiền',
 ];
-const WIDTHS = [13, 12, 10, 10, 14, 17, 12, 19, 12, 14, 10, 10, 12, 34, 8, 9, 13, 13, 14];
+const WIDTHS = [13, 12, 10, 10, 14, 17, 12, 19, 12, 14, 10, 10, 12, 12, 34, 8, 9, 13, 13, 14];
 
 // Thêm 1 dòng 20 cột, dòng dữ liệu không xuống dòng (tiền/GW ghi text chuẩn Việt)
 function lrow(ws: ExcelJS.Worksheet, values: unknown[], o: { bold?: boolean } = {}): ExcelJS.Row {
@@ -72,8 +72,8 @@ function lrow(ws: ExcelJS.Worksheet, values: unknown[], o: { bold?: boolean } = 
     if (o.bold) cell.font = { bold: true, size: 10 };
     else cell.font = { size: 10 };
     cell.alignment = { vertical: 'middle', wrapText: false };
-    // Giá VND(17) / Tiền thuế(18) / Tổng tiền(19) / GW(11): số -> text chuẩn Việt
-    if ((colNumber === 17 || colNumber === 18 || colNumber === 19 || colNumber === 11) && typeof cell.value === 'number') {
+    // Giá VND(18) / Tiền thuế(19) / Tổng tiền(20) / GW(11): số -> text chuẩn Việt
+    if ((colNumber === 18 || colNumber === 19 || colNumber === 20 || colNumber === 11) && typeof cell.value === 'number') {
       cell.value = vndText(cell.value);
     }
   });
@@ -124,8 +124,9 @@ export async function buildDebitLandscapeWorkbook(sheets: any[]): Promise<Buffer
       jTotal = Math.round((jTotal + amt) * 100) / 100;
       lrow(ws, [
         ...jobInfo,
-        // Invoice No dòng trống thì lấy số của phiếu
-        dd.invoiceNumber ?? (s as any).invoiceNumber ?? '',
+        // Invoice No của phiếu + Số hoá đơn của debit: 2 cột riêng
+        (s as any).invoiceNumber ?? '',
+        dd.invoiceNumber ?? '',
         dd.description ?? dd.type,
         dd.unit ?? '',
         dd.quantity != null ? Number(dd.quantity) : '',
@@ -135,14 +136,14 @@ export async function buildDebitLandscapeWorkbook(sheets: any[]): Promise<Buffer
       ]);
     });
     if (!debits.length) {
-      lrow(ws, [...jobInfo, '', '', '', '', '', '', '']);
+      lrow(ws, [...jobInfo, (s as any).invoiceNumber ?? '', '', '', '', '', '', '', '']);
     }
     gVat = Math.round((gVat + jVat) * 100) / 100;
     gTotal = Math.round((gTotal + jTotal) * 100) / 100;
   }
 
   // TOTAL AMT cuối (nhãn ở cột Mô tả)
-  lrow(ws, [...Array(13).fill(''), 'TOTAL AMT', '', '', '', gVat, gTotal], { bold: true });
+  lrow(ws, [...Array(14).fill(''), 'TOTAL AMT', '', '', '', gVat, gTotal], { bold: true });
 
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer as ArrayBuffer);

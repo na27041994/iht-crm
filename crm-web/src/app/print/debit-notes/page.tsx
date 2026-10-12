@@ -281,7 +281,7 @@ function JobDebitBlock({ sheet }: { sheet: SheetWithDebits }) {
           <tr>
             <td className="old-th">STT</td>
             <td className="old-th">Descriptions</td>
-            <td className="old-th">Invoice No</td>
+            <td className="old-th">Số hoá đơn</td>
             <td className="old-th">Unit</td>
             <td className="old-th">Qty</td>
             <td className="old-th">Price</td>

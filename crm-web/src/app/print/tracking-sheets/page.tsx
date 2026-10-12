@@ -289,7 +289,7 @@ function SheetDocument({
           <thead>
             <tr>
               <th>Loại</th>
-              <th>Invoice No</th>
+              <th>Số hoá đơn</th>
               <th>Mô tả</th>
               <th>Unit</th>
               <th>Current</th>

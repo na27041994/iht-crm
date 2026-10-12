@@ -613,7 +613,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           tableLayout="fixed"
           columns={[
             { title: 'Loại', dataIndex: 'type', width: 140, render: (v: string) => <Tag color="blue">{v}</Tag> },
-            { title: 'Invoice No', dataIndex: 'invoiceNumber', width: 140, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
+            { title: 'Số hoá đơn', dataIndex: 'invoiceNumber', width: 140, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Unit', dataIndex: 'unit', render: (v: string | null) => v ?? '-' },
             { title: 'Current', dataIndex: 'currency', align: 'center' as const, render: (v: string) => <Tag color={v === 'USD' ? 'green' : 'default'}>{v}</Tag> },

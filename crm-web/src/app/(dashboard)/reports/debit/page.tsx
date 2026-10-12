@@ -162,7 +162,7 @@ export default function DebitReportPage() {
       if (info.missingInvCount > 0) {
         const preview = info.missingInv.slice(0, 20).join(', ');
         const more = info.missingInvCount > 20 ? ` ... (và ${info.missingInvCount - 20} phiếu khác)` : '';
-        warns.push(`${info.missingInvCount} phiếu có dòng thiếu Invoice No: ${preview}${more}`);
+        warns.push(`${info.missingInvCount} phiếu có dòng debit thiếu Số hoá đơn: ${preview}${more}`);
       }
       if (warns.length > 0) {
         message.warning(`Đã xuất ${info.found}/${info.total} phiếu. ${warns.join(' ')}`);
