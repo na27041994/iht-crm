@@ -124,7 +124,8 @@ export async function buildDebitLandscapeWorkbook(sheets: any[]): Promise<Buffer
       jTotal = Math.round((jTotal + amt) * 100) / 100;
       lrow(ws, [
         ...jobInfo,
-        dd.invoiceNumber ?? '',
+        // Invoice No dòng trống thì lấy số của phiếu
+        dd.invoiceNumber ?? (s as any).invoiceNumber ?? '',
         dd.description ?? dd.type,
         dd.unit ?? '',
         dd.quantity != null ? Number(dd.quantity) : '',
