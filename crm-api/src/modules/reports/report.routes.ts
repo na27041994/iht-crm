@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { asyncHandler } from '../../middleware/error.js';
+import multer from 'multer';
+import { asyncHandler, AppError } from '../../middleware/error.js';
 import { validateQuery } from '../../middleware/validate.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
@@ -21,10 +22,16 @@ import { buildSheetCreationWorkbook } from './sheetCreation.export.js';
 import { buildLiftingReportWorkbook } from './liftingReport.export.js';
 import { buildDebitReportWorkbook } from './debitReport.export.js';
 import { buildProfitWorkbook } from './profitReport.export.js';
+import { parseSheetCodeFile, encodeMissingCodes } from './debitUpload.parse.js';
 
 export const reportRouter = Router();
 
 reportRouter.use(requireAuth);
+
+const debitFileUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 const refundReportQuery = z.object({
   from: z.coerce.date().optional(),
@@ -395,6 +402,47 @@ reportRouter.get('/debit/landscape-export', validateQuery(z.object({ ids: z.stri
   const buf = await buildDebitLandscapeWorkbook(sheets);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename="debit-ngang_${ids.length}_phieu.xlsx"`);
+  res.send(buf);
+}));
+
+// Upload file danh sách mã phiếu (CSV/XLSX) rồi xuất Excel tổng hợp cho đúng các phiếu đó
+reportRouter.post('/debit/upload-export', requirePermission('report_debit', 'view'), debitFileUpload.single('file'), asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new AppError('Vui lòng chọn file danh sách mã phiếu', 400);
+  }
+  const parsed = await parseSheetCodeFile(req.file.buffer, req.file.originalname);
+  if (!parsed.codes.length) {
+    throw new AppError('File không có mã phiếu hợp lệ nào', 400);
+  }
+  const { prisma } = await import('../../lib/prisma.js');
+  const sheets = await prisma.trackingSheet.findMany({
+    where: { sheetNumber: { in: parsed.codes, mode: 'insensitive' }, isDelete: 1 },
+    orderBy: { sheetNumber: 'asc' },
+    include: {
+      customer: { select: { id: true, code: true, customerName: true, companyName: true } },
+      debitNotes: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
+    },
+  });
+
+  const found = new Set(sheets.map((s) => s.sheetNumber.trim().toUpperCase()));
+  const missing = parsed.codes.filter((c) => !found.has(c.trim().toUpperCase()));
+
+  // Sắp xếp lại theo đúng thứ tự mã phiếu trong file
+  const byCode = new Map(sheets.map((s) => [s.sheetNumber.trim().toUpperCase(), s]));
+  const ordered: typeof sheets = [];
+  for (const code of parsed.codes) {
+    const s = byCode.get(code.trim().toUpperCase());
+    if (s) ordered.push(s);
+  }
+
+  const { buildDebitSelectedWorkbook } = await import('./debitReport.export.js');
+  const buf = await buildDebitSelectedWorkbook(ordered);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="debit_tu_file_${ordered.length}_phieu.xlsx"`);
+  res.setHeader('X-Total-Codes', String(parsed.codes.length));
+  res.setHeader('X-Found-Count', String(ordered.length));
+  res.setHeader('X-Missing-Count', String(missing.length));
+  res.setHeader('X-Missing-Codes', encodeMissingCodes(missing));
   res.send(buf);
 }));
 

@@ -2,10 +2,10 @@
 const MONEY_SCALE = 100;
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { App, Button, Card, Input, Select, Space, Spin, Table, Tag, Typography } from 'antd';
-import { DownloadOutlined, PrinterOutlined, SearchOutlined } from '@ant-design/icons';
+import { App, Button, Card, Input, Select, Space, Spin, Table, Tag, Typography, Upload } from 'antd';
+import { DownloadOutlined, PrinterOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
-import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
+import { apiDownload, apiFetch, apiUploadDownload, saveBlob } from '@/lib/api';
 import { SlashRangePicker } from '@/components/SlashDatePicker';
 
 // Định dạng số tiền/số lượng theo chuẩn vi-VN
@@ -26,6 +26,7 @@ export default function DebitReportPage() {
   const [sheetsPage, setSheetsPage] = useState(1);
   const [sheetsLoading, setSheetsLoading] = useState(false);
   const [selectedSheetIds, setSelectedSheetIds] = useState<number[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     apiFetch<{ items: { id: number; companyName: string; customerName: string }[] }>('/customers?pageSize=100')
@@ -146,6 +147,28 @@ export default function DebitReportPage() {
     }
   }
 
+  // Upload file danh sách mã phiếu (CSV/XLSX) rồi xuất Excel tổng hợp
+  async function handleUploadFile(file: File) {
+    setUploading(true);
+    try {
+      const { blob, info } = await apiUploadDownload('/reports/debit/upload-export', file);
+      saveBlob(blob, `debit_tu_file_${info.found}_phieu.xlsx`);
+      if (info.missingCount > 0) {
+        const preview = info.missing.slice(0, 20).join(', ');
+        const more = info.missingCount > 20 ? ` ... (và ${info.missingCount - 20} mã khác)` : '';
+        message.warning(
+          `Đã xuất ${info.found}/${info.total} phiếu. Không tìm thấy ${info.missingCount} mã: ${preview}${more}`,
+        );
+      } else {
+        message.success(`Đã xuất ${info.found} phiếu từ file`);
+      }
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xuất Excel từ file thất bại');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   // Hàm handleExportAll: xử lý handleExportAll
   async function handleExportAll() {
     setExporting(true);
@@ -233,6 +256,18 @@ export default function DebitReportPage() {
             <Button loading={exporting} onClick={handleExportAll}>
               Xuất tất cả
             </Button>
+            <Upload
+              accept=".csv,.txt,.xlsx"
+              showUploadList={false}
+              beforeUpload={(file) => {
+                handleUploadFile(file);
+                return false;
+              }}
+            >
+              <Button icon={<UploadOutlined />} loading={uploading}>
+                Tạo Excel từ file
+              </Button>
+            </Upload>
             {selectedSheetIds.length > 0 && <Button onClick={() => setSelectedSheetIds([])}>Bỏ chọn</Button>}
           </Space>
         </div>

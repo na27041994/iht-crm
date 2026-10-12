@@ -83,3 +83,38 @@ export async function apiUpload<T>(path: string, file: File): Promise<T> {
 
   return res.json() as Promise<T>;
 }
+
+// Hàm apiUploadDownload: upload file rồi nhận về file tải xuống kèm header báo cáo
+export async function apiUploadDownload(path: string, file: File): Promise<{ blob: Blob; info: { total: number; found: number; missingCount: number; missing: string[] } }> {
+  const form = new FormData();
+  form.append('file', file);
+
+  const headers: Record<string, string> = {};
+  const token = getTokenClient();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', body: form, headers, credentials: 'include' });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(body.error || 'Tải tệp thất bại', res.status);
+  }
+
+  const rawMissing = res.headers.get('X-Missing-Codes') || '';
+  let missing: string[] = [];
+  try {
+    if (rawMissing) missing = decodeURIComponent(rawMissing).split('|').filter(Boolean);
+  } catch {
+    missing = [];
+  }
+
+  return {
+    blob: await res.blob(),
+    info: {
+      total: Number(res.headers.get('X-Total-Codes') || 0),
+      found: Number(res.headers.get('X-Found-Count') || 0),
+      missingCount: Number(res.headers.get('X-Missing-Count') || missing.length),
+      missing,
+    },
+  };
+}
