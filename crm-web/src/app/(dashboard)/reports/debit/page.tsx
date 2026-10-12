@@ -152,7 +152,7 @@ export default function DebitReportPage() {
     setUploading(true);
     try {
       const { blob, info } = await apiUploadDownload('/reports/debit/upload-export', file);
-      saveBlob(blob, `debit_tu_file_${info.found}_phieu.xlsx`);
+      saveBlob(blob, `debit-ngang-tu-file_${info.found}_phieu.xlsx`);
       if (info.missingCount > 0) {
         const preview = info.missing.slice(0, 20).join(', ');
         const more = info.missingCount > 20 ? ` ... (và ${info.missingCount - 20} mã khác)` : '';

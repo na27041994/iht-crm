@@ -435,10 +435,10 @@ reportRouter.post('/debit/upload-export', requirePermission('report_debit', 'vie
     if (s) ordered.push(s);
   }
 
-  const { buildDebitSelectedWorkbook } = await import('./debitReport.export.js');
-  const buf = await buildDebitSelectedWorkbook(ordered);
+  const { buildDebitLandscapeWorkbook } = await import('./debitLandscape.export.js');
+  const buf = await buildDebitLandscapeWorkbook(ordered);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename="debit_tu_file_${ordered.length}_phieu.xlsx"`);
+  res.setHeader('Content-Disposition', `attachment; filename="debit-ngang-tu-file_${ordered.length}_phieu.xlsx"`);
   res.setHeader('X-Total-Codes', String(parsed.codes.length));
   res.setHeader('X-Found-Count', String(ordered.length));
   res.setHeader('X-Missing-Count', String(missing.length));
