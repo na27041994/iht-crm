@@ -85,7 +85,7 @@ export async function apiUpload<T>(path: string, file: File): Promise<T> {
 }
 
 // Hàm apiUploadDownload: upload file rồi nhận về file tải xuống kèm header báo cáo
-export async function apiUploadDownload(path: string, file: File): Promise<{ blob: Blob; info: { total: number; found: number; missingCount: number; missing: string[] } }> {
+export async function apiUploadDownload(path: string, file: File): Promise<{ blob: Blob; info: { total: number; found: number; missingCount: number; missing: string[]; missingInvCount: number; missingInv: string[] } }> {
   const form = new FormData();
   form.append('file', file);
 
@@ -108,6 +108,14 @@ export async function apiUploadDownload(path: string, file: File): Promise<{ blo
     missing = [];
   }
 
+  const rawMissingInv = res.headers.get('X-Missing-Inv') || '';
+  let missingInv: string[] = [];
+  try {
+    if (rawMissingInv) missingInv = decodeURIComponent(rawMissingInv).split('|').filter(Boolean);
+  } catch {
+    missingInv = [];
+  }
+
   return {
     blob: await res.blob(),
     info: {
@@ -115,6 +123,8 @@ export async function apiUploadDownload(path: string, file: File): Promise<{ blo
       found: Number(res.headers.get('X-Found-Count') || 0),
       missingCount: Number(res.headers.get('X-Missing-Count') || missing.length),
       missing,
+      missingInvCount: Number(res.headers.get('X-Missing-Inv-Count') || missingInv.length),
+      missingInv,
     },
   };
 }

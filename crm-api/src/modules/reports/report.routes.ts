@@ -435,6 +435,13 @@ reportRouter.post('/debit/upload-export', requirePermission('report_debit', 'vie
     if (s) ordered.push(s);
   }
 
+  // Phiếu có dòng debit chưa nhập Invoice No
+  const missingInv: string[] = [];
+  for (const s of ordered) {
+    const n = (s.debitNotes || []).filter((d) => !String(d.invoiceNumber ?? '').trim()).length;
+    if (n > 0) missingInv.push(`${s.sheetNumber} (${n})`);
+  }
+
   const { buildDebitLandscapeWorkbook } = await import('./debitLandscape.export.js');
   const buf = await buildDebitLandscapeWorkbook(ordered);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -443,6 +450,8 @@ reportRouter.post('/debit/upload-export', requirePermission('report_debit', 'vie
   res.setHeader('X-Found-Count', String(ordered.length));
   res.setHeader('X-Missing-Count', String(missing.length));
   res.setHeader('X-Missing-Codes', encodeMissingCodes(missing));
+  res.setHeader('X-Missing-Inv-Count', String(missingInv.length));
+  res.setHeader('X-Missing-Inv', encodeMissingCodes(missingInv));
   res.send(buf);
 }));
 

@@ -153,12 +153,19 @@ export default function DebitReportPage() {
     try {
       const { blob, info } = await apiUploadDownload('/reports/debit/upload-export', file);
       saveBlob(blob, `debit-ngang-tu-file_${info.found}_phieu.xlsx`);
+      const warns: string[] = [];
       if (info.missingCount > 0) {
         const preview = info.missing.slice(0, 20).join(', ');
         const more = info.missingCount > 20 ? ` ... (và ${info.missingCount - 20} mã khác)` : '';
-        message.warning(
-          `Đã xuất ${info.found}/${info.total} phiếu. Không tìm thấy ${info.missingCount} mã: ${preview}${more}`,
-        );
+        warns.push(`Không tìm thấy ${info.missingCount} mã: ${preview}${more}`);
+      }
+      if (info.missingInvCount > 0) {
+        const preview = info.missingInv.slice(0, 20).join(', ');
+        const more = info.missingInvCount > 20 ? ` ... (và ${info.missingInvCount - 20} phiếu khác)` : '';
+        warns.push(`${info.missingInvCount} phiếu có dòng thiếu Invoice No: ${preview}${more}`);
+      }
+      if (warns.length > 0) {
+        message.warning(`Đã xuất ${info.found}/${info.total} phiếu. ${warns.join(' ')}`);
       } else {
         message.success(`Đã xuất ${info.found} phiếu từ file`);
       }

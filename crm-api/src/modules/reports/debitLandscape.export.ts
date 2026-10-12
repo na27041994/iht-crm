@@ -115,14 +115,15 @@ export async function buildDebitLandscapeWorkbook(sheets: any[]): Promise<Buffer
     ];
     let jVat = 0;
     let jTotal = 0;
-    debits.forEach((dd, idx) => {
+    // Mỗi dòng debit lặp đầy đủ thông tin job (khớp mẫu cũ)
+    debits.forEach((dd) => {
       const vat = vatAmount(dd);
       const price = unitPrice(dd);
       const amt = numMoney(dd.total) ?? 0;
       jVat = Math.round((jVat + vat) * 100) / 100;
       jTotal = Math.round((jTotal + amt) * 100) / 100;
       lrow(ws, [
-        ...(idx === 0 ? jobInfo : Array(12).fill('')),
+        ...jobInfo,
         dd.invoiceNumber ?? '',
         dd.description ?? dd.type,
         dd.unit ?? '',
