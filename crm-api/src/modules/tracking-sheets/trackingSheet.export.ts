@@ -409,7 +409,7 @@ function fmtWtX(v: any): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
 
-// Thêm 1 dòng 8 cột, căn lề + tiền ghi text chuẩn Việt (viewer không render đúng numFmt châu Âu)
+// Thêm 1 dòng 9 cột, căn lề + tiền ghi text chuẩn Việt (viewer không render đúng numFmt châu Âu)
 interface XRowOpts {
   bold?: boolean;
   size?: number;
@@ -419,6 +419,8 @@ interface XRowOpts {
   money?: boolean;
   border?: boolean;
   borderCols?: [number, number];
+  // Căn lề riêng từng cột (left/center/right), không set thì theo center/right/left chung
+  aligns?: Array<'left' | 'center' | 'right' | undefined>;
 }
 function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): ExcelJS.Row {
   const row = ws.addRow(values);
@@ -430,8 +432,9 @@ function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): Excel
     if (o.bold || o.size) cell.font = { bold: !!o.bold, size: o.size ?? 11 };
     if (o.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: o.fill } };
     if (o.money && typeof cell.value === 'number') cell.value = vndText(cell.value);
+    const perCol = o.aligns?.[colNumber - 1];
     cell.alignment = {
-      horizontal: o.center ? 'center' : o.right ? 'right' : 'left',
+      horizontal: perCol ?? (o.center ? 'center' : o.right ? 'right' : 'left'),
       vertical: 'middle',
       wrapText: true,
     };
@@ -471,40 +474,35 @@ function writeDebitHeader(ws: ExcelJS.Worksheet, s: any) {
   const d = new Date();
   const today = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 
-  let r = xrow(ws, ['I.H.T VIET NAM CO., LTD', '', '', '', '', '', '', ''], { bold: true, size: 14, center: true });
-  xmerge(ws, r, 1, 8);
-  r = xrow(ws, ['Add: 108 Ý Lan, Phường Phú Thạnh, TP.HCM', '', '', '', '', '', '', ''], { bold: true, center: true });
-  xmerge(ws, r, 1, 8);
-  r = xrow(ws, ['Tel: 08-38380888 /08-39225100', '', '', '', '', '', '', ''], { bold: true, center: true });
-  xmerge(ws, r, 1, 8);
-  r = xrow(ws, ['Fax: 08-39225105 /08-39225106', '', '', '', '', '', '', ''], { bold: true, center: true });
-  xmerge(ws, r, 1, 8);
-  ws.addRow(['', '', '', '', '', '', '', '']);
-  r = xrow(ws, ['DEBIT NOTE', '', '', '', '', '', '', ''], { bold: true, size: 16, center: true });
-  xmerge(ws, r, 1, 8);
-  ws.addRow(['', '', '', '', '', '', '', '']);
+  let r = xrow(ws, ['I.H.T VIET NAM CO., LTD', '', '', '', '', '', '', '', ''], { bold: true, size: 14, center: true });
+  xmerge(ws, r, 1, 9);
+  r = xrow(ws, ['Add: 108 Ý Lan, Phường Phú Thạnh, TP.HCM', '', '', '', '', '', '', '', ''], { bold: true, center: true });
+  xmerge(ws, r, 1, 9);
+  r = xrow(ws, ['Tel: 08-38380888 /08-39225100', '', '', '', '', '', '', '', ''], { bold: true, center: true });
+  xmerge(ws, r, 1, 9);
+  r = xrow(ws, ['Fax: 08-39225105 /08-39225106', '', '', '', '', '', '', '', ''], { bold: true, center: true });
+  xmerge(ws, r, 1, 9);
+  ws.addRow(['', '', '', '', '', '', '', '', '']);
+  r = xrow(ws, ['DEBIT NOTE', '', '', '', '', '', '', '', ''], { bold: true, size: 16, center: true });
+  xmerge(ws, r, 1, 9);
+  ws.addRow(['', '', '', '', '', '', '', '', '']);
 
-  r = xrow(ws, ['RECEIVE', '', '', '', 'Date:', today, '', ''], { bold: true, center: true, border: true });
+  r = xrow(ws, ['RECEIVE', '', '', '', 'Date:', today, '', '', ''], { bold: true, center: true, border: true });
   xmerge(ws, r, 1, 4);
-  xmerge(ws, r, 6, 8);
-  // Hàng Date nền đỏ (khớp mẫu)
-  for (let c = 3; c <= 8; c++) {
-    const cell = r.getCell(c);
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
-  }
-  r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', ''], { bold: true, border: true });
+  xmerge(ws, r, 6, 9);
+  r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', '', ''], { bold: true, border: true });
   xmerge(ws, r, 2, 4);
-  xmerge(ws, r, 6, 8);
-  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', contactPhone, '', ''], { bold: true, border: true });
+  xmerge(ws, r, 6, 9);
+  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', contactPhone, '', '', ''], { bold: true, border: true });
   xmerge(ws, r, 2, 4);
-  xmerge(ws, r, 6, 8);
-  r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', ''], { bold: true, border: true });
-  xmerge(ws, r, 2, 8);
-  r = xrow(ws, ['Tel:', customer.phone ?? '', '', '', '', '', '', ''], { bold: true, border: true });
-  xmerge(ws, r, 2, 8);
-  r = xrow(ws, ['Fax:', customer.fax ?? '', '', '', '', '', '', ''], { bold: true, border: true });
-  xmerge(ws, r, 2, 8);
-  ws.addRow(['', '', '', '', '', '', '', '']);
+  xmerge(ws, r, 6, 9);
+  r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', '', ''], { bold: true, border: true });
+  xmerge(ws, r, 2, 9);
+  r = xrow(ws, ['Tel:', customer.phone ?? '', '', '', '', '', '', '', ''], { bold: true, border: true });
+  xmerge(ws, r, 2, 9);
+  r = xrow(ws, ['Fax:', customer.fax ?? '', '', '', '', '', '', '', ''], { bold: true, border: true });
+  xmerge(ws, r, 2, 9);
+  ws.addRow(['', '', '', '', '', '', '', '', '']);
 }
 
 // Khối 1 job: info + items + JOB AMT (+ vàng/chi hộ khi có tạm ứng), trả về tổng
@@ -519,45 +517,47 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     ['Container No:', s.containerNumber ?? '', '', ''],
   ];
   for (const [l1, v1, l2, v2] of jobInfo) {
-    const r = xrow(ws, [l1, v1, '', '', l2, v2, '', ''], { bold: true });
+    const r = xrow(ws, [l1, v1, '', '', l2, v2, '', '', ''], { bold: true });
     xmerge(ws, r, 2, 4);
-    xmerge(ws, r, 6, 8);
+    xmerge(ws, r, 6, 9);
   }
-  ws.addRow(['', '', '', '', '', '', '', '']);
+  ws.addRow(['', '', '', '', '', '', '', '', '']);
 
-  const hr = xrow(ws, ['STT', 'Descriptions', 'Invoice No', 'Unit', 'Qty', 'Price', 'VAT Tax', 'Total Amt'], { bold: true, center: true, border: true });
-  // Ô Descriptions nền đỏ (khớp mẫu)
-  hr.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
+  xrow(ws, ['STT', 'Descriptions', 'Invoice No', 'Unit', 'Qty', 'Price', 'Amount', 'VAT Tax', 'Total Amt'], { bold: true, center: true, border: true });
   const debits: any[] = s.debitNotes ?? [];
   const t = debitSheetTotals(s);
+  // Căn lề dòng item: STT giữa, text trái, Unit giữa, số phải
+  const itemAligns: Array<'left' | 'center' | 'right' | undefined> = ['center', 'left', 'left', 'center', 'right', 'right', 'right', 'right', 'right'];
   debits.forEach((dd, idx) => {
     const vat = debitVatAmount(dd);
     const price = debitUnitPrice(dd);
     const amt = Number(dd.total ?? 0) / MONEY_SCALE;
+    const qtyNum = dd.quantity != null ? Number(dd.quantity) : 1;
+    // Cột Amount = tiền trước thuế (đơn giá x số lượng)
+    const amount = price == null ? '' : Math.round(price * qtyNum * 100) / 100;
     // Mẫu chuẩn: không invoice + tiền USD thì ghi EX + tỷ giá vào cột Invoice No
     const invNo = dd.invoiceNumber ?? (dd.currency === 'USD' && dd.exchangeRate != null ? `EX: ${Number(dd.exchangeRate).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '');
     const ir = xrow(
       ws,
-      [idx + 1, dd.description ?? dd.type, invNo, dd.unit ?? '', dd.quantity != null ? Number(dd.quantity) : '', price, vat ? vat : '-', amt],
-      { money: true, border: true },
+      [idx + 1, dd.description ?? dd.type, invNo, dd.unit ?? '', dd.quantity != null ? Number(dd.quantity) : '', price, amount, vat ? vat : '-', amt],
+      { money: true, border: true, aligns: itemAligns },
     );
-    // VAT '-' nền vàng (khớp mẫu)
-    if (!vat) ir.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } };
+    void ir;
   });
+  // Dòng trống có viền trước JOB AMT (đóng table)
+  xrow(ws, ['', '', '', '', '', '', '', '', ''], { border: true });
   const pretaxTotal = Math.round((t.total - t.vat) * 100) / 100;
-  let r = xrow(ws, ['', '', '', '', '', 'JOB AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, borderCols: [6, 8] });
-  xmerge(ws, r, 1, 5);
-  // Ô VAT '00' nền đỏ (khớp mẫu)
-  r.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
+  const r = xrow(ws, ['', '', '', '', '', '', 'JOB AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, borderCols: [7, 9] });
+  xmerge(ws, r, 1, 6);
   if (t.tamUng > 0) {
-    r = xrow(ws, ['', '', '', '', 'TỔNG CỘNG 合計', pretaxTotal, t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true, fill: 'FFFFFF00', borderCols: [5, 8] });
-    xmerge(ws, r, 1, 4);
-    r = xrow(ws, ['', '', '', '', '', '', 'CHI HỘ 代墊費', t.tamUng], { bold: true, right: true, money: true, borderCols: [7, 8] });
-    xmerge(ws, r, 1, 6);
-    r = xrow(ws, ['', '', '', '', '', '', 'PHÍ DỊCH VỤ IHT - 服務費', t.serviceFee], { bold: true, right: true, money: true, borderCols: [7, 8] });
-    xmerge(ws, r, 1, 6);
+    const r2 = xrow(ws, ['', '', '', '', '', 'TỔNG CỘNG 合計', pretaxTotal, t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true, borderCols: [6, 9] });
+    xmerge(ws, r2, 1, 5);
+    const r3 = xrow(ws, ['', '', '', '', '', '', '', 'CHI HỘ 代墊費', t.tamUng], { bold: true, right: true, money: true, borderCols: [8, 9] });
+    xmerge(ws, r3, 1, 7);
+    const r4 = xrow(ws, ['', '', '', '', '', '', '', 'PHÍ DỊCH VỤ IHT - 服務費', t.serviceFee], { bold: true, right: true, money: true, borderCols: [8, 9] });
+    xmerge(ws, r4, 1, 7);
   }
-  ws.addRow(['', '', '', '', '', '', '', '']);
+  ws.addRow(['', '', '', '', '', '', '', '', '']);
   return { vat: t.vat, total: t.total };
 }
 
@@ -572,10 +572,10 @@ function writeDebitBankSign(ws: ExcelJS.Worksheet) {
     'Account name: CTY TNHH TM DV VẬN CHUYỂN I.H.T VIỆT NAM',
   ];
   for (const line of bankLines) {
-    const r = xrow(ws, [line, '', '', '', '', '', '', ''], { bold: true });
-    xmerge(ws, r, 1, 8);
+    const r = xrow(ws, [line, '', '', '', '', '', '', '', ''], { bold: true });
+    xmerge(ws, r, 1, 9);
   }
-  xrow(ws, ['', 'SALE', '', '', 'ACCOUNTANT', '', 'APPROVAL', ''], { bold: true, center: true });
+  xrow(ws, ['', 'SALE', '', '', 'ACCOUNTANT', '', 'APPROVAL', '', ''], { bold: true, center: true });
 }
 
 // Xuất Excel Debit Note theo đúng form bản in (1 job/khối, header 1 lần, TOTAL cuối)
@@ -586,15 +586,14 @@ export async function buildDebitTemplateWorkbook(s: any): Promise<Buffer> {
   const ws = wb.addWorksheet('Debit Note');
   ws.columns = [
     { width: 6 }, { width: 32 }, { width: 16 }, { width: 10 },
-    { width: 10 }, { width: 15 }, { width: 14 }, { width: 16 },
+    { width: 10 }, { width: 15 }, { width: 14 }, { width: 14 }, { width: 16 },
   ];
 
   writeDebitHeader(ws, s);
   const t = writeDebitJobBlock(ws, s);
   // Mẫu chuẩn: xuất đơn cũng có dòng TOTAL AMT cuối
-  const tr = xrow(ws, ['', '', '', '', '', 'TOTAL AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, borderCols: [6, 8] });
-  xmerge(ws, tr, 1, 5);
-  tr.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
+  const tr = xrow(ws, ['', '', '', '', '', '', 'TOTAL AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, borderCols: [7, 9] });
+  xmerge(ws, tr, 1, 6);
   writeDebitBankSign(ws);
 
   const buffer = await wb.xlsx.writeBuffer();
@@ -625,9 +624,8 @@ export async function buildDebitMultiTemplateWorkbook(sheets: any[]): Promise<Bu
   }
   const gPretax = Math.round((gTotal - gVat) * 100) / 100;
   const f = (n: number) => n;
-  const r = xrow(ws, ['', '', '', '', 'TOTAL AMT', f(gPretax), gVat ? gVat : '00', f(gTotal)], { bold: true, right: true, money: true, borderCols: [5, 8] });
-  xmerge(ws, r, 1, 4);
-  r.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
+  const r = xrow(ws, ['', '', '', '', '', 'TOTAL AMT', f(gPretax), gVat ? gVat : '00', f(gTotal)], { bold: true, right: true, money: true, borderCols: [6, 9] });
+  xmerge(ws, r, 1, 5);
   writeDebitBankSign(ws);
 
   const buffer = await wb.xlsx.writeBuffer();
