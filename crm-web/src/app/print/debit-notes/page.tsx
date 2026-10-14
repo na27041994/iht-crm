@@ -121,7 +121,7 @@ function DebitDocHeader({ sheet }: { sheet: SheetWithDebits }) {
       {/* Header */}
       <div className="old-header">
         <div className="old-company">I.H.T VIET NAM CO., LTD</div>
-        <div className="old-addr">Add: 108 Ý Lan, Phường Phú Thạnh, TP.HCM</div>
+        <div className="old-addr">Add: 108 Ỷ Lan, Phường Phú Thạnh, TP.HCM</div>
         <div className="old-contact">Tel: 08-38380888 / 08-39225100 ; Fax:08-39225105 /08-39225106</div>
         <div className="old-title">DEBIT NOTE</div>
       </div>

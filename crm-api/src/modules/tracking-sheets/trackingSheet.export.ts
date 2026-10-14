@@ -476,7 +476,7 @@ function writeDebitHeader(ws: ExcelJS.Worksheet, s: any, exporterName = '') {
 
   let r = xrow(ws, ['I.H.T VIET NAM CO., LTD', '', '', '', '', '', '', '', ''], { bold: true, size: 14, center: true });
   xmerge(ws, r, 1, 9);
-  r = xrow(ws, ['Add: 108 Ý Lan, Phường Phú Thạnh, TP.HCM', '', '', '', '', '', '', '', ''], { bold: true, center: true });
+  r = xrow(ws, ['Add: 108 Ỷ Lan, Phường Phú Thạnh, TP.HCM', '', '', '', '', '', '', '', ''], { bold: true, center: true });
   xmerge(ws, r, 1, 9);
   r = xrow(ws, ['Tel: 08-38380888 /08-39225100', '', '', '', '', '', '', '', ''], { bold: true, center: true });
   xmerge(ws, r, 1, 9);

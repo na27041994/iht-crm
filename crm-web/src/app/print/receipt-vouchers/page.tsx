@@ -47,7 +47,7 @@ function VoucherDocument({ v }: { v: ReceiptVoucher }) {
       <div className="old-top">
         <div className="old-company">
           <div className="old-co-name">I.H.T VIET NAM CO., LTD</div>
-          <div>Add: 108 Ý Lan, Phường Phú Thạnh, TP.HCM</div>
+          <div>Add: 108 Ỷ Lan, Phường Phú Thạnh, TP.HCM</div>
           <div>Tel: 08-38380888 / 08-39225100 ; Fax: 08-39225105 / 08-39225106</div>
         </div>
         <div className="old-receipt-no">SỐ PHIẾU: {v.receiptNo}</div>
