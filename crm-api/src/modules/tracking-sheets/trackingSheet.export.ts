@@ -544,10 +544,8 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     );
     void ir;
   });
-  // Dòng trống có viền trước JOB AMT (đóng table)
-  xrow(ws, ['', '', '', '', '', '', '', '', ''], { border: true });
   const pretaxTotal = Math.round((t.total - t.vat) * 100) / 100;
-  const r = xrow(ws, ['', '', '', '', '', '', 'JOB AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, borderCols: [7, 9] });
+  const r = xrow(ws, ['', '', '', '', '', '', 'JOB AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, border: true });
   xmerge(ws, r, 1, 6);
   if (t.tamUng > 0) {
     const r2 = xrow(ws, ['', '', '', '', '', 'TỔNG CỘNG 合計', pretaxTotal, t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true, borderCols: [6, 9] });
