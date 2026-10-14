@@ -7,6 +7,15 @@ import DecimalInput from '@/components/DecimalInput';
 import { JOB_TYPES, TAX_RATES } from '@/lib/jobTypes';
 import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 
+// Thông tin phiếu truyền từ trang chi tiết để hiển thị cạnh form khi nhập
+export interface DebitSheetInfo {
+  sheetNumber: string;
+  customer: string;
+  route: string;
+  containerNumber: string;
+  billNumber: string;
+}
+
 export interface DebitNoteItem {
   id: number;
   type: string;
@@ -43,9 +52,10 @@ interface DebitNoteModalProps {
   editing: DebitNoteItem | null;
   onClose: () => void;
   onSaved: () => void;
+  sheetInfo?: DebitSheetInfo | null;
 }
 
-export default function DebitNoteModal({ open, sheetId, editing, onClose, onSaved }: DebitNoteModalProps) {
+export default function DebitNoteModal({ open, sheetId, editing, onClose, onSaved, sheetInfo }: DebitNoteModalProps) {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [jbForm] = Form.useForm();
@@ -188,18 +198,28 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
     }
   }
 
-  return (
-    <Modal
-      open={open}
-      title={editing ? 'Sửa Debit Note' : 'Thêm Debit Note'}
-      onCancel={onClose}
-      onOk={() => form.submit()}
-      okText={editing ? 'Lưu thay đổi' : 'Thêm mục'}
-      confirmLoading={saving}
-      width={720}
-      destroyOnHidden
-    >
-      <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
+  // Panel thông tin phiếu hiển thị cạnh form khi nhập
+  const infoPanel = sheetInfo ? (
+    <div style={{ background: '#f5f5f5', border: '1px solid #e5e5e5', borderRadius: 8, padding: 12, fontSize: 13 }}>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>Thông tin phiếu</div>
+      {[
+        ['Mã phiếu', sheetInfo.sheetNumber],
+        ['Khách hàng', sheetInfo.customer],
+        ['Tuyến', sheetInfo.route],
+        ['Container', sheetInfo.containerNumber],
+        ['Bill', sheetInfo.billNumber],
+      ].map(([k, v]) => (
+        <div key={k} style={{ display: 'flex', gap: 8, padding: '4px 0', borderTop: '1px solid #e8e8e8' }}>
+          <span style={{ color: '#888', minWidth: 90 }}>{k}</span>
+          <span style={{ fontWeight: 500 }}>{v}</span>
+        </div>
+      ))}
+    </div>
+  ) : null;
+
+  const formBody = (
+    <>
+      <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 0 }}>
         {editing?.sourceBookingId != null && (
           <div style={{ marginBottom: 12 }}>
             <Tag color="purple">Liên kết Job Book #{editing.sourceBookingId}</Tag>
@@ -207,17 +227,17 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
           </div>
         )}
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-          <Form.Item label="Loại" name="type" rules={[{ required: true, message: 'Chọn loại' }]} className="sm:col-span-2">
+          <Form.Item label="Loại" name="type" rules={[{ required: true, message: 'Chọn loại' }]}>
             <Select placeholder="Chọn loại" options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />
+          </Form.Item>
+          <Form.Item label="Mô tả" name="description">
+            <DescriptionAutocomplete type="debit" placeholder="Gõ để tìm mô tả đã từng nhập..." />
           </Form.Item>
           <Form.Item label="Số hoá đơn" name="invoiceNumber">
             <Input placeholder="VD: HD-2026-0088" />
           </Form.Item>
           <Form.Item label="Unit" name="unit">
             <Input placeholder="VD: Cont, Kg..." />
-          </Form.Item>
-          <Form.Item label="Mô tả" name="description" className="sm:col-span-2">
-            <DescriptionAutocomplete type="debit" placeholder="Gõ để tìm mô tả đã từng nhập..." />
           </Form.Item>
           <Form.Item label="Current" name="currency">
             <Select options={[{ value: 'VND', label: 'VND' }, { value: 'USD', label: 'USD' }]} />
@@ -297,6 +317,30 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
             </Form>
           )}
         </div>
+      )}
+    </>
+  );
+
+  const modalTitle = editing ? 'Sửa Debit Note' : 'Thêm Debit Note';
+
+  return (
+    <Modal
+      open={open}
+      title={modalTitle}
+      onCancel={onClose}
+      onOk={() => form.submit()}
+      okText={editing ? 'Lưu thay đổi' : 'Thêm mục'}
+      confirmLoading={saving}
+      width={sheetInfo ? 1040 : 720}
+      destroyOnHidden
+    >
+      {sheetInfo ? (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3" style={{ marginTop: 16 }}>
+          <div className="xl:col-span-2">{formBody}</div>
+          <div>{infoPanel}</div>
+        </div>
+      ) : (
+        formBody
       )}
     </Modal>
   );

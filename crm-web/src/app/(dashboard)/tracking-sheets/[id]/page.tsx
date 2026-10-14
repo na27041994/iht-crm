@@ -120,6 +120,15 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   const canEditSheet = can('tracking_sheet_list', 'edit');
   const [sheet, setSheet] = useState<TrackingSheetDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const debitSheetInfo = sheet
+    ? {
+        sheetNumber: sheet.sheetNumber,
+        customer: sheet.customer?.companyName || (sheet.customer as any)?.customerName || '-',
+        route: sheet.fromLocation || sheet.toLocation ? `${sheet.fromLocation ?? '?'} → ${sheet.toLocation ?? '?'}` : '-',
+        containerNumber: sheet.containerNumber || '-',
+        billNumber: sheet.billNumber || '-',
+      }
+    : null;
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<JobOrderItem | null>(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -668,6 +677,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         editing={editingDebit}
         onClose={() => setDebitModalOpen(false)}
         onSaved={load}
+        sheetInfo={debitSheetInfo}
       />
     </div>
   );
