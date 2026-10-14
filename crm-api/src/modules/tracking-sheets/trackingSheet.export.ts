@@ -466,8 +466,8 @@ function debitSheetTotals(s: any): { vat: number; total: number; tamUng: number;
   return { vat: totalVat, total: totalAmt, tamUng, serviceFee: Math.round((totalAmt - tamUng) * 100) / 100 };
 }
 
-// Header mẫu in: công ty + RECEIVE
-function writeDebitHeader(ws: ExcelJS.Worksheet, s: any) {
+// Header mẫu in: công ty + RECEIVE (Accountting = tên người xuất excel, trống thì SĐT NV)
+function writeDebitHeader(ws: ExcelJS.Worksheet, s: any, exporterName = '') {
   const customer = s.customer ?? {};
   const contactName = s.deliveryStaff?.fullName ?? s.docStaff?.fullName ?? '';
   const contactPhone = s.deliveryStaff?.phone ?? s.docStaff?.phone ?? '';
@@ -493,7 +493,7 @@ function writeDebitHeader(ws: ExcelJS.Worksheet, s: any) {
   r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', '', ''], { bold: true, border: true });
   xmerge(ws, r, 2, 4);
   xmerge(ws, r, 6, 9);
-  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', contactPhone, '', '', ''], { bold: true, border: true });
+  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', exporterName || contactPhone, '', '', ''], { bold: true, border: true });
   xmerge(ws, r, 2, 4);
   xmerge(ws, r, 6, 9);
   r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', '', ''], { bold: true, border: true });
@@ -577,7 +577,7 @@ function writeDebitBankSign(ws: ExcelJS.Worksheet) {
 }
 
 // Xuất Excel Debit Note theo đúng form bản in (1 job/khối, header 1 lần, TOTAL cuối)
-export async function buildDebitTemplateWorkbook(s: any): Promise<Buffer> {
+export async function buildDebitTemplateWorkbook(s: any, exporterName = ''): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'I.H.T Logistics';
   wb.created = new Date();
@@ -587,7 +587,7 @@ export async function buildDebitTemplateWorkbook(s: any): Promise<Buffer> {
     { width: 10 }, { width: 15 }, { width: 14 }, { width: 14 }, { width: 16 },
   ];
 
-  writeDebitHeader(ws, s);
+  writeDebitHeader(ws, s, exporterName);
   const t = writeDebitJobBlock(ws, s);
   // Mẫu chuẩn: xuất đơn cũng có dòng TOTAL AMT cuối
   const tr = xrow(ws, ['', '', '', '', '', '', 'TOTAL AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, border: true });
@@ -599,7 +599,7 @@ export async function buildDebitTemplateWorkbook(s: any): Promise<Buffer> {
 }
 
 // Xuất Excel nhiều phiếu debit theo form in: 1 header chung + từng job + TOTAL AMT tổng cuối
-export async function buildDebitMultiTemplateWorkbook(sheets: any[]): Promise<Buffer> {
+export async function buildDebitMultiTemplateWorkbook(sheets: any[], exporterName = ''): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'I.H.T Logistics';
   wb.created = new Date();
@@ -612,7 +612,7 @@ export async function buildDebitMultiTemplateWorkbook(sheets: any[]): Promise<Bu
     const buffer = await wb.xlsx.writeBuffer();
     return Buffer.from(buffer as ArrayBuffer);
   }
-  writeDebitHeader(ws, sheets[0]);
+  writeDebitHeader(ws, sheets[0], exporterName);
   let gVat = 0;
   let gTotal = 0;
   for (const s of sheets) {
@@ -630,7 +630,7 @@ export async function buildDebitMultiTemplateWorkbook(sheets: any[]): Promise<Bu
   return Buffer.from(buffer as ArrayBuffer);
 }
 
-export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 'debit'): Promise<Buffer> {
+export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 'debit', exporterName = ''): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'I.H.T Logistics';
   wb.created = new Date();
@@ -724,7 +724,7 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
     }
   } else {
     // Debit theo đúng form bản in
-    return buildDebitTemplateWorkbook(sheet);
+    return buildDebitTemplateWorkbook(sheet, exporterName);
   }
 
   const buffer = await wb.xlsx.writeBuffer();

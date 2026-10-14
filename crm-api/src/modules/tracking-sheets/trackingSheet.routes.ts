@@ -288,7 +288,9 @@ trackingSheetRouter.get(
       res.status(404).json({ error: 'Không tìm thấy phiếu theo dõi' });
       return;
     }
-    const buffer = await buildJobsWorkbook(sheet, type);
+    const { prisma } = await import('../../lib/prisma.js');
+    const me = await prisma.user.findUnique({ where: { id: (req as unknown as AuthedRequest).user!.sub }, select: { fullName: true } });
+    const buffer = await buildJobsWorkbook(sheet, type, me?.fullName ?? '');
     const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : 'debit-note';
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${prefix}-${sheet.sheetNumber}.xlsx"`);

@@ -381,7 +381,8 @@ reportRouter.get('/debit/template-export', validateQuery(z.object({ ids: z.strin
     },
   });
   const { buildDebitMultiTemplateWorkbook } = await import('../tracking-sheets/trackingSheet.export.js');
-  const buf = await buildDebitMultiTemplateWorkbook(sheets);
+  const me = await prisma.user.findUnique({ where: { id: (req as unknown as { user?: { sub?: number } }).user!.sub! }, select: { fullName: true } });
+  const buf = await buildDebitMultiTemplateWorkbook(sheets, me?.fullName ?? '');
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename="debit-doc_${ids.length}_phieu.xlsx"`);
   res.send(buf);
