@@ -272,7 +272,7 @@ trackingSheetRouter.get(
   '/deposit-export',
   requirePermission('tracking_sheet_list', 'view'),
   asyncHandler(async (req, res) => {
-    const q = req.query as unknown as { ids?: string; search?: string; from?: string; to?: string };
+    const q = req.query as unknown as { ids?: string; search?: string; customerId?: string; from?: string; to?: string };
     const ids = String(q.ids ?? '')
       .split(',')
       .map((s) => Number(s.trim()))
@@ -282,6 +282,10 @@ trackingSheetRouter.get(
     if (ids.length) {
       (where as any).id = { in: ids };
     } else {
+      const customerId = Number(q.customerId);
+      if (Number.isInteger(customerId) && customerId > 0) {
+        (where as any).customerId = customerId;
+      }
       if (q.from || q.to) {
         (where as any).createdAt = {};
         if (q.from) (where as any).createdAt.gte = new Date(q.from);
