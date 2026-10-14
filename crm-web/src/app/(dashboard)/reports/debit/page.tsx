@@ -138,8 +138,8 @@ export default function DebitReportPage() {
     setExporting(true);
     try {
       const blob = await apiDownload(`/reports/debit/template-export?ids=${selectedSheetIds.join(',')}`);
-      saveBlob(blob, `debit-mau-in_${selectedSheetIds.length}_phieu.xlsx`);
-      message.success(`Đã xuất mẫu in ${selectedSheetIds.length} phiếu`);
+      saveBlob(blob, `debit-doc_${selectedSheetIds.length}_phieu.xlsx`);
+      message.success(`Đã xuất dọc ${selectedSheetIds.length} phiếu`);
     } catch (err) {
       message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
     } finally {
@@ -255,7 +255,7 @@ export default function DebitReportPage() {
               Xuất Excel đã chọn {selectedSheetIds.length ? `(${selectedSheetIds.length})` : ''}
             </Button>
             <Button icon={<DownloadOutlined />} loading={exporting} disabled={!selectedSheetIds.length} onClick={handleExportTemplate}>
-              Xuất mẫu in {selectedSheetIds.length ? `(${selectedSheetIds.length})` : ''}
+              Xuất dọc {selectedSheetIds.length ? `(${selectedSheetIds.length})` : ''}
             </Button>
             <Button icon={<DownloadOutlined />} loading={exporting} disabled={!selectedSheetIds.length} onClick={handleExportLandscape}>
               Xuất ngang {selectedSheetIds.length ? `(${selectedSheetIds.length})` : ''}

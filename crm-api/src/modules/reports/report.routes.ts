@@ -383,7 +383,7 @@ reportRouter.get('/debit/template-export', validateQuery(z.object({ ids: z.strin
   const { buildDebitMultiTemplateWorkbook } = await import('../tracking-sheets/trackingSheet.export.js');
   const buf = await buildDebitMultiTemplateWorkbook(sheets);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename="debit-mau-in_${ids.length}_phieu.xlsx"`);
+  res.setHeader('Content-Disposition', `attachment; filename="debit-doc_${ids.length}_phieu.xlsx"`);
   res.send(buf);
 }));
 
