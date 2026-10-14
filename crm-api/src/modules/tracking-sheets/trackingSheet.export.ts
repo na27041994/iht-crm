@@ -590,7 +590,7 @@ export async function buildDebitTemplateWorkbook(s: any): Promise<Buffer> {
   writeDebitHeader(ws, s);
   const t = writeDebitJobBlock(ws, s);
   // Mẫu chuẩn: xuất đơn cũng có dòng TOTAL AMT cuối
-  const tr = xrow(ws, ['', '', '', '', '', '', 'TOTAL AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, borderCols: [7, 9] });
+  const tr = xrow(ws, ['', '', '', '', '', '', 'TOTAL AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, border: true });
   xmerge(ws, tr, 1, 6);
   writeDebitBankSign(ws);
 
@@ -622,7 +622,7 @@ export async function buildDebitMultiTemplateWorkbook(sheets: any[]): Promise<Bu
   }
   const gPretax = Math.round((gTotal - gVat) * 100) / 100;
   const f = (n: number) => n;
-  const r = xrow(ws, ['', '', '', '', '', 'TOTAL AMT', f(gPretax), gVat ? gVat : '00', f(gTotal)], { bold: true, right: true, money: true, borderCols: [6, 9] });
+  const r = xrow(ws, ['', '', '', '', '', 'TOTAL AMT', f(gPretax), gVat ? gVat : '00', f(gTotal)], { bold: true, right: true, money: true, border: true });
   xmerge(ws, r, 1, 5);
   writeDebitBankSign(ws);
 
