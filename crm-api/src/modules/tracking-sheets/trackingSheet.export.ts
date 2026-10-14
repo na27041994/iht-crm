@@ -630,7 +630,7 @@ export async function buildDebitMultiTemplateWorkbook(sheets: any[], exporterNam
   return Buffer.from(buffer as ArrayBuffer);
 }
 
-export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 'debit', exporterName = ''): Promise<Buffer> {
+export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 'debit' | 'deposit', exporterName = ''): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'I.H.T Logistics';
   wb.created = new Date();
@@ -715,6 +715,42 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
         unit: b.unit ?? '',
         quantity: num(b.quantity),
         pretaxAmount: vndText(numMoney(b.pretaxAmount)),
+        taxRate: num(b.taxRate),
+        taxAmount: vndText(numMoney(b.taxAmount)),
+        afterTaxAmount: vndText(numMoney(b.afterTaxAmount)),
+        total: vndText(numMoney(b.total)),
+        note: (b as any).note ?? '',
+      });
+    }
+  } else if (type === 'deposit') {
+    // Xuất riêng các dòng cược cont / cược sửa chữa cont trong Job Book tàu
+    const ws = wb.addWorksheet('Cuoc Cont');
+    setup(ws, [
+      { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
+      { header: 'Khách hàng', key: 'customer', width: 30 },
+      { header: 'Loại', key: 'type', width: 18 },
+      { header: 'Mô tả', key: 'description', width: 28 },
+      { header: 'Hãng tàu / Đại lý', key: 'partner', width: 22 },
+      { header: 'Đơn vị tính', key: 'unit', width: 12 },
+      { header: 'Số lượng', key: 'quantity', width: 10 },
+      { header: 'Trước thuế', key: 'pretaxAmount', width: 15 },
+      { header: 'Thuế (%)', key: 'taxRate', width: 10 },
+      { header: 'Tiền thuế', key: 'taxAmount', width: 15 },
+      { header: 'Sau thuế', key: 'afterTaxAmount', width: 15 },
+      { header: 'Tổng tiền', key: 'total', width: 15 },
+      { header: 'Ghi chú', key: 'note', width: 26 },
+    ]);
+    const deposits = (sheet.jobBookings ?? []).filter((b: any) => b.type === 'Cược Cont' || b.type === 'Cược sửa chữa cont');
+    for (const b of deposits) {
+      ws.addRow({
+        sheetNumber: sheet.sheetNumber,
+        customer: sheet.customer ? `${sheet.customer.companyName} (#${sheet.customer.id})` : '',
+        type: b.type,
+        description: b.description ?? '',
+        partner: (b as any).carrier?.carrierName ?? (b as any).agent?.agentName ?? (sheet as any).carrier?.carrierName ?? '',
+        unit: b.unit ?? '',
+        quantity: num(b.quantity),
+        pretaxAmount: vndText(numMoney((b as any).pretaxAmount)),
         taxRate: num(b.taxRate),
         taxAmount: vndText(numMoney(b.taxAmount)),
         afterTaxAmount: vndText(numMoney(b.afterTaxAmount)),

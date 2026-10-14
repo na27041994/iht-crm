@@ -271,8 +271,8 @@ trackingSheetRouter.get(
   '/:id/export',
   validateQuery(exportJobsQuery),
   asyncHandler(async (req: AuthedRequest, res, next) => {
-    const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' };
-    const resource = type === 'order' ? 'job_order' : type === 'booking' ? 'job_booking' : 'debit_note';
+    const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' | 'deposit' };
+    const resource = type === 'order' ? 'job_order' : type === 'debit' ? 'debit_note' : 'job_booking';
     const { hasPermission } = await import('../../modules/permissions/permissions.service.js');
     const ok = await hasPermission(req.user!.sub, resource as any, 'view');
     if (!ok) {
@@ -282,7 +282,7 @@ trackingSheetRouter.get(
     next();
   }),
   asyncHandler(async (req, res) => {
-    const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' };
+    const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' | 'deposit' };
     const sheet = await getTrackingSheet(Number(req.params.id));
     if (!sheet) {
       res.status(404).json({ error: 'Không tìm thấy phiếu theo dõi' });
@@ -291,7 +291,7 @@ trackingSheetRouter.get(
     const { prisma } = await import('../../lib/prisma.js');
     const me = await prisma.user.findUnique({ where: { id: (req as unknown as AuthedRequest).user!.sub }, select: { fullName: true } });
     const buffer = await buildJobsWorkbook(sheet, type, me?.fullName ?? '');
-    const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : 'debit-note';
+    const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : type === 'deposit' ? 'cuoc-cont' : 'debit-note';
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${prefix}-${sheet.sheetNumber}.xlsx"`);
     res.send(buffer);

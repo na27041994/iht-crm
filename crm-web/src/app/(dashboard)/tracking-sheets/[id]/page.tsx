@@ -289,11 +289,11 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   }
 
   // Hàm exportJobs: xử lý exportJobs
-  async function exportJobs(type: 'order' | 'booking' | 'debit') {
+  async function exportJobs(type: 'order' | 'booking' | 'debit' | 'deposit') {
     if (!sheet) return;
     try {
       const blob = await apiDownload(`/tracking-sheets/${sheet.id}/export?type=${type}`);
-      const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : 'debit-note';
+      const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : type === 'deposit' ? 'cuoc-cont' : 'debit-note';
       saveBlob(blob, `${prefix}-${sheet.sheetNumber}.xlsx`);
       message.success('Đã xuất file Excel');
     } catch (err) {
@@ -501,6 +501,9 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             <CollapseToggle sectionKey="booking" collapsed={collapsed.booking} />
             <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('booking')}>
               Xuất Excel
+            </Button>
+            <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('deposit')}>
+              Xuất Excel cược
             </Button>
             {canCreateBooking && (
               <Button type="primary" icon={<PlusOutlined />} onClick={openAddBooking} size="small">
