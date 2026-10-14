@@ -289,11 +289,11 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   }
 
   // Hàm exportJobs: xử lý exportJobs
-  async function exportJobs(type: 'order' | 'booking' | 'debit' | 'deposit') {
+  async function exportJobs(type: 'order' | 'booking' | 'debit') {
     if (!sheet) return;
     try {
       const blob = await apiDownload(`/tracking-sheets/${sheet.id}/export?type=${type}`);
-      const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : type === 'deposit' ? 'cuoc-cont' : 'debit-note';
+      const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : 'debit-note';
       saveBlob(blob, `${prefix}-${sheet.sheetNumber}.xlsx`);
       message.success('Đã xuất file Excel');
     } catch (err) {

@@ -108,5 +108,5 @@ export const exportTrackingSheetsQuery = z.object({
 });
 
 export const exportJobsQuery = z.object({
-  type: z.enum(['order', 'booking', 'debit', 'deposit']),
+  type: z.enum(['order', 'booking', 'debit']),
 });

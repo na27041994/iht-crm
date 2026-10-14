@@ -204,63 +204,6 @@ function TrackingSheetsContent() {
     }
   }
 
-  // Xuất Excel gộp các dòng cược của các phiếu đã tích chọn
-  const [exportingDeposit, setExportingDeposit] = useState(false);
-  async function handleExportDeposit() {
-    if (!selectedIds.length) return;
-    setExportingDeposit(true);
-    try {
-      const blob = await apiDownload(`/tracking-sheets/deposit-export?ids=${selectedIds.join(',')}`);
-      saveBlob(blob, `cuoc-cont_${selectedIds.length}_phieu.xlsx`);
-      message.success(`Đã xuất cược ${selectedIds.length} phiếu đã chọn`);
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
-    } finally {
-      setExportingDeposit(false);
-    }
-  }
-
-  // Query filter hiện tại (dùng cho xuất tất cả các trang)
-  function filterQuery() {
-    const params = new URLSearchParams();
-    if (urlSearch) params.set('search', urlSearch);
-    if (urlFrom) params.set('from', urlFrom);
-    if (urlTo) params.set('to', urlTo);
-    return params.toString();
-  }
-
-  // Xuất Excel tất cả các trang theo filter hiện tại
-  const [exportingAll, setExportingAll] = useState(false);
-  async function handleExportAll() {
-    setExportingAll(true);
-    try {
-      const qs = filterQuery();
-      const blob = await apiDownload(`/tracking-sheets/export${qs ? `?${qs}` : ''}`);
-      saveBlob(blob, `phieu-theo-doi-tatca-${dayjs().format('YYYYMMDD-HHmmss')}.xlsx`);
-      message.success(`Đã xuất tất cả ${data?.total ?? ''} phiếu`.trim());
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
-    } finally {
-      setExportingAll(false);
-    }
-  }
-
-  // Xuất Excel cược tất cả các trang theo filter hiện tại
-  const [exportingDepositAll, setExportingDepositAll] = useState(false);
-  async function handleExportDepositAll() {
-    setExportingDepositAll(true);
-    try {
-      const qs = filterQuery();
-      const blob = await apiDownload(`/tracking-sheets/deposit-export${qs ? `?${qs}` : ''}`);
-      saveBlob(blob, `cuoc-cont-tatca-${dayjs().format('YYYYMMDD-HHmmss')}.xlsx`);
-      message.success('Đã xuất cược tất cả các phiếu');
-    } catch (err) {
-      message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
-    } finally {
-      setExportingDepositAll(false);
-    }
-  }
-
   // Hàm openEdit: xử lý openEdit
   function openEdit(id: number) {
     setEditingId(id);
@@ -317,40 +260,6 @@ function TrackingSheetsContent() {
               Xuất đã chọn{selectedIds.length ? ` (${selectedIds.length})` : ''}
             </Button>
           )}
-          {canView && (data?.total ?? 0) > 0 && (
-            <Button
-              icon={<DownloadOutlined />}
-              loading={exportingAll}
-              onClick={handleExportAll}
-              block
-              className="sm:!w-auto"
-            >
-              Xuất tất cả ({data?.total ?? 0})
-            </Button>
-          )}
-          {canView && (data?.total ?? 0) > 0 && (
-            <Button
-              icon={<DownloadOutlined />}
-              loading={exportingDepositAll}
-              onClick={handleExportDepositAll}
-              block
-              className="sm:!w-auto"
-            >
-              Xuất cược tất cả ({data?.total ?? 0})
-            </Button>
-          )}
-          {canView && (
-            <Button
-              icon={<DownloadOutlined />}
-              disabled={!selectedIds.length}
-              loading={exportingDeposit}
-              onClick={handleExportDeposit}
-              block
-              className="sm:!w-auto"
-            >
-              Xuất Excel cược{selectedIds.length ? ` (${selectedIds.length})` : ''}
-            </Button>
-          )}
           {canView && (
             <Button icon={<DownloadOutlined />} onClick={() => setExportOpen(true)} block className="sm:!w-auto">
               Xuất Excel
@@ -404,31 +313,6 @@ function TrackingSheetsContent() {
               selectedRowKeys: selectedIds,
               onChange: (keys) => setSelectedIds(keys as number[]),
               preserveSelectedRowKeys: true,
-              selections: [
-                {
-                  key: 'page',
-                  text: 'Chọn cả trang',
-                  onSelect: (pageKeys) => setSelectedIds(Array.from(new Set([...selectedIds, ...(pageKeys as number[])]))),
-                },
-                {
-                  key: 'invert-page',
-                  text: 'Đảo chọn trang này',
-                  onSelect: (pageKeys) => {
-                    const pageSet = new Set(pageKeys as number[]);
-                    const kept = selectedIds.filter((id) => !pageSet.has(id));
-                    const add = ((data?.items ?? []).map((r: any) => r.id) as number[]).filter((id) => !selectedIds.includes(id));
-                    setSelectedIds([...kept, ...add]);
-                  },
-                },
-                {
-                  key: 'none-page',
-                  text: 'Bỏ chọn trang này',
-                  onSelect: (pageKeys) => {
-                    const pageSet = new Set(pageKeys as number[]);
-                    setSelectedIds(selectedIds.filter((id) => !pageSet.has(id)));
-                  },
-                },
-              ],
             }}
             pagination={{
               current: data?.page ?? urlPage,

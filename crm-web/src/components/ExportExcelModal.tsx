@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { App, Button, Form, Input, Modal, Radio, Select, Spin } from 'antd';
+import { App, Button, Form, Input, Modal, Select, Spin } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import dayjs, { type Dayjs } from 'dayjs';
 import { apiDownload, apiFetch, saveBlob } from '@/lib/api';
@@ -14,7 +14,6 @@ interface CustomerOption {
 }
 
 interface ExportFormValues {
-  kind?: 'sheet' | 'deposit';
   search?: string;
   customerId?: number;
   range?: [Dayjs, Dayjs];
@@ -68,10 +67,9 @@ export default function ExportExcelModal({ open, onClose }: ExportExcelModalProp
       if (values.customerId) q.set('customerId', String(values.customerId));
       if (values.range?.[0]) q.set('from', values.range[0].startOf('day').toISOString());
       if (values.range?.[1]) q.set('to', values.range[1].endOf('day').toISOString());
-      const isDeposit = values.kind === 'deposit';
-      const blob = await apiDownload(`${isDeposit ? '/tracking-sheets/deposit-export' : '/tracking-sheets/export'}?${q.toString()}`);
-      saveBlob(blob, `${isDeposit ? 'cuoc-cont' : 'phieu-theo-doi'}-${dayjs().format('YYYYMMDD-HHmmss')}.xlsx`);
-      message.success(isDeposit ? 'Đã xuất file Excel cược' : 'Đã xuất file Excel');
+      const blob = await apiDownload(`/tracking-sheets/export?${q.toString()}`);
+      saveBlob(blob, `phieu-theo-doi-${dayjs().format('YYYYMMDD-HHmmss')}.xlsx`);
+      message.success('Đã xuất file Excel');
       onClose();
     } catch (err) {
       message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
@@ -95,15 +93,7 @@ export default function ExportExcelModal({ open, onClose }: ExportExcelModalProp
         </Button>,
       ]}
     >
-      <Form form={form} layout="vertical" onFinish={handleExport} style={{ marginTop: 16 }} initialValues={{ kind: 'sheet' }}>
-        <Form.Item label="Loại xuất" name="kind">
-          <Radio.Group
-            options={[
-              { value: 'sheet', label: 'Phiếu theo dõi' },
-              { value: 'deposit', label: 'Cược cont' },
-            ]}
-          />
-        </Form.Item>
+      <Form form={form} layout="vertical" onFinish={handleExport} style={{ marginTop: 16 }}>
         <Form.Item label="Tìm kiếm (mã phiếu, container, tuyến...)" name="search">
           <Input placeholder="Bỏ trống để lấy tất cả" allowClear />
         </Form.Item>

@@ -267,73 +267,12 @@ trackingSheetRouter.get(
   }),
 );
 
-// Xuất Excel gộp các dòng cược của các phiếu đã chọn (hoặc theo filter khi không truyền ids)
-trackingSheetRouter.get(
-  '/deposit-export',
-  requirePermission('tracking_sheet_list', 'view'),
-  asyncHandler(async (req, res) => {
-    const q = req.query as unknown as { ids?: string; search?: string; customerId?: string; from?: string; to?: string };
-    const ids = String(q.ids ?? '')
-      .split(',')
-      .map((s) => Number(s.trim()))
-      .filter((n) => Number.isInteger(n) && n > 0)
-      .slice(0, 200);
-    const where: Record<string, unknown> = { isDelete: 1 };
-    if (ids.length) {
-      (where as any).id = { in: ids };
-    } else {
-      const customerId = Number(q.customerId);
-      if (Number.isInteger(customerId) && customerId > 0) {
-        (where as any).customerId = customerId;
-      }
-      if (q.from || q.to) {
-        (where as any).createdAt = {};
-        if (q.from) (where as any).createdAt.gte = new Date(q.from);
-        if (q.to) (where as any).createdAt.lte = new Date(q.to);
-      }
-      if (q.search) {
-        const s = q.search;
-        (where as any).OR = [
-          { sheetNumber: { contains: s, mode: 'insensitive' } },
-          { containerNumber: { contains: s, mode: 'insensitive' } },
-          { customer: { is: { companyName: { contains: s, mode: 'insensitive' } } } },
-          { fromLocation: { contains: s, mode: 'insensitive' } },
-          { toLocation: { contains: s, mode: 'insensitive' } },
-          { customNo: { contains: s, mode: 'insensitive' } },
-          { billNumber: { contains: s, mode: 'insensitive' } },
-          { invoiceNumber: { contains: s, mode: 'insensitive' } },
-          { consignee: { contains: s, mode: 'insensitive' } },
-          { shipper: { contains: s, mode: 'insensitive' } },
-          { note: { contains: s, mode: 'insensitive' } },
-          { pol: { contains: s, mode: 'insensitive' } },
-          { pod: { contains: s, mode: 'insensitive' } },
-        ];
-      }
-    }
-    const { prisma } = await import('../../lib/prisma.js');
-    const sheets = await prisma.trackingSheet.findMany({
-      where: { id: { in: ids }, isDelete: 1 },
-      orderBy: { id: 'asc' },
-      include: {
-        customer: { select: { id: true, companyName: true } },
-        carrier: { select: { id: true, carrierName: true } },
-        jobBookings: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
-      },
-    });
-    const { buildDepositsWorkbook } = await import('./trackingSheet.export.js');
-    const buffer = await buildDepositsWorkbook(sheets);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="cuoc-cont_${ids.length}_phieu.xlsx"`);
-    res.send(buffer);
-  }),
-);
-
 trackingSheetRouter.get(
   '/:id/export',
   validateQuery(exportJobsQuery),
   asyncHandler(async (req: AuthedRequest, res, next) => {
-    const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' | 'deposit' };
-    const resource = type === 'order' ? 'job_order' : type === 'debit' ? 'debit_note' : 'job_booking';
+    const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' };
+    const resource = type === 'order' ? 'job_order' : type === 'booking' ? 'job_booking' : 'debit_note';
     const { hasPermission } = await import('../../modules/permissions/permissions.service.js');
     const ok = await hasPermission(req.user!.sub, resource as any, 'view');
     if (!ok) {
@@ -343,7 +282,7 @@ trackingSheetRouter.get(
     next();
   }),
   asyncHandler(async (req, res) => {
-    const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' | 'deposit' };
+    const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' };
     const sheet = await getTrackingSheet(Number(req.params.id));
     if (!sheet) {
       res.status(404).json({ error: 'Không tìm thấy phiếu theo dõi' });
@@ -352,7 +291,7 @@ trackingSheetRouter.get(
     const { prisma } = await import('../../lib/prisma.js');
     const me = await prisma.user.findUnique({ where: { id: (req as unknown as AuthedRequest).user!.sub }, select: { fullName: true } });
     const buffer = await buildJobsWorkbook(sheet, type, me?.fullName ?? '');
-    const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : type === 'deposit' ? 'cuoc-cont' : 'debit-note';
+    const prefix = type === 'order' ? 'job-order' : type === 'booking' ? 'job-book-tau' : 'debit-note';
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${prefix}-${sheet.sheetNumber}.xlsx"`);
     res.send(buffer);
