@@ -5,6 +5,14 @@ import type { DebitGroup } from './report.service.js';
 
 const HEADER_FILL = 'FF1F4E79';
 
+// Ngày ghi text dd/mm/yyyy (viewer không render đúng numFmt ngày)
+function fmtDMY(v: Date | string | null | undefined): string {
+  if (!v) return '';
+  const d = v instanceof Date ? v : new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
 // Hàm styleHeader: xử lý styleHeader
 function styleHeader(row: ExcelJS.Row) {
   row.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
@@ -41,7 +49,7 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
   { header: 'Mã KH', key: 'customerCode', width: 12 },
   { header: 'Khách hàng', key: 'customerName', width: 30 },
-  { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
+  { header: 'Ngày', key: 'date', width: 12 },
   { header: 'Tiền trước thuế', key: 'pretaxAmount', width: 16 },
   { header: 'Tiền thuế', key: 'taxAmount', width: 15 },
   { header: 'Số tiền', key: 'amount', width: 15 },
@@ -117,7 +125,7 @@ export async function buildDebitReportWorkbook(
       sheetNumber: g.sheetNumber,
       customerCode: g.customerCode,
       customerName: g.customerName,
-      date: g.date,
+      date: fmtDMY(g.date),
       pretaxAmount: vndText(g.pretax / MONEY_SCALE),
       taxAmount: vndText(g.tax / MONEY_SCALE),
       amount: vndText(g.total / MONEY_SCALE),
@@ -186,7 +194,7 @@ export async function buildDebitSelectedWorkbook(sheets: any[]): Promise<Buffer>
         customerName: s.customer ? s.customer.companyName || s.customer.customerName : '',
         quantity: d.quantity ? Number(d.quantity) : '',
         currency: d.currency ?? '',
-        date: d.createdAt ? new Date(d.createdAt) : new Date(),
+        date: fmtDMY(d.createdAt ?? null),
         pretaxAmount: vndText(pretax / MONEY_SCALE),
         taxAmount: vndText(tax / MONEY_SCALE),
         amount: vndText(Number(d.total ?? 0) / MONEY_SCALE),
