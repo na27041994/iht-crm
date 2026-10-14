@@ -335,7 +335,7 @@ trackingSheetRouter.delete('/:sheetId/job-orders/:id', requirePermission('job_or
 }));
 
 trackingSheetRouter.post('/:sheetId/job-bookings', validate(jobBookingSchema), requirePermission('job_booking', 'create'), asyncHandler(async (req, res) => {
-  res.status(201).json(await createJobBooking(Number(req.params.sheetId), req.body));
+  res.status(201).json(await createJobBooking(Number(req.params.sheetId), req.body, (req as unknown as AuthedRequest).user?.sub ?? null));
 }));
 
 trackingSheetRouter.put('/:sheetId/job-bookings/:id', validate(jobBookingSchema), requirePermission('job_booking', 'edit'), asyncHandler(async (req, res) => {
@@ -359,7 +359,7 @@ trackingSheetRouter.patch('/:sheetId/job-bookings/:id/approval', requirePermissi
 }));
 
 trackingSheetRouter.post('/:sheetId/debit-notes', validate(debitNoteSchema), requirePermission('debit_note', 'create'), asyncHandler(async (req, res) => {
-  res.status(201).json(await createDebitNote(Number(req.params.sheetId), req.body));
+  res.status(201).json(await createDebitNote(Number(req.params.sheetId), req.body, (req as unknown as AuthedRequest).user?.sub ?? null));
 }));
 
 trackingSheetRouter.put('/:sheetId/debit-notes/:id', validate(debitNoteSchema), requirePermission('debit_note', 'edit'), asyncHandler(async (req, res) => {

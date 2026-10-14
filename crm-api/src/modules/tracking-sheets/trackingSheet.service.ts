@@ -351,12 +351,21 @@ function depositApprovalOnSave(current: { type: string; approvalStatus: string |
   return {};
 }
 
+// Tên người dùng để lưu vết người nhập / người duyệt
+async function userDisplayName(userId?: number | null): Promise<string> {
+  if (userId == null) return '';
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { fullName: true } });
+  return u?.fullName ?? '';
+}
+
 // Tạo Job Order/Booking/DebitNote cho phiếu
-export async function createJobBooking(sheetId: number, input: JobBookingInput & { alsoCreateDebit?: boolean }) {
+export async function createJobBooking(sheetId: number, input: JobBookingInput & { alsoCreateDebit?: boolean }, userId?: number | null) {
   await requireSheet(sheetId);
   const { alsoCreateDebit, ...bookingInput } = input;
+  const createdByName = await userDisplayName(userId);
+  const creator = userId != null ? { createdById: userId, createdByName } : {};
   return prisma.$transaction(async (tx) => {
-    const booking = await tx.jobBooking.create({ data: { ...scaleJobBooking(bookingInput), ...depositApprovalOnSave(null, bookingInput), sheetId } });
+    const booking = await tx.jobBooking.create({ data: { ...scaleJobBooking(bookingInput), ...depositApprovalOnSave(null, bookingInput), ...creator, sheetId } });
     if (alsoCreateDebit) {
       const debit = await tx.debitNote.create({ data: { ...scaleDebitNote(debitDataFromBooking(bookingInput)), sheetId } });
       await tx.debitNote.update({ where: { id: debit.id }, data: { sourceBookingId: booking.id } });
@@ -423,15 +432,17 @@ export async function deleteJobBooking(sheetId: number, id: number) {
 }
 
 // Tạo Job Order/Booking/DebitNote cho phiếu
-export async function createDebitNote(sheetId: number, input: DebitNoteInput & { alsoCreateBooking?: boolean; linkedBooking?: Record<string, unknown> }) {
+export async function createDebitNote(sheetId: number, input: DebitNoteInput & { alsoCreateBooking?: boolean; linkedBooking?: Record<string, unknown> }, userId?: number | null) {
   await requireSheet(sheetId);
   const { alsoCreateBooking, linkedBooking, ...debitInput } = input;
+  const createdByName = await userDisplayName(userId);
+  const creator = userId != null ? { createdById: userId, createdByName } : {};
   return prisma.$transaction(async (tx) => {
     const debit = await tx.debitNote.create({ data: { ...scaleDebitNote(debitInput), sheetId } });
     if (alsoCreateBooking) {
       const computed = bookingDataFromDebit(debitInput);
       const merged = { ...computed, ...pickDefined(linkedBooking) };
-      const booking = await tx.jobBooking.create({ data: { ...scaleJobBooking(merged as any), sheetId } });
+      const booking = await tx.jobBooking.create({ data: { ...scaleJobBooking(merged as any), ...depositApprovalOnSave(null, merged as any), ...creator, sheetId } });
       await tx.debitNote.update({ where: { id: debit.id }, data: { sourceBookingId: booking.id } });
       return { ...debit, sourceBookingId: booking.id };
     }

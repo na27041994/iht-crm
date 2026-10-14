@@ -42,14 +42,6 @@ function numOrText(v: unknown): number | string | null {
   return Number.isNaN(n) ? String(v) : n;
 }
 
-// Text trạng thái duyệt dòng cược cho Excel
-function approvalText(b: any): string {
-  if (b?.approvalStatus === 'approved') return 'Đã duyệt';
-  if (b?.approvalStatus === 'rejected') return (b as any).rejectReason ? `Từ chối: ${(b as any).rejectReason}` : 'Từ chối';
-  if (b?.approvalStatus === 'pending') return 'Chờ duyệt';
-  return '';
-}
-
 // Hàm dateCell: xử lý dateCell
 function dateCell(v: Date | string | null): Date | string | null {
   return v ?? null;
@@ -712,7 +704,7 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       { header: 'Sau thuế', key: 'afterTaxAmount', width: 15 },
       { header: 'Tổng tiền', key: 'total', width: 15 },
       { header: 'Ghi chú', key: 'note', width: 26 },
-      { header: 'Duyệt', key: 'approvalStatus', width: 14 },
+      { header: 'Người nhập', key: 'createdByName', width: 18 },
     ]);
     for (const b of sheet.jobBookings) {
       ws.addRow({
@@ -729,7 +721,7 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
         afterTaxAmount: vndText(numMoney(b.afterTaxAmount)),
         total: vndText(numMoney(b.total)),
         note: (b as any).note ?? '',
-        approvalStatus: approvalText(b),
+        createdByName: (b as any).createdByName ?? '',
       });
     }
   } else {

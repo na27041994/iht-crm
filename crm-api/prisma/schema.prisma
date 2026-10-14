@@ -328,6 +328,9 @@ model JobBooking {
   approvedByName String?
   approvedAt     DateTime?
   rejectReason   String?
+  // Người nhập dòng
+  createdById   Int?
+  createdByName String?
 
   @@index([sheetId])
   @@index([isDelete, sheetId])
