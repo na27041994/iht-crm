@@ -286,7 +286,7 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
                   label="Loại Job Book"
                   name="type"
                   rules={[{ required: true, message: 'Chọn loại' }]}
-                  initialValue="Our Company Pay"
+                  initialValue="Pay In Advance"
                 >
                   <Select placeholder="Chọn loại" options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />
                 </Form.Item>
