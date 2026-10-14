@@ -232,11 +232,11 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
           <Form.Item label="Loại" name="type" rules={[{ required: true, message: 'Chọn loại' }]}>
             <Select placeholder="Chọn loại" options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />
           </Form.Item>
-          <Form.Item label="Mô tả" name="description">
-            <DescriptionAutocomplete type="debit" placeholder="Gõ để tìm mô tả đã từng nhập..." />
-          </Form.Item>
           <Form.Item label="Số hoá đơn" name="invoiceNumber">
             <Input placeholder="VD: HD-2026-0088" />
+          </Form.Item>
+          <Form.Item label="Mô tả" name="description">
+            <DescriptionAutocomplete type="debit" placeholder="Gõ để tìm mô tả đã từng nhập..." />
           </Form.Item>
           <Form.Item label="Unit" name="unit">
             <Input placeholder="VD: Cont, Kg..." />
