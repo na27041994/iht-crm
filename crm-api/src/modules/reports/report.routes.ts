@@ -398,8 +398,8 @@ reportRouter.get('/debit/landscape-export', validateQuery(z.object({ ids: z.stri
       debitNotes: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
     },
   });
-  const { buildDebitLandscapeWorkbook } = await import('./debitLandscape.export.js');
-  const buf = await buildDebitLandscapeWorkbook(sheets);
+  const { buildDebitLandscapeClassicWorkbook } = await import('./debitLandscapeClassic.export.js');
+  const buf = await buildDebitLandscapeClassicWorkbook(sheets);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename="debit-ngang_${ids.length}_phieu.xlsx"`);
   res.send(buf);

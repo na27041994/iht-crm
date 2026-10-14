@@ -263,18 +263,6 @@ export default function DebitReportPage() {
             <Button loading={exporting} onClick={handleExportAll}>
               Xuất tất cả
             </Button>
-            <Upload
-              accept=".csv,.txt,.xlsx"
-              showUploadList={false}
-              beforeUpload={(file) => {
-                handleUploadFile(file);
-                return false;
-              }}
-            >
-              <Button icon={<UploadOutlined />} loading={uploading}>
-                Tạo Excel từ file
-              </Button>
-            </Upload>
             {selectedSheetIds.length > 0 && <Button onClick={() => setSelectedSheetIds([])}>Bỏ chọn</Button>}
           </Space>
         </div>
@@ -306,6 +294,26 @@ export default function DebitReportPage() {
           ]}
           locale={{ emptyText: 'Không có phiếu' }}
         />
+      </Card>
+
+      <Card title="Tạo Excel từ file danh sách" className="mt-4">
+        <div className="flex flex-wrap gap-2 items-center">
+          <Upload
+            accept=".csv,.txt,.xlsx"
+            showUploadList={false}
+            beforeUpload={(file) => {
+              handleUploadFile(file);
+              return false;
+            }}
+          >
+            <Button icon={<UploadOutlined />} loading={uploading}>
+              Chọn file mã phiếu (CSV/XLSX)
+            </Button>
+          </Upload>
+          <Typography.Text type="secondary">
+            File cột đầu là mã phiếu (VD: J260929-001). Xuất ra Excel khổ ngang đầy đủ, mã thiếu sẽ báo sau khi xuất.
+          </Typography.Text>
+        </div>
       </Card>
     </div>
   );
