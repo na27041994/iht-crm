@@ -13,6 +13,7 @@ export interface DebitSheetInfo {
   customer: string;
   route: string;
   containerNumber: string;
+  containerQuantity: string;
   billNumber: string;
 }
 
@@ -207,6 +208,7 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
         ['Khách hàng', sheetInfo.customer],
         ['Tuyến', sheetInfo.route],
         ['Container', sheetInfo.containerNumber],
+        ['Số lượng container', sheetInfo.containerQuantity],
         ['Bill', sheetInfo.billNumber],
       ].map(([k, v]) => (
         <div key={k} style={{ display: 'flex', gap: 8, padding: '4px 0', borderTop: '1px solid #e8e8e8' }}>

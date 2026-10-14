@@ -126,6 +126,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         customer: sheet.customer?.companyName || (sheet.customer as any)?.customerName || '-',
         route: sheet.fromLocation || sheet.toLocation ? `${sheet.fromLocation ?? '?'} → ${sheet.toLocation ?? '?'}` : '-',
         containerNumber: sheet.containerNumber || '-',
+        containerQuantity: sheet.containerQuantity || '-',
         billNumber: sheet.billNumber || '-',
       }
     : null;
