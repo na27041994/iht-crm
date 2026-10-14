@@ -526,8 +526,8 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
   xrow(ws, ['STT', 'Descriptions', 'Invoice No', 'Unit', 'Qty', 'Price', 'Amount', 'VAT Tax', 'Total Amt'], { bold: true, center: true, border: true });
   const debits: any[] = s.debitNotes ?? [];
   const t = debitSheetTotals(s);
-  // Căn lề dòng item: STT giữa, text trái, Unit giữa, số phải
-  const itemAligns: Array<'left' | 'center' | 'right' | undefined> = ['center', 'left', 'left', 'center', 'right', 'right', 'right', 'right', 'right'];
+  // Căn lề dòng item: STT giữa, text trái, Unit/Qty giữa, tiền phải
+  const itemAligns: Array<'left' | 'center' | 'right' | undefined> = ['center', 'left', 'left', 'center', 'center', 'right', 'right', 'right', 'right'];
   debits.forEach((dd, idx) => {
     const vat = debitVatAmount(dd);
     const price = debitUnitPrice(dd);
