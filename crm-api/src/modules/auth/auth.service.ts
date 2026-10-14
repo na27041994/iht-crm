@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { signToken } from '../../lib/jwt.js';
 import { AppError } from '../../middleware/error.js';
+import { ensureDefaultPermissions } from '../permissions/permissions.service.js';
 import type { LoginInput, CreateUserInput, UpdateUserInput } from './auth.schema.js';
 
 // Hàm login: xử lý login
@@ -143,6 +144,7 @@ export async function updateUser(id: number, input: UpdateUserInput, actorId: nu
   }
 
   const data: Prisma.UserUpdateInput = {};
+  let roleChanged = false;
   if (input.fullName !== undefined) data.fullName = input.fullName;
   if (input.chineseName !== undefined) data.chineseName = input.chineseName;
   if (input.cccd !== undefined) data.cccd = input.cccd;
@@ -153,6 +155,7 @@ export async function updateUser(id: number, input: UpdateUserInput, actorId: nu
     const roleRec = await prisma.role.findUnique({ where: { name: input.role } });
     if (!roleRec) throw new AppError(`Vai trò ${input.role} không tồn tại`, 400);
     data.role = input.role;
+    roleChanged = input.role !== user.role;
   }
   if (input.isActive !== undefined) data.isActive = input.isActive;
   if (input.annualLeaveQuota !== undefined) data.annualLeaveQuota = input.annualLeaveQuota;
@@ -177,6 +180,13 @@ export async function updateUser(id: number, input: UpdateUserInput, actorId: nu
       annualLeaveQuota: true,
       lastLoginAt: true,
     },
+  }).then(async (updated) => {
+    // Đổi vai trò -> reset quyền theo vai trò mới (rows cũ snapshot vai trò cũ sẽ che phủ)
+    if (roleChanged) {
+      await prisma.userPermission.deleteMany({ where: { userId: id } });
+      await ensureDefaultPermissions(id, updated.role);
+    }
+    return updated;
   });
 }
 

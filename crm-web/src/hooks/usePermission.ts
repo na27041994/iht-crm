@@ -30,7 +30,7 @@ interface SharedState {
   at: number;
 }
 
-const CACHE_TTL_MS = 60000;
+const CACHE_TTL_MS = 20000;
 let shared: SharedState = { me: null, perms: null, error: null, at: 0 };
 let inflight: Promise<void> | null = null;
 const listeners = new Set<() => void>();
