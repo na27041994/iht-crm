@@ -79,6 +79,8 @@ const JOB_BOOKING_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Sau thuế', key: 'afterTaxAmount', width: 15 },
   { header: 'Tổng tiền', key: 'total', width: 15 },
   { header: 'Ghi chú', key: 'note', width: 26 },
+  { header: 'Duyệt', key: 'approvalStatus', width: 14 },
+  { header: 'Người nhập', key: 'createdByName', width: 18 },
 ];
 
 const DEBIT_NOTE_COLUMNS: Partial<ExcelJS.Column>[] = [
@@ -114,6 +116,7 @@ function jobOrderRow(s: TrackingSheetWithRelations, o: TrackingSheetWithRelation
 
 // Hàm jobBookingRow: xử lý jobBookingRow
 function jobBookingRow(s: TrackingSheetWithRelations, b: TrackingSheetWithRelations['jobBookings'][number]) {
+  const approval = (b as any).approvalStatus;
   return {
     sheetNumber: s.sheetNumber,
     customer: s.customer?.companyName ?? '',
@@ -127,6 +130,8 @@ function jobBookingRow(s: TrackingSheetWithRelations, b: TrackingSheetWithRelati
     afterTaxAmount: vndText(numMoney(b.afterTaxAmount)),
     total: vndText(numMoney(b.total)),
     note: (b as any).note ?? '',
+    approvalStatus: approval === 'approved' ? 'Đã duyệt' : approval === 'rejected' ? 'Từ chối' : approval === 'pending' ? 'Chờ duyệt' : '',
+    createdByName: (b as any).createdByName ?? '',
   };
 }
 
