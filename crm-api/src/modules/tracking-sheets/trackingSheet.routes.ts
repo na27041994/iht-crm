@@ -267,21 +267,46 @@ trackingSheetRouter.get(
   }),
 );
 
-// Xuất Excel gộp các dòng cược của các phiếu đã chọn
+// Xuất Excel gộp các dòng cược của các phiếu đã chọn (hoặc theo filter khi không truyền ids)
 trackingSheetRouter.get(
   '/deposit-export',
-  validateQuery(z.object({ ids: z.string().min(1) })),
   requirePermission('tracking_sheet_list', 'view'),
   asyncHandler(async (req, res) => {
-    const ids = String(req.query.ids)
+    const q = req.query as unknown as { ids?: string; search?: string; from?: string; to?: string };
+    const ids = String(q.ids ?? '')
       .split(',')
       .map((s) => Number(s.trim()))
       .filter((n) => Number.isInteger(n) && n > 0)
       .slice(0, 200);
-    if (!ids.length) {
-      res.status(400).json({ error: 'Chưa chọn phiếu' });
-      return;
+    const where: Record<string, unknown> = { isDelete: 1 };
+    if (ids.length) {
+      (where as any).id = { in: ids };
+    } else {
+      if (q.from || q.to) {
+        (where as any).createdAt = {};
+        if (q.from) (where as any).createdAt.gte = new Date(q.from);
+        if (q.to) (where as any).createdAt.lte = new Date(q.to);
+      }
+      if (q.search) {
+        const s = q.search;
+        (where as any).OR = [
+          { sheetNumber: { contains: s, mode: 'insensitive' } },
+          { containerNumber: { contains: s, mode: 'insensitive' } },
+          { customer: { is: { companyName: { contains: s, mode: 'insensitive' } } } },
+          { fromLocation: { contains: s, mode: 'insensitive' } },
+          { toLocation: { contains: s, mode: 'insensitive' } },
+          { customNo: { contains: s, mode: 'insensitive' } },
+          { billNumber: { contains: s, mode: 'insensitive' } },
+          { invoiceNumber: { contains: s, mode: 'insensitive' } },
+          { consignee: { contains: s, mode: 'insensitive' } },
+          { shipper: { contains: s, mode: 'insensitive' } },
+          { note: { contains: s, mode: 'insensitive' } },
+          { pol: { contains: s, mode: 'insensitive' } },
+          { pod: { contains: s, mode: 'insensitive' } },
+        ];
+      }
     }
+    const { prisma } = await import('../../lib/prisma.js');
     const sheets = await prisma.trackingSheet.findMany({
       where: { id: { in: ids }, isDelete: 1 },
       orderBy: { id: 'asc' },
