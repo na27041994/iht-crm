@@ -318,10 +318,16 @@ model JobBooking {
   afterTaxAmount Decimal?       @db.Decimal(15, 2)
   total          Decimal?       @db.Decimal(15, 2)
   note           String?
-  isDelete       Int            @default(1)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  linkedDebit    DebitNote?     @relation("DebitBookingLink")
+  isDelete       Int       @default(1)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  linkedDebit    DebitNote? @relation("DebitBookingLink")
+  // Duyệt kế toán cho dòng cược: null = không cần duyệt, pending/approved/rejected
+  approvalStatus String?
+  approvedById   Int?
+  approvedByName String?
+  approvedAt     DateTime?
+  rejectReason   String?
 
   @@index([sheetId])
   @@index([isDelete, sheetId])

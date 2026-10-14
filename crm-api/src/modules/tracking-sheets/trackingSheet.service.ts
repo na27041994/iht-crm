@@ -331,12 +331,32 @@ export async function deleteJobOrder(sheetId: number, id: number) {
   return prisma.jobOrder.update({ where: { id }, data: { isDelete: -1 } });
 }
 
+// Các loại cược cần kế toán duyệt mới tính là xong
+export const DEPOSIT_BOOKING_TYPES = ['Cược Cont', 'Cược sửa chữa cont'];
+export function isDepositBookingType(type: unknown): boolean {
+  return typeof type === 'string' && DEPOSIT_BOOKING_TYPES.includes(type);
+}
+
+// Trạng thái duyệt khởi tạo khi tạo/sửa dòng cược
+function depositApprovalOnSave(current: { type: string; approvalStatus: string | null } | null, input: { type?: unknown; quantity?: unknown; pretaxAmount?: unknown; taxRate?: unknown; taxAmount?: unknown; afterTaxAmount?: unknown; total?: unknown }): Record<string, string | null> {
+  const cleared = { approvalStatus: null, approvedById: null, approvedByName: null, approvedAt: null, rejectReason: null };
+  const newType = typeof input.type === 'string' && input.type !== '' ? input.type : current?.type;
+  if (!isDepositBookingType(newType)) return cleared;
+  if (current == null) return { ...cleared, approvalStatus: 'pending' };
+  // Dòng cược mà đổi tiền/SL/thuế -> về chờ duyệt lại
+  const moneyChanged = ['quantity', 'pretaxAmount', 'taxRate', 'taxAmount', 'afterTaxAmount', 'total'].some(
+    (k) => (input as Record<string, unknown>)[k] !== undefined && (input as Record<string, unknown>)[k] !== null,
+  );
+  if (moneyChanged) return { ...cleared, approvalStatus: 'pending' };
+  return {};
+}
+
 // Tạo Job Order/Booking/DebitNote cho phiếu
 export async function createJobBooking(sheetId: number, input: JobBookingInput & { alsoCreateDebit?: boolean }) {
   await requireSheet(sheetId);
   const { alsoCreateDebit, ...bookingInput } = input;
   return prisma.$transaction(async (tx) => {
-    const booking = await tx.jobBooking.create({ data: { ...scaleJobBooking(bookingInput), sheetId } });
+    const booking = await tx.jobBooking.create({ data: { ...scaleJobBooking(bookingInput), ...depositApprovalOnSave(null, bookingInput), sheetId } });
     if (alsoCreateDebit) {
       const debit = await tx.debitNote.create({ data: { ...scaleDebitNote(debitDataFromBooking(bookingInput)), sheetId } });
       await tx.debitNote.update({ where: { id: debit.id }, data: { sourceBookingId: booking.id } });
@@ -349,7 +369,7 @@ export async function createJobBooking(sheetId: number, input: JobBookingInput &
 export async function updateJobBooking(sheetId: number, id: number, input: JobBookingInput) {
   const item = await prisma.jobBooking.findFirst({ where: { id, sheetId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy mục Job Book', 404);
-  const updated = await prisma.jobBooking.update({ where: { id }, data: scaleJobBooking(input) });
+  const updated = await prisma.jobBooking.update({ where: { id }, data: { ...scaleJobBooking(input), ...depositApprovalOnSave(item, input) } });
   const linked = await prisma.debitNote.findFirst({ where: { sourceBookingId: id, sheetId, isDelete: 1 } });
   if (linked) {
     const qty = Number(updated.quantity ?? 1) || 1;
@@ -373,6 +393,22 @@ export async function updateJobBooking(sheetId: number, id: number, input: JobBo
     await prisma.debitNote.update({ where: { id: linked.id }, data: scaleDebitNote(patch as any) });
   }
   return updated;
+}
+
+// Kế toán duyệt / từ chối dòng cược (chỉ dòng cược mới cần duyệt)
+export async function decideBookingApproval(sheetId: number, id: number, userId: number, status: 'approved' | 'rejected', reason?: string | null) {
+  const item = await prisma.jobBooking.findFirst({ where: { id, sheetId, isDelete: 1 } });
+  if (!item) throw new AppError('Không tìm thấy mục Job Book', 404);
+  if (!isDepositBookingType(item.type)) throw new AppError('Chỉ dòng cược cont mới cần duyệt', 400);
+  if (status === 'rejected' && !String(reason ?? '').trim()) throw new AppError('Từ chối cần nhập lý do', 400);
+  const me = await prisma.user.findUnique({ where: { id: userId }, select: { fullName: true } });
+  return prisma.jobBooking.update({
+    where: { id },
+    data:
+      status === 'approved'
+        ? { approvalStatus: 'approved', approvedById: userId, approvedByName: me?.fullName ?? '', approvedAt: new Date(), rejectReason: null }
+        : { approvalStatus: 'rejected', approvedById: userId, approvedByName: me?.fullName ?? '', approvedAt: new Date(), rejectReason: String(reason ?? '').trim() },
+  });
 }
 
 // Xóa mềm Job item (xóa luôn debit liên kết nếu có)

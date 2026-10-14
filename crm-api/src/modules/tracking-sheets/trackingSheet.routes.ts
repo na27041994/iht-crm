@@ -20,6 +20,7 @@ import {
   createJobBooking,
   updateJobBooking,
   deleteJobBooking,
+  decideBookingApproval,
   createDebitNote,
   updateDebitNote,
   deleteDebitNote,
@@ -344,6 +345,17 @@ trackingSheetRouter.put('/:sheetId/job-bookings/:id', validate(jobBookingSchema)
 trackingSheetRouter.delete('/:sheetId/job-bookings/:id', requirePermission('job_booking', 'delete'), asyncHandler(async (req, res) => {
   await deleteJobBooking(Number(req.params.sheetId), Number(req.params.id));
   res.json({ success: true });
+}));
+
+// Kế toán duyệt / từ chối dòng cược (ai có quyền Sửa booking được duyệt)
+trackingSheetRouter.patch('/:sheetId/job-bookings/:id/approval', requirePermission('job_booking', 'edit'), asyncHandler(async (req: AuthedRequest, res) => {
+  const body = req.body as { status?: string; reason?: string | null };
+  const status = body.status === 'approved' || body.status === 'rejected' ? body.status : null;
+  if (!status) {
+    res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+    return;
+  }
+  res.json(await decideBookingApproval(Number(req.params.sheetId), Number(req.params.id), req.user!.sub, status, body.reason ?? null));
 }));
 
 trackingSheetRouter.post('/:sheetId/debit-notes', validate(debitNoteSchema), requirePermission('debit_note', 'create'), asyncHandler(async (req, res) => {

@@ -19,6 +19,10 @@ export interface JobBookingItem {
   afterTaxAmount: string | null;
   total: string | null;
   note?: string | null;
+  approvalStatus?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
+  rejectReason?: string | null;
 }
 
 export interface JobBookingFormValues {

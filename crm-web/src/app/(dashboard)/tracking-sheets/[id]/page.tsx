@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { App, Button, Card, Descriptions, Popconfirm, Select, Space, Spin, Table, Tag, Tooltip, Typography } from 'antd';
-import { ArrowLeftOutlined, DeleteOutlined, DownOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined, UpOutlined } from '@ant-design/icons';
+import { App, Button, Card, Descriptions, Input, Modal, Popconfirm, Select, Space, Spin, Table, Tag, Tooltip, Typography } from 'antd';
+import { ArrowLeftOutlined, CheckOutlined, CloseOutlined, DeleteOutlined, DownOutlined, DownloadOutlined, EditOutlined, PlusOutlined, PrinterOutlined, UpOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -256,6 +256,39 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
     } catch (err) {
       message.error(err instanceof Error ? err.message : 'Xóa thất bại');
     }
+  }
+
+  const DEPOSIT_TYPES = ['Cược Cont', 'Cược sửa chữa cont'];
+  const isDepositRow = (item: JobBookingItem) => DEPOSIT_TYPES.includes(item.type);
+  const [rejectTarget, setRejectTarget] = useState<JobBookingItem | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+
+  // Kế toán duyệt / từ chối dòng cược
+  async function handleBookingApproval(item: JobBookingItem, status: 'approved' | 'rejected', reason?: string) {
+    try {
+      await apiFetch(`/tracking-sheets/${sheet?.id}/job-bookings/${item.id}/approval`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, reason: reason ?? null }),
+      });
+      message.success(status === 'approved' ? 'Đã duyệt dòng cược' : 'Đã từ chối dòng cược');
+      setRejectTarget(null);
+      setRejectReason('');
+      load();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Duyệt thất bại');
+    }
+  }
+
+  function approvalTag(item: JobBookingItem) {
+    if (!isDepositRow(item)) return '-';
+    if (item.approvalStatus === 'approved') {
+      const tip = item.approvedByName ? `Người duyệt: ${item.approvedByName}` : 'Đã duyệt';
+      return <Tooltip title={tip}><Tag color="green">Đã duyệt</Tag></Tooltip>;
+    }
+    if (item.approvalStatus === 'rejected') {
+      return <Tooltip title={item.rejectReason || 'Đã từ chối'}><Tag color="red">Từ chối</Tag></Tooltip>;
+    }
+    return <Tag color="gold">Chờ duyệt</Tag>;
   }
 
   // Hàm openAddDebit: xử lý openAddDebit
@@ -532,9 +565,9 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             const total = totalBooking;
             return (
               <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={8} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={8} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={9} />
+                <Table.Summary.Cell index={0} colSpan={9} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={9} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={10} />
               </Table.Summary.Row>
             );
           }}
@@ -551,14 +584,32 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             { title: 'Tổng tiền', dataIndex: 'total', align: 'right' as const, render: (v: string | null) => <span className="font-medium">{fmtMoney(v)}</span> },
             { title: 'Ghi chú', dataIndex: 'note', width: 180, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             {
+              title: 'Duyệt',
+              key: 'approval',
+              width: 110,
+              align: 'center' as const,
+              render: (_: unknown, item: JobBookingItem) => approvalTag(item),
+            },
+            {
               title: 'Thao tác',
               key: 'actions',
-              width: 110,
+              width: 150,
               render: (_: unknown, item: JobBookingItem) => {
                 const linkedId = linkedDebitIdOf(item.id);
+                const needApproval = isDepositRow(item) && item.approvalStatus !== 'approved';
                 return (
                 <Space>
                   {canEditBooking && <Button size="small" icon={<EditOutlined />} onClick={() => openEditBooking(item)} />}
+                  {canEditBooking && needApproval && (
+                    <Tooltip title="Duyệt">
+                      <Button size="small" type="primary" ghost icon={<CheckOutlined />} onClick={() => handleBookingApproval(item, 'approved')} />
+                    </Tooltip>
+                  )}
+                  {canEditBooking && needApproval && (
+                    <Tooltip title="Từ chối">
+                      <Button size="small" danger ghost icon={<CloseOutlined />} onClick={() => { setRejectTarget(item); setRejectReason(''); }} />
+                    </Tooltip>
+                  )}
                   {canDeleteBooking && (
                     <Popconfirm title={linkedId ? 'Xóa Job Book này? Debit liên kết cũng bị xóa.' : 'Xóa mục này?'} onConfirm={() => deleteBooking(item)} okText="Xóa" cancelText="Hủy">
                       <Button size="small" danger icon={<DeleteOutlined />} />
@@ -680,6 +731,23 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         onSaved={load}
         sheetInfo={debitSheetInfo}
       />
+      <Modal
+        open={rejectTarget != null}
+        title={`Từ chối dòng cược: ${rejectTarget?.description ?? rejectTarget?.type ?? ''}`}
+        onCancel={() => { setRejectTarget(null); setRejectReason(''); }}
+        onOk={() => { if (rejectTarget) handleBookingApproval(rejectTarget, 'rejected', rejectReason); }}
+        okText="Từ chối"
+        okButtonProps={{ danger: true, disabled: !rejectReason.trim() }}
+        cancelText="Hủy"
+        destroyOnHidden
+      >
+        <Input.TextArea
+          rows={3}
+          placeholder="Nhập lý do từ chối (bắt buộc)"
+          value={rejectReason}
+          onChange={(e) => setRejectReason(e.target.value)}
+        />
+      </Modal>
     </div>
   );
 }
