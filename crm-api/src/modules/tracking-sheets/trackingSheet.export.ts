@@ -630,6 +630,66 @@ export async function buildDebitMultiTemplateWorkbook(sheets: any[], exporterNam
   return Buffer.from(buffer as ArrayBuffer);
 }
 
+// Xuất Excel gộp các dòng cược cont / cược sửa chữa cont của nhiều phiếu (1 sheet chung)
+export function isDepositBooking(b: any): boolean {
+  return b?.type === 'Cược Cont' || b?.type === 'Cược sửa chữa cont';
+}
+
+function setupBlueHeader(ws: ExcelJS.Worksheet, cols: Partial<ExcelJS.Column>[]) {
+  ws.columns = cols;
+  ws.getRow(1).eachCell((c) => {
+    c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 } as any;
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } } as any;
+    c.border = { top: { style: 'thin' as const }, left: { style: 'thin' as const }, bottom: { style: 'thin' as const }, right: { style: 'thin' as const } } as any;
+    c.alignment = { vertical: 'middle' as const, wrapText: true } as any;
+  });
+  ws.getRow(1).height = 20;
+  ws.views = [{ state: 'frozen', ySplit: 1 }];
+}
+
+export async function buildDepositsWorkbook(sheets: any[]): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'I.H.T Logistics';
+  wb.created = new Date();
+  const ws = wb.addWorksheet('Cuoc Cont');
+  setupBlueHeader(ws, [
+    { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
+    { header: 'Khách hàng', key: 'customer', width: 30 },
+    { header: 'Loại', key: 'type', width: 18 },
+    { header: 'Mô tả', key: 'description', width: 28 },
+    { header: 'Hãng tàu / Đại lý', key: 'partner', width: 22 },
+    { header: 'Đơn vị tính', key: 'unit', width: 12 },
+    { header: 'Số lượng', key: 'quantity', width: 10 },
+    { header: 'Trước thuế', key: 'pretaxAmount', width: 15 },
+    { header: 'Thuế (%)', key: 'taxRate', width: 10 },
+    { header: 'Tiền thuế', key: 'taxAmount', width: 15 },
+    { header: 'Sau thuế', key: 'afterTaxAmount', width: 15 },
+    { header: 'Tổng tiền', key: 'total', width: 15 },
+    { header: 'Ghi chú', key: 'note', width: 26 },
+  ]);
+  for (const sheet of sheets) {
+    for (const b of (sheet.jobBookings ?? []).filter(isDepositBooking)) {
+      ws.addRow({
+        sheetNumber: sheet.sheetNumber,
+        customer: sheet.customer ? `${sheet.customer.companyName} (#${sheet.customer.id})` : '',
+        type: b.type,
+        description: b.description ?? '',
+        partner: (b as any).carrier?.carrierName ?? (b as any).agent?.agentName ?? (sheet as any).carrier?.carrierName ?? '',
+        unit: b.unit ?? '',
+        quantity: num(b.quantity),
+        pretaxAmount: vndText(numMoney((b as any).pretaxAmount)),
+        taxRate: num(b.taxRate),
+        taxAmount: vndText(numMoney(b.taxAmount)),
+        afterTaxAmount: vndText(numMoney(b.afterTaxAmount)),
+        total: vndText(numMoney(b.total)),
+        note: (b as any).note ?? '',
+      });
+    }
+  }
+  const buffer = await wb.xlsx.writeBuffer();
+  return Buffer.from(buffer);
+}
+
 export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 'debit' | 'deposit', exporterName = ''): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'I.H.T Logistics';
@@ -723,41 +783,8 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       });
     }
   } else if (type === 'deposit') {
-    // Xuất riêng các dòng cược cont / cược sửa chữa cont trong Job Book tàu
-    const ws = wb.addWorksheet('Cuoc Cont');
-    setup(ws, [
-      { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
-      { header: 'Khách hàng', key: 'customer', width: 30 },
-      { header: 'Loại', key: 'type', width: 18 },
-      { header: 'Mô tả', key: 'description', width: 28 },
-      { header: 'Hãng tàu / Đại lý', key: 'partner', width: 22 },
-      { header: 'Đơn vị tính', key: 'unit', width: 12 },
-      { header: 'Số lượng', key: 'quantity', width: 10 },
-      { header: 'Trước thuế', key: 'pretaxAmount', width: 15 },
-      { header: 'Thuế (%)', key: 'taxRate', width: 10 },
-      { header: 'Tiền thuế', key: 'taxAmount', width: 15 },
-      { header: 'Sau thuế', key: 'afterTaxAmount', width: 15 },
-      { header: 'Tổng tiền', key: 'total', width: 15 },
-      { header: 'Ghi chú', key: 'note', width: 26 },
-    ]);
-    const deposits = (sheet.jobBookings ?? []).filter((b: any) => b.type === 'Cược Cont' || b.type === 'Cược sửa chữa cont');
-    for (const b of deposits) {
-      ws.addRow({
-        sheetNumber: sheet.sheetNumber,
-        customer: sheet.customer ? `${sheet.customer.companyName} (#${sheet.customer.id})` : '',
-        type: b.type,
-        description: b.description ?? '',
-        partner: (b as any).carrier?.carrierName ?? (b as any).agent?.agentName ?? (sheet as any).carrier?.carrierName ?? '',
-        unit: b.unit ?? '',
-        quantity: num(b.quantity),
-        pretaxAmount: vndText(numMoney((b as any).pretaxAmount)),
-        taxRate: num(b.taxRate),
-        taxAmount: vndText(numMoney(b.taxAmount)),
-        afterTaxAmount: vndText(numMoney(b.afterTaxAmount)),
-        total: vndText(numMoney(b.total)),
-        note: (b as any).note ?? '',
-      });
-    }
+    // Xuất 1 phiếu: gom vào workbook cược chung
+    return buildDepositsWorkbook([sheet]);
   } else {
     // Debit theo đúng form bản in
     return buildDebitTemplateWorkbook(sheet, exporterName);

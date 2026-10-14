@@ -267,6 +267,38 @@ trackingSheetRouter.get(
   }),
 );
 
+// Xuất Excel gộp các dòng cược của các phiếu đã chọn
+trackingSheetRouter.get(
+  '/deposit-export',
+  validateQuery(z.object({ ids: z.string().min(1) })),
+  requirePermission('tracking_sheet_list', 'view'),
+  asyncHandler(async (req, res) => {
+    const ids = String(req.query.ids)
+      .split(',')
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isInteger(n) && n > 0)
+      .slice(0, 200);
+    if (!ids.length) {
+      res.status(400).json({ error: 'Chưa chọn phiếu' });
+      return;
+    }
+    const sheets = await prisma.trackingSheet.findMany({
+      where: { id: { in: ids }, isDelete: 1 },
+      orderBy: { id: 'asc' },
+      include: {
+        customer: { select: { id: true, companyName: true } },
+        carrier: { select: { id: true, carrierName: true } },
+        jobBookings: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
+      },
+    });
+    const { buildDepositsWorkbook } = await import('./trackingSheet.export.js');
+    const buffer = await buildDepositsWorkbook(sheets);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="cuoc-cont_${ids.length}_phieu.xlsx"`);
+    res.send(buffer);
+  }),
+);
+
 trackingSheetRouter.get(
   '/:id/export',
   validateQuery(exportJobsQuery),

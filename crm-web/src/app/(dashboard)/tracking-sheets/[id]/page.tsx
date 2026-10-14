@@ -502,9 +502,6 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('booking')}>
               Xuất Excel
             </Button>
-            <Button size="small" icon={<DownloadOutlined />} onClick={() => exportJobs('deposit')}>
-              Xuất Excel cược
-            </Button>
             {canCreateBooking && (
               <Button type="primary" icon={<PlusOutlined />} onClick={openAddBooking} size="small">
                 Thêm mục

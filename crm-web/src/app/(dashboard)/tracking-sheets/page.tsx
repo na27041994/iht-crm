@@ -204,6 +204,22 @@ function TrackingSheetsContent() {
     }
   }
 
+  // Xuất Excel gộp các dòng cược của các phiếu đã tích chọn
+  const [exportingDeposit, setExportingDeposit] = useState(false);
+  async function handleExportDeposit() {
+    if (!selectedIds.length) return;
+    setExportingDeposit(true);
+    try {
+      const blob = await apiDownload(`/tracking-sheets/deposit-export?ids=${selectedIds.join(',')}`);
+      saveBlob(blob, `cuoc-cont_${selectedIds.length}_phieu.xlsx`);
+      message.success(`Đã xuất cược ${selectedIds.length} phiếu đã chọn`);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
+    } finally {
+      setExportingDeposit(false);
+    }
+  }
+
   // Hàm openEdit: xử lý openEdit
   function openEdit(id: number) {
     setEditingId(id);
@@ -258,6 +274,18 @@ function TrackingSheetsContent() {
               className="sm:!w-auto"
             >
               Xuất đã chọn{selectedIds.length ? ` (${selectedIds.length})` : ''}
+            </Button>
+          )}
+          {canView && (
+            <Button
+              icon={<DownloadOutlined />}
+              disabled={!selectedIds.length}
+              loading={exportingDeposit}
+              onClick={handleExportDeposit}
+              block
+              className="sm:!w-auto"
+            >
+              Xuất Excel cược{selectedIds.length ? ` (${selectedIds.length})` : ''}
             </Button>
           )}
           {canView && (
