@@ -101,6 +101,12 @@ function sortByType<T extends { id: number; type: string }>(items: T[]) {
   return [...items].sort((a, b) => a.type.localeCompare(b.type, 'vi') || a.id - b.id);
 }
 
+// Các loại refund hoàn tiền trong Job Book: tính âm (trừ ra khỏi tổng)
+const REFUND_BOOKING_TYPES = ['Refund khách hàng', 'Refund hãng tàu', 'Refund đại lý'];
+function isRefundBookingType(type: unknown): boolean {
+  return typeof type === 'string' && REFUND_BOOKING_TYPES.includes(type);
+}
+
 export default function TrackingSheetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { message } = App.useApp();
   const router = useRouter();
@@ -185,7 +191,9 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
   const sortedBookings = useMemo(() => sortByType(sheet?.jobBookings ?? []), [sheet]);
   const sortedDebits = useMemo(() => sortByType(sheet?.debitNotes ?? []), [sheet]);
   const totalOrder = useMemo(() => (sheet?.jobOrders ?? []).reduce((s, r) => s + Number((r as any).portAmt ?? 0), 0), [sheet]);
-  const totalBooking = useMemo(() => (sheet?.jobBookings ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0), [sheet]);
+  // Dòng refund hoàn tiền tính âm (trừ ra khỏi tổng)
+  const totalBooking = useMemo(() => (sheet?.jobBookings ?? []).reduce((s, r) => s + (isRefundBookingType((r as any).type) ? -1 : 1) * Number((r as any).total ?? 0), 0), [sheet]);
+  const totalRefundBooking = useMemo(() => (sheet?.jobBookings ?? []).filter((r) => isRefundBookingType((r as any).type)).reduce((s, r) => s + Number((r as any).total ?? 0), 0), [sheet]);
   const totalDebit = useMemo(() => (sheet?.debitNotes ?? []).reduce((s, r) => s + Number((r as any).total ?? 0), 0), [sheet]);
   // Tổng tạm ứng chỉ tính khoản Chi (không trừ Giảm trừ), chỉ phiếu Chi tạm ứng
   const totalTamUng = useMemo(() => {
@@ -564,16 +572,25 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
           summary={() => {
             const total = totalBooking;
             return (
-              <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={9} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={9} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={10} />
-              </Table.Summary.Row>
+              <>
+                {totalRefundBooking > 0 && (
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell index={0} colSpan={9} align="right">Hoàn trả:</Table.Summary.Cell>
+                    <Table.Summary.Cell index={9} align="right"><span style={{ color: '#cf1322' }}>-{fmtMoney(String(totalRefundBooking))}</span></Table.Summary.Cell>
+                    <Table.Summary.Cell index={10} />
+                  </Table.Summary.Row>
+                )}
+                <Table.Summary.Row>
+                  <Table.Summary.Cell index={0} colSpan={9} align="right"><strong>Tổng tiền:</strong></Table.Summary.Cell>
+                  <Table.Summary.Cell index={9} align="right"><strong>{fmtMoney(String(total))}</strong></Table.Summary.Cell>
+                  <Table.Summary.Cell index={10} />
+                </Table.Summary.Row>
+              </>
             );
           }}
           tableLayout="fixed"
           columns={[
-            { title: 'Loại', dataIndex: 'type', width: 140, render: (v: string) => <Tag color="blue">{v}</Tag> },
+            { title: 'Loại', dataIndex: 'type', width: 140, render: (v: string) => <Tag color={isRefundBookingType(v) ? 'red' : 'blue'}>{v}</Tag> },
             { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Đơn vị tính', dataIndex: 'unit', render: (v: string | null) => v ?? '-' },
             { title: 'Số lượng', dataIndex: 'quantity', align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
@@ -581,7 +598,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
             { title: 'Tiền thuế', dataIndex: 'taxAmount', align: 'right' as const, render: fmtMoney },
             { title: 'Sau thuế', dataIndex: 'afterTaxAmount', align: 'right' as const, render: fmtMoney },
-            { title: 'Tổng tiền', dataIndex: 'total', align: 'right' as const, render: (v: string | null) => <span className="font-medium">{fmtMoney(v)}</span> },
+            { title: 'Tổng tiền', dataIndex: 'total', align: 'right' as const, render: (v: string | null, r: JobBookingItem) => (v == null ? '-' : isRefundBookingType(r?.type) ? <span className="font-medium" style={{ color: '#cf1322' }}>-{fmtMoney(v)}</span> : <span className="font-medium">{fmtMoney(v)}</span>) },
             { title: 'Ghi chú', dataIndex: 'note', width: 180, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             {
               title: 'Duyệt',
