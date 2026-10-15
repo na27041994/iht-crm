@@ -178,17 +178,17 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
           <Form.Item label="Số lượng" name="quantity">
             <DecimalInput locale="en" maxDecimals={3} placeholder="VD: 1,000.567" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item label="Trước thuế" name="pretaxAmount">
-            <DecimalInput locale="vi" placeholder="Số tiền trước thuế" style={{ width: '100%' }} />
+          <Form.Item label="Trước thuế" name="pretaxAmount" tooltip="Dòng hoàn tiền: nhập số âm (-) nếu khách hàng trả tiền lại cho mình">
+            <DecimalInput locale="vi" allowNegative placeholder="Số tiền trước thuế (âm (-) nếu thu về)" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Thuế (%)" name="taxRate">
             <Select placeholder="Chọn thuế suất" options={TAX_RATES.map((t) => ({ value: t, label: `${t}%` }))} />
           </Form.Item>
           <Form.Item label="Tiền thuế" name="taxAmount">
-            <DecimalInput locale="vi" disabled style={{ width: '100%' }} />
+            <DecimalInput locale="vi" allowNegative disabled style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="Sau thuế" name="afterTaxAmount">
-            <DecimalInput locale="vi" disabled style={{ width: '100%' }} />
+            <DecimalInput locale="vi" allowNegative disabled style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             label={isFivePercent ? 'Tổng tiền (nhập để suy ngược Trước thuế + Thuế 5%)' : 'Tổng tiền'}
@@ -197,6 +197,7 @@ export default function JobBookingModal({ open, sheetId, editing, linkedDebitId,
           >
             <DecimalInput
               locale="vi"
+              allowNegative
               disabled={!isFivePercent}
               placeholder={isFivePercent ? 'Nhập tổng để tự tính ngược' : 'Tự tính = (trước thuế + thuế) x SL'}
               style={{ width: '100%' }}

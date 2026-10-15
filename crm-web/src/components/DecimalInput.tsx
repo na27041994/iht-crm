@@ -16,12 +16,14 @@ interface DecimalInputProps {
   parse?: (v: any) => string;
   // Giới hạn số thập phân (VD: 3 -> 1,000.567)
   maxDecimals?: number;
+  // Cho phép số âm (mặc định chặn dấu -). Bật cho ô tiền hoàn (âm = thu về).
+  allowNegative?: boolean;
 }
 
 // Nhập số thập phân kiểu VN (VD: 1.000,56):
 // - giữ nguyên dấu phẩy đang gõ dở (InputNumber thường ăn mất)
 // - blur mới format chuẩn, form luôn nhận number
-export default function DecimalInput({ value, onChange, placeholder, style, disabled, locale = 'vi', format, parse, maxDecimals }: DecimalInputProps) {
+export default function DecimalInput({ value, onChange, placeholder, style, disabled, locale = 'vi', format, parse, maxDecimals, allowNegative = false }: DecimalInputProps) {
   const fmt = format ?? (locale === 'en' ? formatEnDecimalInput : formatMoneyInput);
   const prs = parse ?? (locale === 'en' ? parseEnDecimalInput : parseMoneyInput);
   // Cắt phần thập phân theo maxDecimals (nếu có)
@@ -53,12 +55,22 @@ export default function DecimalInput({ value, onChange, placeholder, style, disa
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value.replace(/-/g, '');
+    // Giữ dấu - đầu khi cho phép số âm, tách ra để parse/format xử lý phần trị tuyệt đối
+    let negative = false;
+    let rawInput = e.target.value;
+    if (allowNegative && rawInput.trim().startsWith('-')) {
+      negative = true;
+      rawInput = rawInput.replace(/-/g, '');
+    } else {
+      rawInput = rawInput.replace(/-/g, '');
+    }
+    const raw = negative ? `-${rawInput}` : rawInput;
     // đang gõ phần thập phân dở (vi: ",xx" / en: ".xx") -> giữ nguyên text
+    const negRe = allowNegative ? '-?' : '';
     const partial =
       locale === 'en'
-        ? raw.includes('.') && new RegExp(`^[\\d\\s,]*\\.${decRe}$`).test(raw)
-        : raw.includes(',') && new RegExp(`^[\\d\\s.]*,${decRe}$`).test(raw);
+        ? raw.includes('.') && new RegExp(`^${negRe}[\\d\\s,]*\\.${decRe}$`).test(raw)
+        : raw.includes(',') && new RegExp(`^${negRe}[\\d\\s.]*,${decRe}$`).test(raw);
     if (partial) {
       textRef.current = raw;
       setText(raw);

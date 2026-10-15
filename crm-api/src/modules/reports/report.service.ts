@@ -835,12 +835,12 @@ export async function getProfitReport(from?: Date, to?: Date) {
       SELECT "sheetId", SUM("total") AS rev FROM debit_notes WHERE "isDelete" = 1 GROUP BY "sheetId"
     ) dn ON dn."sheetId" = s.id
     LEFT JOIN (
-      SELECT "sheetId", SUM(CASE WHEN type IN (${Prisma.join(REFUND_TYPES.map((t) => Prisma.sql`${t}`))}) THEN -COALESCE("pretaxAmount", 0) ELSE COALESCE("pretaxAmount", 0) END) AS total_fees,
+      SELECT "sheetId", SUM(COALESCE("pretaxAmount", 0)) AS total_fees,
         SUM(CASE WHEN type IN (${Prisma.join(CUOC_TYPES.map((t) => Prisma.sql`${t}`))}) THEN COALESCE("pretaxAmount", 0) ELSE 0 END) AS cuoc_fees
       FROM job_bookings WHERE "isDelete" = 1 GROUP BY "sheetId"
     ) jb ON jb."sheetId" = s.id
     LEFT JOIN (
-      SELECT "sheetId", SUM(CASE WHEN type IN (${Prisma.join(REFUND_TYPES.map((t) => Prisma.sql`${t}`))}) THEN -COALESCE("portAmt", 0) ELSE COALESCE("portAmt", 0) END) AS order_fees,
+      SELECT "sheetId", SUM(COALESCE("portAmt", 0)) AS order_fees,
         SUM(CASE WHEN type IN (${Prisma.join(CUOC_TYPES.map((t) => Prisma.sql`${t}`))}) THEN COALESCE("portAmt", 0) ELSE 0 END) AS order_cuoc
       FROM job_orders WHERE "isDelete" = 1 GROUP BY "sheetId"
     ) jo ON jo."sheetId" = s.id
