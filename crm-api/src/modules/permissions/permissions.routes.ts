@@ -4,6 +4,7 @@ import { asyncHandler } from '../../middleware/error.js';
 import { validate } from '../../middleware/validate.js';
 import { requireAuth, type AuthedRequest } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/auth.js';
+import { requirePermission } from '../../middleware/permission.js';
 import { RESOURCES, RESOURCE_LABELS, ACTION_LABELS } from './permissions.constants.js';
 import { getUserPermissions, setUserPermissions, getEffectivePermissions, ensureDefaultPermissions } from './permissions.service.js';
 import { prisma } from '../../lib/prisma.js';
@@ -47,7 +48,7 @@ permissionsRouter.get('/me', asyncHandler(async (req: AuthedRequest, res) => {
 
 permissionsRouter.get(
   '/users/:id',
-  requireRole('admin'),
+  requirePermission('user', 'edit'),
   asyncHandler(async (req, res) => {
     const userId = Number(req.params.id);
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
@@ -63,7 +64,7 @@ permissionsRouter.get(
 
 permissionsRouter.put(
   '/users/:id',
-  requireRole('admin'),
+  requirePermission('user', 'edit'),
   validate(setPermissionsSchema),
   asyncHandler(async (req, res) => {
     const userId = Number(req.params.id);
