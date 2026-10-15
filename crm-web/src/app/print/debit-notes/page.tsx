@@ -5,6 +5,7 @@ import { Button, Empty } from 'antd';
 import { PrinterOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { getMeId, getStaffOptions } from '@/lib/cachedApi';
 
 interface CustomerRef {
   id: number;
@@ -110,10 +111,11 @@ function computeVat(d: DebitNoteItem) {
 }
 
 // Header chung 1 lần đầu: công ty + RECEIVE (lấy khách hàng job đầu, ngày = ngày in)
-function DebitDocHeader({ sheet }: { sheet: SheetWithDebits }) {
+function DebitDocHeader({ sheet, printerName }: { sheet: SheetWithDebits; printerName?: string }) {
   const customer = sheet.customer;
   const contactName = sheet.deliveryStaff?.fullName ?? sheet.docStaff?.fullName ?? '-';
-  const contactPhone = (sheet.deliveryStaff?.phone ?? sheet.docStaff?.phone) || '-';
+  // Accountting: tên người in, trống thì SĐT NV như cũ
+  const contactPhone = printerName || (sheet.deliveryStaff?.phone ?? sheet.docStaff?.phone) || '-';
   const d = new Date();
   const today = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   return (
@@ -336,6 +338,19 @@ function PrintContent() {
   const [sheets, setSheets] = useState<SheetWithDebits[] | null>(null);
   const [error, setError] = useState('');
   const [printed, setPrinted] = useState(false);
+  const [printerName, setPrinterName] = useState('');
+
+  useEffect(() => {
+    getMeId()
+      .then((id) => {
+        if (id == null) return;
+        return getStaffOptions().then((list) => {
+          const me = list.find((s) => s.id === id);
+          if (me) setPrinterName(me.fullName);
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const ids = params.get('ids') ?? '';
@@ -412,7 +427,7 @@ function PrintContent() {
           if (!validSheets.length) return null;
           return (
             <div className="print-sheet">
-              <DebitDocHeader sheet={validSheets[0]} />
+              <DebitDocHeader sheet={validSheets[0]} printerName={printerName} />
               {validSheets.map((s) => (
                 <JobDebitBlock key={s.id} sheet={s} />
               ))}
