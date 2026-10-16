@@ -99,7 +99,7 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
           </tr>
           <tr>
             <td className="old-label">Lý do:<br /><span className="old-label-en">Reasons:</span></td>
-            <td className="old-val-bold" colSpan={7}>{v.note ?? ''}</td>
+            <td className="old-val-bold" colSpan={7} style={{ overflowWrap: 'anywhere', wordBreak: 'break-all' }}>{v.note ?? ''}</td>
           </tr>
         </tbody>
       </table>
