@@ -469,6 +469,8 @@ function PrintContent() {
         .old-sig { width: 33%; font-size: 12px; font-weight: 700; }
         @media print {
           @page { margin: 8mm 10mm; }
+          /* Ép nền trắng thắng theme dark (dark:bg-[#141414] specificity cao hơn) */
+          html, body, .print-wrap, .print-sheet { background: #fff !important; }
           .no-print { display: none !important; }
           .print-sheet { max-width: 100%; padding: 0; }
           .print-sheet { page-break-after: always; break-after: page; }

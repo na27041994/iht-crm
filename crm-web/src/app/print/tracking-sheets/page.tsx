@@ -454,6 +454,8 @@ function PrintContent() {
         .sig-name { font-size: 13px; font-weight: 600; border-top: 1px solid #000; padding-top: 40px; }
         @media print {
           @page { margin: 10mm; }
+          /* Ép nền trắng thắng theme dark (dark:bg-[#141414] specificity cao hơn) */
+          html, body, .print-wrap, .print-sheet { background: #fff !important; }
           body { margin: 0; }
           .no-print { display: none !important; }
           .print-sheet { max-width: 100%; padding: 0; }

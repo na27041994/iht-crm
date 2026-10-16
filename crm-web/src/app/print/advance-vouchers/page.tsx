@@ -247,6 +247,8 @@ function PrintAdvanceVouchersContent() {
         .old-total-row td { font-weight: 700; text-align: center; }
         .old-bold { font-weight: 700; }
         @media print {
+          /* Ép nền trắng thắng theme dark (dark:bg-[#141414] specificity cao hơn) */
+          html, body, .print-wrap, .print-sheet { background: #fff !important; }
           /* Giấy A4 nhưng phiếu giữ cỡ A5 nằm trên đầu trang */
           @page { size: A4 portrait; margin: 10mm 15mm 12mm; }
           body { margin: 0; }

@@ -170,6 +170,8 @@ function PrintReceiptVouchersContent() {
         .sig-cell { height: 90px; }
         @media print {
           @page { size: A4 portrait; margin: 12mm 15mm; }
+          /* Ép nền trắng thắng theme dark (dark:bg-[#141414] specificity cao hơn) */
+          html, body, .print-wrap, .print-sheet { background: #fff !important; }
           body { margin: 0; }
           .no-print { display: none !important; }
           .print-wrap { padding: 0 !important; }
