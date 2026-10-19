@@ -424,6 +424,7 @@ interface XRowOpts {
   money?: boolean;
   border?: boolean;
   borderCols?: [number, number];
+  boldCells?: number[];
   // Căn lề riêng từng cột (left/center/right), không set thì theo center/right/left chung
   aligns?: Array<'left' | 'center' | 'right' | undefined>;
 }
@@ -435,6 +436,7 @@ function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): Excel
       cell.border = { top: thin, left: thin, bottom: thin, right: thin };
     }
     if (o.bold || o.size) cell.font = { bold: !!o.bold, size: o.size ?? 11 };
+    if (o.boldCells?.includes(colNumber)) cell.font = { ...(cell.font ?? {}), bold: true };
     if (o.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: o.fill } };
     if (o.money && typeof cell.value === 'number') cell.value = vndText(cell.value);
     const perCol = o.aligns?.[colNumber - 1];
@@ -495,17 +497,17 @@ function writeDebitHeader(ws: ExcelJS.Worksheet, s: any, exporterName = '') {
   r = xrow(ws, ['RECEIVE', '', '', '', 'Date:', today, '', '', ''], { bold: true, center: true, border: true });
   xmerge(ws, r, 1, 4);
   xmerge(ws, r, 6, 9);
-  r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', '', ''], { border: true });
+  r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', '', ''], { border: true, boldCells: [1, 5] });
   xmerge(ws, r, 2, 4);
   xmerge(ws, r, 6, 9);
-  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', exporterName || contactPhone, '', '', ''], { border: true });
+  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', exporterName || contactPhone, '', '', ''], { border: true, boldCells: [1, 5] });
   xmerge(ws, r, 2, 4);
   xmerge(ws, r, 6, 9);
-  r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', '', ''], { border: true });
+  r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', '', ''], { border: true, boldCells: [1] });
   xmerge(ws, r, 2, 9);
-  r = xrow(ws, ['Tel:', customer.phone ?? '', '', '', '', '', '', '', ''], { border: true });
+  r = xrow(ws, ['Tel:', customer.phone ?? '', '', '', '', '', '', '', ''], { border: true, boldCells: [1] });
   xmerge(ws, r, 2, 9);
-  r = xrow(ws, ['Fax:', customer.fax ?? '', '', '', '', '', '', '', ''], { border: true });
+  r = xrow(ws, ['Fax:', customer.fax ?? '', '', '', '', '', '', '', ''], { border: true, boldCells: [1] });
   xmerge(ws, r, 2, 9);
   ws.addRow(['', '', '', '', '', '', '', '', '']);
 }
