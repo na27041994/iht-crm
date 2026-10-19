@@ -540,8 +540,7 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     const qtyNum = dd.quantity != null ? Number(dd.quantity) : 1;
     // Cột Amount = tiền trước thuế (đơn giá x số lượng)
     const amount = price == null ? '' : Math.round(price * qtyNum * 100) / 100;
-    // Mẫu chuẩn: không invoice + tiền USD thì ghi EX + tỷ giá vào cột Invoice No
-    const invNo = dd.invoiceNumber ?? (dd.currency === 'USD' && dd.exchangeRate != null ? `EX: ${Number(dd.exchangeRate).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '');
+    const invNo = dd.invoiceNumber ?? '';
     const ir = xrow(
       ws,
       [idx + 1, dd.description ?? dd.type, invNo, dd.unit ?? '', dd.quantity != null ? Number(dd.quantity) : '', price, amount, vat ? vat : '-', amt],
