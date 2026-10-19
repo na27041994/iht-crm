@@ -495,17 +495,17 @@ function writeDebitHeader(ws: ExcelJS.Worksheet, s: any, exporterName = '') {
   r = xrow(ws, ['RECEIVE', '', '', '', 'Date:', today, '', '', ''], { bold: true, center: true, border: true });
   xmerge(ws, r, 1, 4);
   xmerge(ws, r, 6, 9);
-  r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', '', ''], { bold: true, border: true });
+  r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', '', ''], { border: true });
   xmerge(ws, r, 2, 4);
   xmerge(ws, r, 6, 9);
-  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', exporterName || contactPhone, '', '', ''], { bold: true, border: true });
+  r = xrow(ws, ['Attn:', customer.contactPerson ?? '', '', '', 'Accountting:', exporterName || contactPhone, '', '', ''], { border: true });
   xmerge(ws, r, 2, 4);
   xmerge(ws, r, 6, 9);
-  r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', '', ''], { bold: true, border: true });
+  r = xrow(ws, ['Add:', customer.address ?? '', '', '', '', '', '', '', ''], { border: true });
   xmerge(ws, r, 2, 9);
-  r = xrow(ws, ['Tel:', customer.phone ?? '', '', '', '', '', '', '', ''], { bold: true, border: true });
+  r = xrow(ws, ['Tel:', customer.phone ?? '', '', '', '', '', '', '', ''], { border: true });
   xmerge(ws, r, 2, 9);
-  r = xrow(ws, ['Fax:', customer.fax ?? '', '', '', '', '', '', '', ''], { bold: true, border: true });
+  r = xrow(ws, ['Fax:', customer.fax ?? '', '', '', '', '', '', '', ''], { border: true });
   xmerge(ws, r, 2, 9);
   ws.addRow(['', '', '', '', '', '', '', '', '']);
 }
