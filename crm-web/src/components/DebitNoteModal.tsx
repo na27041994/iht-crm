@@ -123,8 +123,10 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
     const dQty = Number(quantity ?? 1);
     const dUnit = form.getFieldValue('unit') || 'Cont';
     const dTotal = Number(debitTotal ?? 0);
+    // Debit.total là tổng cả số lượng, Job Book lưu trước thuế theo ĐƠN VỊ
+    const dUnitTotal = dQty > 0 ? dTotal / dQty : dTotal;
     // Thuế 5% theo hóa đơn thực tế: trước thuế = tổng x 95%, làm tròn đồng
-    const pretax = dTax === 5 ? Math.round(dTotal * 95 / 100) : dTax > 0 ? Math.round((dTotal / (1 + dTax / 100)) * 100) / 100 : dTotal;
+    const pretax = dTax === 5 ? Math.round(dUnitTotal * 95 / 100) : dTax > 0 ? Math.round((dUnitTotal / (1 + dTax / 100)) * 100) / 100 : dUnitTotal;
     jbForm.setFieldsValue({
       taxRate: dTax,
       quantity: dQty,

@@ -37,14 +37,17 @@ function pickDefined<T extends Record<string, unknown>>(obj?: T | null): Partial
 }
 
 // Tính booking (đơn vị hiển thị) từ debit.
+// Debit.total là tổng cho cả số lượng; booking lưu trước thuế theo ĐƠN VỊ (total = sau thuế x SL).
 // Thuế 5% theo hóa đơn thực tế: thuế = tổng x 5% (trước thuế = tổng x 95%), làm tròn đồng.
 // Các mức % khác: trước thuế = tổng/(1+thuế), thuế = trước thuế x thuế%.
 function bookingDataFromDebit(d: { type: string; description?: unknown; unit?: unknown; quantity?: unknown; taxRate?: unknown; total?: unknown }) {
-  const total = Number(d.total ?? 0);
+  const totalAll = Number(d.total ?? 0);
   const tax = Number(d.taxRate ?? 0);
   const qty = Number(d.quantity ?? 1) || 1;
-  const pretax = tax === 5 ? Math.round(total * 95 / 100) : tax > 0 ? Math.round((total / (1 + tax / 100)) * 100) / 100 : total;
-  const taxAmount = tax === 5 ? Math.round((total - pretax) * 100) / 100 : Math.round(pretax * tax) / 100;
+  // Đưa về đơn giá (trước thuế) của 1 đơn vị để không nhân trùng số lượng
+  const totalUnit = totalAll / qty;
+  const pretax = tax === 5 ? Math.round(totalUnit * 95 / 100) : tax > 0 ? Math.round((totalUnit / (1 + tax / 100)) * 100) / 100 : totalUnit;
+  const taxAmount = tax === 5 ? Math.round((totalUnit - pretax) * 100) / 100 : Math.round(pretax * tax) / 100;
   const afterTax = Math.round((pretax + taxAmount) * 100) / 100;
   return {
     type: d.type,
