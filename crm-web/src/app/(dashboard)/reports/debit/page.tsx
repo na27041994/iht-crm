@@ -2,7 +2,7 @@
 const MONEY_SCALE = 100;
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { App, Button, Card, Input, Select, Space, Spin, Table, Tag, Typography, Upload } from 'antd';
+import { App, Button, Card, Form, Input, Modal, Select, Space, Spin, Table, Tag, Typography, Upload } from 'antd';
 import { DownloadOutlined, PrinterOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { apiDownload, apiFetch, apiUploadDownload, saveBlob } from '@/lib/api';
@@ -27,6 +27,8 @@ export default function DebitReportPage() {
   const [sheetsLoading, setSheetsLoading] = useState(false);
   const [selectedSheetIds, setSelectedSheetIds] = useState<number[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [exportAllOpen, setExportAllOpen] = useState(false);
+  const [exportAllForm] = Form.useForm();
 
   useEffect(() => {
     apiFetch<{ items: { id: number; companyName: string; customerName: string }[] }>('/customers?pageSize=100')
@@ -176,19 +178,21 @@ export default function DebitReportPage() {
     }
   }
 
-  // Hàm handleExportAll: xử lý handleExportAll
+  // Hàm handleExportAll: xuất tất cả debit note theo khoảng ngày đã chọn
   async function handleExportAll() {
+    const vals = exportAllForm.getFieldsValue() as { range?: [Dayjs, Dayjs] };
+    const r = vals.range;
     setExporting(true);
     try {
       const params = new URLSearchParams();
-      if (sheetSearch.trim()) params.set('search', sheetSearch.trim());
-      if (sheetCustomerId) params.set('customerId', String(sheetCustomerId));
-      if (range?.[0]) params.set('from', range[0].format('YYYY-MM-DD'));
-      if (range?.[1]) params.set('to', range[1].format('YYYY-MM-DD'));
+      if (r?.[0]) params.set('from', r[0].format('YYYY-MM-DD'));
+      if (r?.[1]) params.set('to', r[1].format('YYYY-MM-DD'));
       const qs = params.toString();
       const blob = await apiDownload(`/reports/debit/export${qs ? `?${qs}` : ''}`);
-      saveBlob(blob, 'thong-ke-debit.xlsx');
+      const name = r?.[0] && r?.[1] ? `thong-ke-debit_${r[0].format('YYYYMMDD')}-${r[1].format('YYYYMMDD')}.xlsx` : 'thong-ke-debit.xlsx';
+      saveBlob(blob, name);
       message.success('Đã xuất Excel');
+      setExportAllOpen(false);
     } catch (err) {
       message.error(err instanceof Error ? err.message : 'Xuất Excel thất bại');
     } finally {
@@ -260,7 +264,7 @@ export default function DebitReportPage() {
             <Button icon={<DownloadOutlined />} loading={exporting} disabled={!selectedSheetIds.length} onClick={handleExportLandscape}>
               Xuất ngang {selectedSheetIds.length ? `(${selectedSheetIds.length})` : ''}
             </Button>
-            <Button loading={exporting} onClick={handleExportAll}>
+            <Button loading={exporting} onClick={() => { exportAllForm.setFieldsValue({ range: range ?? undefined }); setExportAllOpen(true); }}>
               Xuất tất cả
             </Button>
             {selectedSheetIds.length > 0 && <Button onClick={() => setSelectedSheetIds([])}>Bỏ chọn</Button>}
@@ -315,6 +319,27 @@ export default function DebitReportPage() {
           </Typography.Text>
         </div>
       </Card>
+
+      <Modal
+        open={exportAllOpen}
+        title="Xuất tất cả Debit Note"
+        onCancel={() => setExportAllOpen(false)}
+        destroyOnHidden
+        footer={[
+          <Button key="cancel" onClick={() => setExportAllOpen(false)}>
+            Bỏ qua
+          </Button>,
+          <Button key="export" type="primary" icon={<DownloadOutlined />} loading={exporting} onClick={handleExportAll}>
+            Xuất Excel
+          </Button>,
+        ]}
+      >
+        <Form form={exportAllForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item label="Từ ngày - Đến ngày" name="range" extra="Bỏ trống để xuất tất cả">
+            <SlashRangePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder={['Từ ngày', 'Đến ngày']} allowClear />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
