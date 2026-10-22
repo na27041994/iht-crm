@@ -105,6 +105,7 @@ export default function UsersPage() {
   const canDeleteUser = can('user', 'delete');
   const [availableRoles, setAvailableRoles] = useState<Array<{ name: string; displayName: string }>>([]);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     apiFetch<Array<{ name: string; displayName: string }>>('/roles')
@@ -113,6 +114,7 @@ export default function UsersPage() {
   }, []);
 
   const filteredUsers = users.filter((u) => {
+    if (roleFilter && u.role !== roleFilter) return false;
     if (!search.trim()) return true;
     const kw = search.trim().toLowerCase();
     return (
@@ -549,15 +551,25 @@ export default function UsersPage() {
         )}
       </div>
 
-      <Input.Search
-        placeholder="Tìm theo tên, email, SĐT, CCCD..."
-        allowClear
-        enterButton={<SearchOutlined />}
-        style={{ width: '100%', maxWidth: 420, marginBottom: 16 }}
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        onSearch={(v) => setSearch(v)}
-      />
+      <div className="mb-4 flex flex-wrap gap-2 items-center">
+        <Input.Search
+          placeholder="Tìm theo tên, email, SĐT, CCCD..."
+          allowClear
+          enterButton={<SearchOutlined />}
+          style={{ width: '100%', maxWidth: 420 }}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onSearch={(v) => setSearch(v)}
+        />
+        <Select
+          placeholder="Lọc theo vai trò"
+          style={{ width: 200 }}
+          value={roleFilter}
+          onChange={(v) => setRoleFilter(v)}
+          allowClear
+          options={(availableRoles.length ? availableRoles : FALLBACK_ROLES.map((r) => ({ name: r, displayName: ROLE_LABEL[r] ?? r }))).map((r) => ({ value: r.name, label: r.displayName }))}
+        />
+      </div>
 
       <Table<User>
         size="small"
