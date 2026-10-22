@@ -57,9 +57,9 @@ interface AdvanceVoucher {
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Nháp',
-  pending_dept: 'Chờ Trưởng bộ phận',
+  pending_dept: 'Chờ chủ quản bộ phận',
   pending_accountant: 'Chờ Kế toán',
-  approved: 'Đã duyệt - chờ chi',
+  approved: 'Đã duyệt',
   paid: 'Đã chi - chờ nhận',
   received: 'Hoàn tất',
   rejected: 'Từ chối',
@@ -190,10 +190,7 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
     { label: 'Container Qty', value: voucher.containerQty },
     { label: 'Qty', value: voucher.qty },
     { label: 'Người trình', value: voucher.submittedByName ? `${voucher.submittedByName} · ${fmtDateTime(voucher.submittedAt)}` : '-' },
-    { label: 'Trưởng bộ phận', value: voucher.deptApprovedByName ? `${voucher.deptApprovedByName} · ${fmtDateTime(voucher.deptApprovedAt)}` : '-' },
-    { label: 'Kế toán', value: voucher.accountantApprovedByName ? `${voucher.accountantApprovedByName} · ${fmtDateTime(voucher.accountantApprovedAt)}` : '-' },
-    { label: 'Thủ quỹ', value: voucher.paidByName ? `${voucher.paidByName} · ${fmtDateTime(voucher.paidAt)}` : '-' },
-    { label: 'Người nhận', value: voucher.receivedByName ? `${voucher.receivedByName} · ${fmtDateTime(voucher.receivedAt)}` : '-' },
+    { label: 'Chủ quản bộ phận', value: voucher.deptApprovedByName ? `${voucher.deptApprovedByName} · ${fmtDateTime(voucher.deptApprovedAt)}` : '-' },
   ];
 
   return (

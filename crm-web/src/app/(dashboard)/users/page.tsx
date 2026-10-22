@@ -716,13 +716,7 @@ export default function UsersPage() {
           >
             Duyệt
           </Checkbox>
-          <Checkbox
-            checked={!!perms.advance_voucher?.pay}
-            onChange={(e) => setSinglePerm('advance_voucher', 'pay', e.target.checked)}
-          >
-            Chi tiền
-          </Checkbox>
-          <span style={{ color: '#999', fontSize: 12 }}>Duyệt: Trưởng bộ phận + Kế toán · Chi tiền: Thủ quỹ</span>
+          <span style={{ color: '#999', fontSize: 12 }}>Duyệt: chủ quản bộ phận · các chữ ký còn lại ký tay trên bản in</span>
         </div>
         <Table
           size="small"

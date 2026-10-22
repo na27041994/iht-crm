@@ -39,9 +39,9 @@ interface AdvanceVoucher {
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Nháp',
-  pending_dept: 'Chờ Trưởng bộ phận',
+  pending_dept: 'Chờ chủ quản bộ phận',
   pending_accountant: 'Chờ Kế toán',
-  approved: 'Đã duyệt - chờ chi',
+  approved: 'Đã duyệt',
   paid: 'Đã chi - chờ nhận',
   received: 'Hoàn tất',
   rejected: 'Từ chối',

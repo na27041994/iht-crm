@@ -5,8 +5,6 @@ import { App, Button, Input, Modal, Popconfirm, Space } from 'antd';
 import {
   CheckOutlined,
   CloseOutlined,
-  DollarOutlined,
-  InboxOutlined,
   PlayCircleOutlined,
   UnlockOutlined,
 } from '@ant-design/icons';
@@ -44,10 +42,8 @@ export default function AdvanceVoucherApprovalActions({ voucher, onChanged, size
 
   const status = voucher.approvalStatus;
   const canApprove = can('advance_voucher', 'approve');
-  const canPay = can('advance_voucher', 'pay');
   const canEdit = can('advance_voucher', 'edit');
   const isCreator = meId != null && (voucher.createdById === meId || voucher.createdBy?.id === meId);
-  const isReceiver = meId != null && (voucher.advanceStaffId === meId || voucher.advanceStaff?.id === meId);
 
   async function run(path: string, note?: string) {
     setBusy(true);
@@ -84,14 +80,13 @@ export default function AdvanceVoucherApprovalActions({ voucher, onChanged, size
     );
   }
 
-  if ((status === 'pending_dept' || status === 'pending_accountant') && canApprove) {
-    const step = status === 'pending_dept' ? 'approve-dept' : 'approve-accountant';
-    const who = status === 'pending_dept' ? 'Trưởng bộ phận' : 'Kế toán';
+  if (status === 'pending_dept' && canApprove) {
     buttons.push(
       <Popconfirm
         key="approve"
-        title={`${who} duyệt phiếu này?`}
-        onConfirm={() => run(step)}
+        title="Chủ quản bộ phận duyệt phiếu này?"
+        description="Sau khi duyệt, các chữ ký còn lại ký tay trên bản in."
+        onConfirm={() => run('approve-dept')}
         okText="Duyệt"
         cancelText="Hủy"
       >
@@ -111,38 +106,6 @@ export default function AdvanceVoucherApprovalActions({ voucher, onChanged, size
       >
         Từ chối
       </Button>,
-    );
-  }
-
-  if (status === 'approved' && canPay) {
-    buttons.push(
-      <Popconfirm
-        key="pay"
-        title="Xác nhận đã chi tiền?"
-        onConfirm={() => run('pay')}
-        okText="Đã chi"
-        cancelText="Hủy"
-      >
-        <Button size={size} type="primary" icon={<DollarOutlined />} loading={busy}>
-          Xác nhận đã chi
-        </Button>
-      </Popconfirm>,
-    );
-  }
-
-  if (status === 'paid' && (isReceiver || canApprove)) {
-    buttons.push(
-      <Popconfirm
-        key="receive"
-        title="Xác nhận đã nhận tiền?"
-        onConfirm={() => run('receive')}
-        okText="Đã nhận"
-        cancelText="Hủy"
-      >
-        <Button size={size} type="primary" icon={<InboxOutlined />} loading={busy}>
-          Xác nhận đã nhận
-        </Button>
-      </Popconfirm>,
     );
   }
 

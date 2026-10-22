@@ -141,25 +141,23 @@ function MenuContent({
   const { can, loading } = usePermissions();
   const { isDark, toggle } = useTheme();
   const canApproveVoucher = can('advance_voucher', 'approve');
-  const canPayVoucher = can('advance_voucher', 'pay');
   const [pendingVoucherCount, setPendingVoucherCount] = useState(0);
 
   useEffect(() => {
-    if (!canApproveVoucher && !canPayVoucher) {
+    if (!canApproveVoucher) {
       setPendingVoucherCount(0);
       return;
     }
     let cancelled = false;
-    apiFetch<{ pendingApproval: number; pendingPay: number }>('/advance-vouchers/pending-count')
+    apiFetch<{ pendingApproval: number }>('/advance-vouchers/pending-count')
       .then((r) => {
-        if (cancelled) return;
-        setPendingVoucherCount((canApproveVoucher ? r.pendingApproval : 0) + (canPayVoucher ? r.pendingPay : 0));
+        if (!cancelled) setPendingVoucherCount(r.pendingApproval);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [canApproveVoucher, canPayVoucher, pathname]);
+  }, [canApproveVoucher, pathname]);
 
   // Keep existing adminOnly logic as fallback, but also check permission view.
   // If loading is true, show all (skeleton behaviour) to avoid flicker.

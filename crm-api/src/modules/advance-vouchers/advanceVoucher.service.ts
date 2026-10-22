@@ -323,7 +323,7 @@ export async function submitAdvanceVoucher(id: number, userId: number) {
   return updated;
 }
 
-// Trưởng bộ phận duyệt -> chờ Kế toán
+// Trưởng bộ phận duyệt -> đã duyệt (các chữ ký còn lại ký tay trên bản in)
 export async function approveAdvanceDept(id: number, userId: number, note?: string | null) {
   const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
   if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
@@ -334,7 +334,7 @@ export async function approveAdvanceDept(id: number, userId: number, note?: stri
   const updated = await prisma.advanceVoucher.update({
     where: { id },
     data: {
-      approvalStatus: 'pending_accountant',
+      approvalStatus: 'approved',
       deptApprovedById: userId,
       deptApprovedByName: actor.fullName,
       deptApprovedAt: new Date(),
@@ -342,7 +342,7 @@ export async function approveAdvanceDept(id: number, userId: number, note?: stri
     },
     include,
   });
-  await writeLog(id, 'approve_dept', voucher.approvalStatus, 'pending_accountant', userId, actor.fullName, note);
+  await writeLog(id, 'approve_dept', voucher.approvalStatus, 'approved', userId, actor.fullName, note);
   return updated;
 }
 

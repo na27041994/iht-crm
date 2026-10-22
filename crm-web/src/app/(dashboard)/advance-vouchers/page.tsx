@@ -42,9 +42,9 @@ function fmtMoney(v: number | null | undefined) {
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Nháp',
-  pending_dept: 'Chờ Trưởng bộ phận',
+  pending_dept: 'Chờ chủ quản bộ phận',
   pending_accountant: 'Chờ Kế toán',
-  approved: 'Đã duyệt - chờ chi',
+  approved: 'Đã duyệt',
   paid: 'Đã chi - chờ nhận',
   received: 'Hoàn tất',
   rejected: 'Từ chối',
@@ -63,10 +63,8 @@ const STATUS_COLOR: Record<string, string> = {
 const STATUS_TABS = [
   { key: '', label: 'Tất cả' },
   { key: 'draft', label: 'Nháp' },
-  { key: 'pending', label: 'Chờ duyệt' },
-  { key: 'approved', label: 'Chờ chi' },
-  { key: 'paid', label: 'Chờ nhận' },
-  { key: 'received', label: 'Hoàn tất' },
+  { key: 'pending', label: 'Chờ chủ quản' },
+  { key: 'approved', label: 'Đã duyệt' },
   { key: 'rejected', label: 'Từ chối' },
 ];
 
