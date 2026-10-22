@@ -11,6 +11,7 @@ const STATUS_LABEL: Record<string, string> = {
   paid: 'Đã chi - chờ nhận',
   received: 'Hoàn tất',
   rejected: 'Từ chối',
+  not_required: 'Không cần duyệt',
 };
 
 // Hàm styleHeader: xử lý styleHeader

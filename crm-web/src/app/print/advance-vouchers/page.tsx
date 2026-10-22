@@ -45,6 +45,7 @@ const STATUS_LABEL: Record<string, string> = {
   paid: 'Đã chi - chờ nhận',
   received: 'Hoàn tất',
   rejected: 'Từ chối',
+  not_required: 'Không cần duyệt',
 };
 
 // Định dạng ngày YYYY/MM/DD
@@ -169,7 +170,7 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
         </tbody>
       </table>
 
-      {v.approvalStatus && (
+      {isTrucTiep && v.approvalStatus && (
         <div style={{ marginTop: 4, fontSize: 11, color: '#444' }}>
           Trạng thái: <strong>{STATUS_LABEL[v.approvalStatus] ?? v.approvalStatus}</strong>
           {v.approvalStatus === 'rejected' && v.rejectReason ? ` — Lý do: ${v.rejectReason}` : ''}
@@ -191,12 +192,12 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
         <tbody>
           <tr>
             <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
-              <div style={{ fontSize: 12 }}>{v.submittedByName ?? v.createdBy?.fullName ?? ''}</div>
-              <div style={{ fontSize: 10, color: '#666' }}>{v.submittedAt ? fmtDateSlash(v.submittedAt) : ''}</div>
+              <div style={{ fontSize: 12 }}>{isTrucTiep ? v.submittedByName ?? v.createdBy?.fullName ?? '' : ''}</div>
+              <div style={{ fontSize: 10, color: '#666' }}>{isTrucTiep && v.submittedAt ? fmtDateSlash(v.submittedAt) : ''}</div>
             </td>
             <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
-              <div style={{ fontSize: 12 }}>{v.deptApprovedByName ?? ''}</div>
-              <div style={{ fontSize: 10, color: '#666' }}>{v.deptApprovedAt ? fmtDateSlash(v.deptApprovedAt) : ''}</div>
+              <div style={{ fontSize: 12 }}>{isTrucTiep ? v.deptApprovedByName ?? '' : ''}</div>
+              <div style={{ fontSize: 10, color: '#666' }}>{isTrucTiep && v.deptApprovedAt ? fmtDateSlash(v.deptApprovedAt) : ''}</div>
             </td>
             <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
               <div style={{ fontSize: 12 }}>{v.accountantApprovedByName ?? ''}</div>
@@ -211,7 +212,7 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
               <div style={{ fontSize: 10, color: '#666' }}>{v.paidAt ? fmtDateSlash(v.paidAt) : ''}</div>
             </td>
             <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
-              <div style={{ fontSize: 12 }}>{v.receivedByName ?? v.advanceStaff?.fullName ?? ''}</div>
+              <div style={{ fontSize: 12 }}>{v.receivedByName ?? ''}</div>
               <div style={{ fontSize: 10, color: '#666' }}>{v.receivedAt ? fmtDateSlash(v.receivedAt) : ''}</div>
             </td>
           </tr>

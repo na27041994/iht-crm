@@ -14,6 +14,7 @@ import { usePermissions } from '@/hooks/usePermission';
 
 export interface ApprovalVoucher {
   id: number;
+  type: string;
   approvalStatus: string;
   createdById?: number | null;
   createdBy?: { id: number } | null;
@@ -39,6 +40,8 @@ export default function AdvanceVoucherApprovalActions({ voucher, onChanged, size
   useEffect(() => {
     getMeId().then(setMeId).catch(() => {});
   }, []);
+
+  if (voucher.type !== 'Chi trực tiếp') return null;
 
   const status = voucher.approvalStatus;
   const canApprove = can('advance_voucher', 'approve');

@@ -48,6 +48,7 @@ const STATUS_LABEL: Record<string, string> = {
   paid: 'Đã chi - chờ nhận',
   received: 'Hoàn tất',
   rejected: 'Từ chối',
+  not_required: 'Không cần duyệt',
 };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -58,6 +59,7 @@ const STATUS_COLOR: Record<string, string> = {
   paid: 'purple',
   received: 'success',
   rejected: 'error',
+  not_required: 'default',
 };
 
 const STATUS_TABS = [
@@ -65,6 +67,7 @@ const STATUS_TABS = [
   { key: 'draft', label: 'Nháp' },
   { key: 'pending', label: 'Chờ chủ quản' },
   { key: 'approved', label: 'Đã duyệt' },
+  { key: 'not_required', label: 'Không cần duyệt' },
   { key: 'rejected', label: 'Từ chối' },
 ];
 
@@ -238,7 +241,8 @@ export default function AdvanceVouchersPage() {
             key: 'actions',
             width: 320,
             render: (_: unknown, r: AdvanceVoucher) => {
-              const editable = r.approvalStatus === 'draft' || r.approvalStatus === 'rejected';
+              const editable =
+                r.type !== 'Chi trực tiếp' || r.approvalStatus === 'draft' || r.approvalStatus === 'rejected';
               return (
                 <div className="flex flex-wrap items-center gap-1">
                   <AdvanceVoucherApprovalActions

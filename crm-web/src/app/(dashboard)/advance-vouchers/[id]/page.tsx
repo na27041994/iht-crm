@@ -63,6 +63,7 @@ const STATUS_LABEL: Record<string, string> = {
   paid: 'Đã chi - chờ nhận',
   received: 'Hoàn tất',
   rejected: 'Từ chối',
+  not_required: 'Không cần duyệt',
 };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -73,6 +74,7 @@ const STATUS_COLOR: Record<string, string> = {
   paid: 'purple',
   received: 'success',
   rejected: 'error',
+  not_required: 'default',
 };
 
 const ACTION_LABEL: Record<string, string> = {
@@ -171,7 +173,8 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
     );
   }
 
-  const editable = voucher.approvalStatus === 'draft' || voucher.approvalStatus === 'rejected';
+  const isDirect = voucher.type === 'Chi trực tiếp';
+  const editable = !isDirect || voucher.approvalStatus === 'draft' || voucher.approvalStatus === 'rejected';
   const info = [
     { label: 'Advance No', value: voucher.advanceNo },
     { label: 'Trạng thái', value: <Tag color={STATUS_COLOR[voucher.approvalStatus] ?? 'default'}>{STATUS_LABEL[voucher.approvalStatus] ?? voucher.approvalStatus}</Tag> },
@@ -189,8 +192,12 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
     { label: 'Order To', value: voucher.orderTo },
     { label: 'Container Qty', value: voucher.containerQty },
     { label: 'Qty', value: voucher.qty },
-    { label: 'Người trình', value: voucher.submittedByName ? `${voucher.submittedByName} · ${fmtDateTime(voucher.submittedAt)}` : '-' },
-    { label: 'Chủ quản bộ phận', value: voucher.deptApprovedByName ? `${voucher.deptApprovedByName} · ${fmtDateTime(voucher.deptApprovedAt)}` : '-' },
+    ...(isDirect
+      ? [
+          { label: 'Người trình', value: voucher.submittedByName ? `${voucher.submittedByName} · ${fmtDateTime(voucher.submittedAt)}` : '-' },
+          { label: 'Chủ quản bộ phận', value: voucher.deptApprovedByName ? `${voucher.deptApprovedByName} · ${fmtDateTime(voucher.deptApprovedAt)}` : '-' },
+        ]
+      : []),
   ];
 
   return (
@@ -237,28 +244,6 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
             <Typography.Text strong type="danger">Lý do từ chối: </Typography.Text>
             <Typography.Text type="danger">{voucher.rejectReason}</Typography.Text>
           </Typography.Paragraph>
-        )}
-      </Card>
-
-      <Card title="Lịch sử duyệt" style={{ marginBottom: 16 }}>
-        {voucher.logs?.length ? (
-          <Timeline
-            items={voucher.logs.map((log) => ({
-              color: log.toStatus === 'rejected' ? 'red' : log.toStatus === 'received' ? 'green' : 'blue',
-              children: (
-                <div>
-                  <div>
-                    <strong>{ACTION_LABEL[log.action] ?? log.action}</strong>
-                    {log.byName ? ` · ${log.byName}` : ''}
-                    <span style={{ color: '#999', marginLeft: 8 }}>{fmtDateTime(log.createdAt)}</span>
-                  </div>
-                  {log.note && <div style={{ color: '#666' }}>{log.note}</div>}
-                </div>
-              ),
-            }))}
-          />
-        ) : (
-          <Typography.Text type="secondary">Chưa có lịch sử duyệt</Typography.Text>
         )}
       </Card>
 
@@ -320,6 +305,30 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
           }}
         />
       </Card>
+
+      {isDirect && (
+      <Card title="Lịch sử duyệt" style={{ marginBottom: 16 }}>
+        {voucher.logs?.length ? (
+          <Timeline
+            items={voucher.logs.map((log) => ({
+              color: log.toStatus === 'rejected' ? 'red' : log.toStatus === 'received' ? 'green' : 'blue',
+              children: (
+                <div>
+                  <div>
+                    <strong>{ACTION_LABEL[log.action] ?? log.action}</strong>
+                    {log.byName ? ` · ${log.byName}` : ''}
+                    <span style={{ color: '#999', marginLeft: 8 }}>{fmtDateTime(log.createdAt)}</span>
+                  </div>
+                  {log.note && <div style={{ color: '#666' }}>{log.note}</div>}
+                </div>
+              ),
+            }))}
+          />
+        ) : (
+          <Typography.Text type="secondary">Chưa có lịch sử duyệt</Typography.Text>
+        )}
+      </Card>
+      )}
 
       <AdvanceVoucherFormModal
         open={formOpen}

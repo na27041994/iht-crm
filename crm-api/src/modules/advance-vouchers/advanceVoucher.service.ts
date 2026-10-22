@@ -6,6 +6,8 @@ import { hasPermission } from '../permissions/permissions.service.js';
 import type { AdvanceVoucherInput, AdvanceItemInput } from './advanceVoucher.schema.js';
 
 const EDITABLE_STATUSES: string[] = ['draft', 'rejected'];
+// Chỉ phiếu Chi trực tiếp mới cần trình/duyệt trên web
+const DIRECT_APPROVAL_TYPE = 'Chi trực tiếp';
 
 async function getActor(userId: number) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { fullName: true } });
@@ -27,10 +29,11 @@ async function writeLog(
   });
 }
 
-// Chỉ phiếu nháp / bị từ chối mới được sửa, xóa, thêm bớt khoản
+// Chỉ phiếu Chi trực tiếp mới bị khóa; phiếu nháp / bị từ chối được sửa
 async function requireEditableVoucher(id: number) {
   const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
   if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (voucher.type !== DIRECT_APPROVAL_TYPE) return voucher;
   if (!EDITABLE_STATUSES.includes(voucher.approvalStatus)) {
     throw new AppError('Phiếu đang chờ duyệt/đã duyệt nên không được sửa. Cần mở khóa trước.', 400);
   }
@@ -135,7 +138,7 @@ export async function listAdvanceVouchersLegacy(search?: string, page = 1, pageS
 // Đếm số phiếu đang chờ duyệt / chờ chi / chờ nhận để hiện badge menu
 export async function countAdvancePending() {
   const [pendingApproval, pendingPay, pendingReceive] = await Promise.all([
-    prisma.advanceVoucher.count({ where: { isDelete: 1, approvalStatus: { in: ['pending_dept', 'pending_accountant'] } } }),
+    prisma.advanceVoucher.count({ where: { isDelete: 1, type: DIRECT_APPROVAL_TYPE, approvalStatus: { in: ['pending_dept', 'pending_accountant'] } } }),
     prisma.advanceVoucher.count({ where: { isDelete: 1, approvalStatus: 'approved' } }),
     prisma.advanceVoucher.count({ where: { isDelete: 1, approvalStatus: 'paid' } }),
   ]);
@@ -207,16 +210,27 @@ export async function createAdvanceVoucher(input: AdvanceVoucherInput, userId: n
   await requireAdvanceStaff(input.advanceStaffId);
   const advanceNo = await nextAdvanceNo();
   return prisma.advanceVoucher.create({
-    data: { ...input, advanceNo, createdById: userId, approvalStatus: 'draft' },
+    data: {
+      ...input,
+      advanceNo,
+      createdById: userId,
+      approvalStatus: input.type === DIRECT_APPROVAL_TYPE ? 'draft' : 'not_required',
+    },
     include,
   });
 }
 
-// Cập nhật phiếu chi (chỉ khi nháp / bị từ chối)
+// Cập nhật phiếu chi (chỉ khi nháp / bị từ chối với phiếu Chi trực tiếp)
 export async function updateAdvanceVoucher(id: number, input: AdvanceVoucherInput) {
-  await requireEditableVoucher(id);
+  const existing = await requireEditableVoucher(id);
   await requireAdvanceStaff(input.advanceStaffId);
-  return prisma.advanceVoucher.update({ where: { id }, data: input, include });
+  const approvalStatus =
+    input.type !== DIRECT_APPROVAL_TYPE
+      ? 'not_required'
+      : existing.approvalStatus === 'not_required'
+        ? 'draft'
+        : existing.approvalStatus;
+  return prisma.advanceVoucher.update({ where: { id }, data: { ...input, approvalStatus }, include });
 }
 
 // Kiểm tra nhân viên ứng tiền tồn tại (nếu có chọn), ném lỗi nếu không
@@ -299,6 +313,9 @@ export async function deleteAdvanceItem(voucherId: number, id: number) {
 export async function submitAdvanceVoucher(id: number, userId: number) {
   const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
   if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (voucher.type !== DIRECT_APPROVAL_TYPE) {
+    throw new AppError('Chỉ phiếu Chi trực tiếp mới cần trình duyệt', 400);
+  }
   if (!EDITABLE_STATUSES.includes(voucher.approvalStatus)) {
     throw new AppError('Chỉ phiếu nháp hoặc bị từ chối mới được trình duyệt', 400);
   }
@@ -327,6 +344,9 @@ export async function submitAdvanceVoucher(id: number, userId: number) {
 export async function approveAdvanceDept(id: number, userId: number, note?: string | null) {
   const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
   if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (voucher.type !== DIRECT_APPROVAL_TYPE) {
+    throw new AppError('Chỉ phiếu Chi trực tiếp mới cần duyệt', 400);
+  }
   if (voucher.approvalStatus !== 'pending_dept') {
     throw new AppError('Phiếu không ở bước chờ Trưởng bộ phận duyệt', 400);
   }
@@ -373,6 +393,9 @@ export async function approveAdvanceAccountant(id: number, userId: number, note?
 export async function rejectAdvanceVoucher(id: number, userId: number, note?: string | null) {
   const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
   if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (voucher.type !== DIRECT_APPROVAL_TYPE) {
+    throw new AppError('Chỉ phiếu Chi trực tiếp mới cần duyệt', 400);
+  }
   if (!['pending_dept', 'pending_accountant'].includes(voucher.approvalStatus)) {
     throw new AppError('Chỉ từ chối được phiếu đang chờ duyệt', 400);
   }

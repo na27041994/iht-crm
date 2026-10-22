@@ -42,6 +42,7 @@ export const advanceApprovalStatuses = [
   'paid',
   'received',
   'rejected',
+  'not_required',
 ] as const;
 export type AdvanceApprovalStatus = (typeof advanceApprovalStatuses)[number];
 
