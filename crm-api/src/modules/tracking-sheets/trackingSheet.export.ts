@@ -519,8 +519,8 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     ['Customs No:', s.customNo ?? '', 'Custom Date:', fmtDMY(s.declarationDate)],
     ['NW:', s.nw != null && s.nw !== '' ? vndText(Number(s.nw)) : '', 'GW:', vndText(s.gw)],
     ['Job Order:', s.sheetNumber, 'Note:', s.carrier?.carrierName ?? s.note ?? ''],
-    ['QTY:', s.containerQuantity != null ? String(s.containerQuantity) : s.containerNumber ?? '', 'Invoices No:', ''],
-    ['Po No:', s.billNumber ?? '', 'Bill No:', s.billNumber ?? ''],
+    ['QTY:', s.containerQuantity != null ? String(s.containerQuantity) : s.containerNumber ?? '', 'Invoices No:', s.invoiceNumber ?? ''],
+    ['Po No:', '', 'Bill No:', s.billNumber ?? ''],
     ['Container No:', s.containerNumber ?? '', '', ''],
   ];
   for (const [l1, v1, l2, v2] of jobInfo) {

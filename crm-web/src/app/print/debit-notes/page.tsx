@@ -262,11 +262,11 @@ function JobDebitBlock({ sheet }: { sheet: SheetWithDebits }) {
             <td className="old-label">QTY:</td>
             <td className="old-val">{sheet.containerQuantity != null ? String(sheet.containerQuantity) : sheet.containerNumber ?? '-'}</td>
             <td className="old-label">Invoices No:</td>
-            <td className="old-val">-</td>
+            <td className="old-val">{sheet.invoiceNumber ?? '-'}</td>
           </tr>
           <tr>
             <td className="old-label">Po No:</td>
-            <td className="old-val">{sheet.billNumber ?? '-'}</td>
+            <td className="old-val">-</td>
             <td className="old-label">Bill No:</td>
             <td className="old-val">{sheet.billNumber ?? '-'}</td>
           </tr>
