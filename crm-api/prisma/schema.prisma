@@ -113,6 +113,8 @@ model RolePermission {
   canCreate Boolean  @default(false)
   canEdit   Boolean  @default(false)
   canDelete Boolean  @default(false)
+  canApprove Boolean @default(false)
+  canPay    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -385,10 +387,35 @@ model AdvanceVoucher {
   createdById  Int?
   advanceStaff User?          @relation("VoucherAdvanceStaff", fields: [advanceStaffId], references: [id])
   advanceStaffId Int?
+  approvalStatus String       @default("draft")
+  submittedById  Int?
+  submittedByName String?
+  submittedAt    DateTime?
+  deptApprovedById Int?
+  deptApprovedByName String?
+  deptApprovedAt DateTime?
+  deptApproveNote String?
+  accountantApprovedById Int?
+  accountantApprovedByName String?
+  accountantApprovedAt DateTime?
+  accountantApproveNote String?
+  paidById     Int?
+  paidByName   String?
+  paidAt       DateTime?
+  paidNote     String?
+  receivedById Int?
+  receivedByName String?
+  receivedAt   DateTime?
+  receivedNote String?
+  rejectReason String?
+  rejectedById Int?
+  rejectedByName String?
+  rejectedAt   DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
   items AdvanceVoucherItem[]
+  logs  AdvanceVoucherLog[]
 
   @@index([advanceNo])
   @@index([sheetId])
@@ -411,6 +438,22 @@ model AdvanceVoucherItem {
 
   @@index([voucherId])
   @@map("advance_voucher_items")
+}
+
+model AdvanceVoucherLog {
+  id          Int            @id @default(autoincrement())
+  voucher     AdvanceVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  voucherId   Int
+  action      String
+  fromStatus  String?
+  toStatus    String?
+  byId        Int?
+  byName      String?
+  note        String?
+  createdAt   DateTime       @default(now())
+
+  @@index([voucherId])
+  @@map("advance_voucher_logs")
 }
 
 model ReceiptVoucher {
@@ -521,6 +564,8 @@ model UserPermission {
   canCreate Boolean  @default(false)
   canEdit   Boolean  @default(false)
   canDelete Boolean  @default(false)
+  canApprove Boolean @default(false)
+  canPay    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

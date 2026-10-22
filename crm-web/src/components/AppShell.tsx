@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
+  Badge,
   Button,
   Drawer,
   Layout,
@@ -139,6 +140,26 @@ function MenuContent({
 }) {
   const { can, loading } = usePermissions();
   const { isDark, toggle } = useTheme();
+  const canApproveVoucher = can('advance_voucher', 'approve');
+  const canPayVoucher = can('advance_voucher', 'pay');
+  const [pendingVoucherCount, setPendingVoucherCount] = useState(0);
+
+  useEffect(() => {
+    if (!canApproveVoucher && !canPayVoucher) {
+      setPendingVoucherCount(0);
+      return;
+    }
+    let cancelled = false;
+    apiFetch<{ pendingApproval: number; pendingPay: number }>('/advance-vouchers/pending-count')
+      .then((r) => {
+        if (cancelled) return;
+        setPendingVoucherCount((canApproveVoucher ? r.pendingApproval : 0) + (canPayVoucher ? r.pendingPay : 0));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [canApproveVoucher, canPayVoucher, pathname]);
 
   // Keep existing adminOnly logic as fallback, but also check permission view.
   // If loading is true, show all (skeleton behaviour) to avoid flicker.
@@ -223,7 +244,15 @@ function MenuContent({
         items={visibleNav.map((item) => ({
           key: item.key,
           icon: item.icon,
-          label: item.label,
+          label:
+            item.key === '/advance-vouchers' && pendingVoucherCount > 0 ? (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span>{item.label}</span>
+                <Badge count={pendingVoucherCount} size="small" />
+              </span>
+            ) : (
+              item.label
+            ),
           children: item.children?.map((child) => ({
             key: child.key,
             icon: child.icon,

@@ -2,7 +2,40 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { AppError } from '../../middleware/error.js';
 import { toScaled } from '../../lib/money.js';
+import { hasPermission } from '../permissions/permissions.service.js';
 import type { AdvanceVoucherInput, AdvanceItemInput } from './advanceVoucher.schema.js';
+
+const EDITABLE_STATUSES: string[] = ['draft', 'rejected'];
+
+async function getActor(userId: number) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { fullName: true } });
+  if (!user) throw new AppError('Không tìm thấy người dùng', 404);
+  return user;
+}
+
+async function writeLog(
+  voucherId: number,
+  action: string,
+  fromStatus: string | null,
+  toStatus: string | null,
+  byId: number,
+  byName: string,
+  note?: string | null,
+) {
+  await prisma.advanceVoucherLog.create({
+    data: { voucherId, action, fromStatus, toStatus, byId, byName, note: note?.trim() ? note.trim() : null },
+  });
+}
+
+// Chỉ phiếu nháp / bị từ chối mới được sửa, xóa, thêm bớt khoản
+async function requireEditableVoucher(id: number) {
+  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
+  if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (!EDITABLE_STATUSES.includes(voucher.approvalStatus)) {
+    throw new AppError('Phiếu đang chờ duyệt/đã duyệt nên không được sửa. Cần mở khóa trước.', 400);
+  }
+  return voucher;
+}
 
 function scaleAdvanceItem(input: AdvanceItemInput): AdvanceItemInput {
   return { ...input, amount: toScaled(input.amount as unknown as number) as unknown as number ?? input.amount };
@@ -20,6 +53,11 @@ const include = {
   createdBy: { select: { id: true, fullName: true } },
   advanceStaff: { select: { id: true, fullName: true } },
   items: { where: { isDelete: 1 }, orderBy: { id: 'asc' } },
+} satisfies Prisma.AdvanceVoucherInclude;
+
+const detailInclude = {
+  ...include,
+  logs: { orderBy: { createdAt: 'asc' } },
 } satisfies Prisma.AdvanceVoucherInclude;
 
 // Sinh mã phiếu chi mới theo ngày YYMMDDxxx
@@ -42,11 +80,14 @@ export async function listAdvanceVouchers(opts: {
   customerId?: number;
   from?: Date;
   to?: Date;
+  status?: string;
   page?: number;
   pageSize?: number;
 }) {
-  const { search, type, customerId, from, to, page = 1, pageSize = 20 } = opts;
+  const { search, type, customerId, from, to, status, page = 1, pageSize = 20 } = opts;
   const where: Prisma.AdvanceVoucherWhereInput = { isDelete: 1 };
+  if (status === 'pending') where.approvalStatus = { in: ['pending_dept', 'pending_accountant'] };
+  else if (status) where.approvalStatus = status;
   if (search) {
     where.OR = [
       { advanceNo: { contains: search, mode: 'insensitive' } },
@@ -89,6 +130,16 @@ export async function listAdvanceVouchers(opts: {
 // Liệt kê phiếu chi (legacy) - gọi listAdvanceVouchers
 export async function listAdvanceVouchersLegacy(search?: string, page = 1, pageSize = 20) {
   return listAdvanceVouchers({ search, page, pageSize });
+}
+
+// Đếm số phiếu đang chờ duyệt / chờ chi / chờ nhận để hiện badge menu
+export async function countAdvancePending() {
+  const [pendingApproval, pendingPay, pendingReceive] = await Promise.all([
+    prisma.advanceVoucher.count({ where: { isDelete: 1, approvalStatus: { in: ['pending_dept', 'pending_accountant'] } } }),
+    prisma.advanceVoucher.count({ where: { isDelete: 1, approvalStatus: 'approved' } }),
+    prisma.advanceVoucher.count({ where: { isDelete: 1, approvalStatus: 'paid' } }),
+  ]);
+  return { pendingApproval, pendingPay, pendingReceive };
 }
 
 // Lấy nhiều phiếu chi theo ids để in/batch
@@ -143,7 +194,7 @@ export async function getAdvanceVouchersForExport(opts: {
 
 // Lấy chi tiết một phiếu chi và tính tổng tiền (net = Chi - Giảm trừ)
 export async function getAdvanceVoucher(id: number) {
-  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 }, include });
+  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 }, include: detailInclude });
   if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
   const totalAmount = voucher.items.reduce((sum, item) => sum + netAmount(item), 0);
   const totalChi = voucher.items.filter((i: any) => i.kind !== 'Giảm trừ').reduce((sum, item) => sum + Number((item as any).amount ?? 0), 0);
@@ -156,15 +207,14 @@ export async function createAdvanceVoucher(input: AdvanceVoucherInput, userId: n
   await requireAdvanceStaff(input.advanceStaffId);
   const advanceNo = await nextAdvanceNo();
   return prisma.advanceVoucher.create({
-    data: { ...input, advanceNo, createdById: userId },
+    data: { ...input, advanceNo, createdById: userId, approvalStatus: 'draft' },
     include,
   });
 }
 
-// Cập nhật phiếu chi
+// Cập nhật phiếu chi (chỉ khi nháp / bị từ chối)
 export async function updateAdvanceVoucher(id: number, input: AdvanceVoucherInput) {
-  const exists = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
-  if (!exists) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  await requireEditableVoucher(id);
   await requireAdvanceStaff(input.advanceStaffId);
   return prisma.advanceVoucher.update({ where: { id }, data: input, include });
 }
@@ -176,10 +226,9 @@ async function requireAdvanceStaff(advanceStaffId?: number | null) {
   if (!staff) throw new AppError('Nhân viên ứng tiền không tồn tại', 400);
 }
 
-// Xóa mềm phiếu chi
+// Xóa mềm phiếu chi (chỉ khi nháp / bị từ chối)
 export async function deleteAdvanceVoucher(id: number) {
-  const exists = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
-  if (!exists) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  const exists = await requireEditableVoucher(id);
   await prisma.$transaction([
     prisma.advanceVoucher.update({ where: { id }, data: { isDelete: -1 } }),
     prisma.advanceVoucherItem.updateMany({ where: { voucherId: id }, data: { isDelete: -1 } }),
@@ -218,12 +267,13 @@ async function syncJobOrderFromItem(voucherId: number, itemId: number) {
 
 // Thêm khoản chi vào phiếu
 export async function createAdvanceItem(voucherId: number, input: AdvanceItemInput) {
-  await requireVoucher(voucherId);
+  await requireEditableVoucher(voucherId);
   return prisma.advanceVoucherItem.create({ data: { ...scaleAdvanceItem(input), voucherId } });
 }
 
 // Cập nhật khoản chi
 export async function updateAdvanceItem(voucherId: number, id: number, input: AdvanceItemInput) {
+  await requireEditableVoucher(voucherId);
   const item = await prisma.advanceVoucherItem.findFirst({ where: { id, voucherId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy khoản chi', 404);
   const updated: any = await prisma.advanceVoucherItem.update({ where: { id }, data: scaleAdvanceItem(input) });
@@ -235,6 +285,7 @@ export async function updateAdvanceItem(voucherId: number, id: number, input: Ad
 
 // Xóa mềm khoản chi
 export async function deleteAdvanceItem(voucherId: number, id: number) {
+  await requireEditableVoucher(voucherId);
   const item = await prisma.advanceVoucherItem.findFirst({ where: { id, voucherId, isDelete: 1 } });
   if (!item) throw new AppError('Không tìm thấy khoản chi', 404);
   const res = await prisma.advanceVoucherItem.update({ where: { id }, data: { isDelete: -1 } });
@@ -242,8 +293,193 @@ export async function deleteAdvanceItem(voucherId: number, id: number) {
   return res;
 }
 
-// Kiểm tra phiếu chi tồn tại, ném lỗi nếu không
-async function requireVoucher(voucherId: number) {
-  const exists = await prisma.advanceVoucher.findFirst({ where: { id: voucherId, isDelete: 1 } });
-  if (!exists) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+// ===== Luồng duyệt phiếu chi =====
+
+// Trình duyệt: nháp / bị từ chối -> chờ Trưởng bộ phận
+export async function submitAdvanceVoucher(id: number, userId: number) {
+  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
+  if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (!EDITABLE_STATUSES.includes(voucher.approvalStatus)) {
+    throw new AppError('Chỉ phiếu nháp hoặc bị từ chối mới được trình duyệt', 400);
+  }
+  const canSubmit = voucher.createdById === userId || (await hasPermission(userId, 'advance_voucher', 'edit'));
+  if (!canSubmit) throw new AppError('Bạn không có quyền trình duyệt phiếu này', 403);
+  const actor = await getActor(userId);
+  const updated = await prisma.advanceVoucher.update({
+    where: { id },
+    data: {
+      approvalStatus: 'pending_dept',
+      submittedById: userId,
+      submittedByName: actor.fullName,
+      submittedAt: new Date(),
+      rejectReason: null,
+      rejectedById: null,
+      rejectedByName: null,
+      rejectedAt: null,
+    },
+    include,
+  });
+  await writeLog(id, 'submit', voucher.approvalStatus, 'pending_dept', userId, actor.fullName, null);
+  return updated;
+}
+
+// Trưởng bộ phận duyệt -> chờ Kế toán
+export async function approveAdvanceDept(id: number, userId: number, note?: string | null) {
+  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
+  if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (voucher.approvalStatus !== 'pending_dept') {
+    throw new AppError('Phiếu không ở bước chờ Trưởng bộ phận duyệt', 400);
+  }
+  const actor = await getActor(userId);
+  const updated = await prisma.advanceVoucher.update({
+    where: { id },
+    data: {
+      approvalStatus: 'pending_accountant',
+      deptApprovedById: userId,
+      deptApprovedByName: actor.fullName,
+      deptApprovedAt: new Date(),
+      deptApproveNote: note?.trim() ? note.trim() : null,
+    },
+    include,
+  });
+  await writeLog(id, 'approve_dept', voucher.approvalStatus, 'pending_accountant', userId, actor.fullName, note);
+  return updated;
+}
+
+// Kế toán duyệt -> đã duyệt, chờ chi tiền
+export async function approveAdvanceAccountant(id: number, userId: number, note?: string | null) {
+  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
+  if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (voucher.approvalStatus !== 'pending_accountant') {
+    throw new AppError('Phiếu không ở bước chờ Kế toán duyệt', 400);
+  }
+  const actor = await getActor(userId);
+  const updated = await prisma.advanceVoucher.update({
+    where: { id },
+    data: {
+      approvalStatus: 'approved',
+      accountantApprovedById: userId,
+      accountantApprovedByName: actor.fullName,
+      accountantApprovedAt: new Date(),
+      accountantApproveNote: note?.trim() ? note.trim() : null,
+    },
+    include,
+  });
+  await writeLog(id, 'approve_accountant', voucher.approvalStatus, 'approved', userId, actor.fullName, note);
+  return updated;
+}
+
+// Từ chối ở bước Trưởng bộ phận hoặc Kế toán
+export async function rejectAdvanceVoucher(id: number, userId: number, note?: string | null) {
+  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
+  if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (!['pending_dept', 'pending_accountant'].includes(voucher.approvalStatus)) {
+    throw new AppError('Chỉ từ chối được phiếu đang chờ duyệt', 400);
+  }
+  if (!note?.trim()) throw new AppError('Vui lòng nhập lý do từ chối', 400);
+  const actor = await getActor(userId);
+  const step = voucher.approvalStatus === 'pending_dept' ? 'dept' : 'accountant';
+  const updated = await prisma.advanceVoucher.update({
+    where: { id },
+    data: {
+      approvalStatus: 'rejected',
+      rejectReason: note.trim(),
+      rejectedById: userId,
+      rejectedByName: actor.fullName,
+      rejectedAt: new Date(),
+    },
+    include,
+  });
+  await writeLog(id, `reject_${step}`, voucher.approvalStatus, 'rejected', userId, actor.fullName, note);
+  return updated;
+}
+
+// Thủ quỹ xác nhận đã chi tiền
+export async function payAdvanceVoucher(id: number, userId: number, note?: string | null) {
+  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
+  if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (voucher.approvalStatus !== 'approved') {
+    throw new AppError('Phiếu chưa được duyệt hoặc đã chi tiền', 400);
+  }
+  const actor = await getActor(userId);
+  const updated = await prisma.advanceVoucher.update({
+    where: { id },
+    data: {
+      approvalStatus: 'paid',
+      paidById: userId,
+      paidByName: actor.fullName,
+      paidAt: new Date(),
+      paidNote: note?.trim() ? note.trim() : null,
+    },
+    include,
+  });
+  await writeLog(id, 'pay', voucher.approvalStatus, 'paid', userId, actor.fullName, note);
+  return updated;
+}
+
+// Người nhận tiền xác nhận đã nhận (hoặc người có quyền duyệt / admin)
+export async function receiveAdvanceVoucher(id: number, userId: number, note?: string | null) {
+  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
+  if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  if (voucher.approvalStatus !== 'paid') {
+    throw new AppError('Phiếu chưa được xác nhận chi tiền', 400);
+  }
+  const canOverride = await hasPermission(userId, 'advance_voucher', 'approve');
+  const receiverId = voucher.advanceStaffId ?? voucher.createdById;
+  if (receiverId !== userId && !canOverride) {
+    throw new AppError('Chỉ người nhận tiền của phiếu mới được xác nhận', 403);
+  }
+  const actor = await getActor(userId);
+  const updated = await prisma.advanceVoucher.update({
+    where: { id },
+    data: {
+      approvalStatus: 'received',
+      receivedById: userId,
+      receivedByName: actor.fullName,
+      receivedAt: new Date(),
+      receivedNote: note?.trim() ? note.trim() : null,
+    },
+    include,
+  });
+  await writeLog(id, 'receive', voucher.approvalStatus, 'received', userId, actor.fullName, note);
+  return updated;
+}
+
+// Admin mở khóa phiếu về nháp
+export async function resetAdvanceVoucher(id: number, userId: number) {
+  const voucher = await prisma.advanceVoucher.findFirst({ where: { id, isDelete: 1 } });
+  if (!voucher) throw new AppError('Không tìm thấy phiếu chi tạm ứng', 404);
+  const actor = await getActor(userId);
+  const updated = await prisma.advanceVoucher.update({
+    where: { id },
+    data: {
+      approvalStatus: 'draft',
+      submittedById: null,
+      submittedByName: null,
+      submittedAt: null,
+      deptApprovedById: null,
+      deptApprovedByName: null,
+      deptApprovedAt: null,
+      deptApproveNote: null,
+      accountantApprovedById: null,
+      accountantApprovedByName: null,
+      accountantApprovedAt: null,
+      accountantApproveNote: null,
+      paidById: null,
+      paidByName: null,
+      paidAt: null,
+      paidNote: null,
+      receivedById: null,
+      receivedByName: null,
+      receivedAt: null,
+      receivedNote: null,
+      rejectReason: null,
+      rejectedById: null,
+      rejectedByName: null,
+      rejectedAt: null,
+    },
+    include,
+  });
+  await writeLog(id, 'admin_reset', voucher.approvalStatus, 'draft', userId, actor.fullName, null);
+  return updated;
 }

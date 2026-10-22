@@ -17,6 +17,8 @@ export const rolePermissionSchema = z.object({
   canCreate: z.boolean(),
   canEdit: z.boolean(),
   canDelete: z.boolean(),
+  canApprove: z.boolean().optional(),
+  canPay: z.boolean().optional(),
 });
 
 export type CreateRoleInput = z.infer<typeof createRoleSchema>;

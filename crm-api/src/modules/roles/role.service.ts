@@ -59,7 +59,7 @@ export async function getRolePermissions(roleId: number) {
   return role.permissions;
 }
 
-export async function setRolePermissions(roleId: number, permissions: Array<{ resource: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean }>) {
+export async function setRolePermissions(roleId: number, permissions: Array<{ resource: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean; canApprove?: boolean; canPay?: boolean }>) {
   const role = await prisma.role.findUnique({ where: { id: roleId } });
   if (!role) throw new AppError('Không tìm thấy vai trò', 404);
   for (const p of permissions) {
@@ -69,8 +69,8 @@ export async function setRolePermissions(roleId: number, permissions: Array<{ re
     permissions.map((p) =>
       prisma.rolePermission.upsert({
         where: { roleId_resource: { roleId, resource: p.resource } },
-        update: { canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete },
-        create: { roleId, resource: p.resource, canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete },
+        update: { canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete, canApprove: !!p.canApprove, canPay: !!p.canPay },
+        create: { roleId, resource: p.resource, canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete, canApprove: !!p.canApprove, canPay: !!p.canPay },
       }),
     ),
   );

@@ -37,7 +37,7 @@ export const RESOURCES = [
 
 export type Resource = (typeof RESOURCES)[number];
 
-export const ACTIONS = ['view', 'create', 'edit', 'delete'] as const;
+export const ACTIONS = ['view', 'create', 'edit', 'delete', 'approve', 'pay'] as const;
 
 export type Action = (typeof ACTIONS)[number];
 
@@ -70,15 +70,20 @@ export const ACTION_LABELS: Record<Action, string> = {
   create: 'Thêm',
   edit: 'Sửa',
   delete: 'Xóa',
+  approve: 'Duyệt',
+  pay: 'Chi tiền',
 };
 
 export type PermissionMap = Record<Resource, Record<Action, boolean>>;
 
 // Hàm defaultPermissionsForRole: xử lý defaultPermissionsForRole
 export function defaultPermissionsForRole(role: string): PermissionMap {
-  const allTrue: Record<Action, boolean> = { view: true, create: true, edit: true, delete: true };
-  const viewOnly: Record<Action, boolean> = { view: true, create: false, edit: false, delete: false };
-  const none: Record<Action, boolean> = { view: false, create: false, edit: false, delete: false };
+  const allTrue: Record<Action, boolean> = { view: true, create: true, edit: true, delete: true, approve: false, pay: false };
+  const viewOnly: Record<Action, boolean> = { view: true, create: false, edit: false, delete: false, approve: false, pay: false };
+  const none: Record<Action, boolean> = { view: false, create: false, edit: false, delete: false, approve: false, pay: false };
+  const voucherAdmin: Record<Action, boolean> = { ...allTrue, approve: true, pay: true };
+  const voucherAccountant: Record<Action, boolean> = { ...allTrue, approve: true, pay: true };
+  const isAccountant = role === 'accountant';
 
   if (role === 'admin') {
     return {
@@ -92,7 +97,7 @@ export function defaultPermissionsForRole(role: string): PermissionMap {
       job_order: { ...allTrue },
       job_booking: { ...allTrue },
       debit_note: { ...allTrue },
-      advance_voucher: { ...allTrue },
+      advance_voucher: { ...voucherAdmin },
       receipt_voucher: { ...allTrue },
       leave_request: { ...allTrue },
       report: { ...allTrue },
@@ -147,7 +152,7 @@ export function defaultPermissionsForRole(role: string): PermissionMap {
     job_order: { ...allTrue },
     job_booking: { ...allTrue },
     debit_note: { ...allTrue },
-    advance_voucher: { ...allTrue },
+    advance_voucher: isAccountant ? { ...voucherAccountant } : { ...allTrue },
     receipt_voucher: { ...allTrue },
     report: { ...allTrue },
     report_profit: { ...allTrue },

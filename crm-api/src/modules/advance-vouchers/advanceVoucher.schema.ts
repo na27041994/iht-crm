@@ -34,6 +34,22 @@ export const advanceItemSchema = z.object({
 
 export type AdvanceItemInput = z.infer<typeof advanceItemSchema>;
 
+export const advanceApprovalStatuses = [
+  'draft',
+  'pending_dept',
+  'pending_accountant',
+  'approved',
+  'paid',
+  'received',
+  'rejected',
+] as const;
+export type AdvanceApprovalStatus = (typeof advanceApprovalStatuses)[number];
+
+export const advanceDecisionSchema = z.object({
+  note: z.string().optional().nullable(),
+  step: z.enum(['dept', 'accountant']).optional(),
+});
+
 export const listAdvanceVouchersQuery = z.object({
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -42,6 +58,7 @@ export const listAdvanceVouchersQuery = z.object({
   customerId: z.coerce.number().int().optional(),
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
+  status: z.string().optional(),
 });
 
 export const batchAdvanceVouchersQuery = z.object({

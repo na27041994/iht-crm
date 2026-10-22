@@ -3,6 +3,16 @@ import { vndText } from '../../lib/money.js';
 
 const HEADER_FILL = 'FF1F4E79';
 
+const STATUS_LABEL: Record<string, string> = {
+  draft: 'Nháp',
+  pending_dept: 'Chờ Trưởng bộ phận',
+  pending_accountant: 'Chờ Kế toán',
+  approved: 'Đã duyệt - chờ chi',
+  paid: 'Đã chi - chờ nhận',
+  received: 'Hoàn tất',
+  rejected: 'Từ chối',
+};
+
 // Hàm styleHeader: xử lý styleHeader
 function styleHeader(row: ExcelJS.Row) {
   row.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
@@ -43,6 +53,11 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
     { header: 'Khách hàng', key: 'customer', width: 28 },
     { header: 'Người tạo', key: 'createdBy', width: 18 },
     { header: 'NV ứng tiền', key: 'advanceStaff', width: 18 },
+    { header: 'Trạng thái', key: 'approvalStatus', width: 22 },
+    { header: 'Trưởng bộ phận', key: 'deptApprovedBy', width: 18 },
+    { header: 'Kế toán', key: 'accountantApprovedBy', width: 18 },
+    { header: 'Thủ quỹ', key: 'paidBy', width: 18 },
+    { header: 'Người nhận', key: 'receivedBy', width: 18 },
     { header: 'Tổng tiền', key: 'totalAmount', width: 16 },
     { header: 'Ghi chú', key: 'note', width: 24 },
   ]);
@@ -58,6 +73,11 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
       customer: v.customer ? v.customer.companyName || v.customer.customerName : '',
       createdBy: v.createdBy?.fullName ?? '',
       advanceStaff: v.advanceStaff?.fullName ?? v.createdBy?.fullName ?? '',
+      approvalStatus: STATUS_LABEL[v.approvalStatus] ?? v.approvalStatus ?? '',
+      deptApprovedBy: v.deptApprovedByName ?? '',
+      accountantApprovedBy: v.accountantApprovedByName ?? '',
+      paidBy: v.paidByName ?? '',
+      receivedBy: v.receivedByName ?? '',
       totalAmount: vndText(Number(v.totalAmount ?? 0) / 100),
       note: v.note ?? '',
     });

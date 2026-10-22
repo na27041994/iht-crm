@@ -195,6 +195,8 @@ export default function UsersPage() {
         canCreate: perms[resource]?.create ?? false,
         canEdit: perms[resource]?.edit ?? false,
         canDelete: perms[resource]?.delete ?? false,
+        canApprove: resource === 'advance_voucher' ? !!perms[resource]?.approve : false,
+        canPay: resource === 'advance_voucher' ? !!perms[resource]?.pay : false,
       }));
       await apiFetch(`/permissions/users/${editingPermUser.id}`, {
         method: 'PUT',
@@ -399,10 +401,10 @@ export default function UsersPage() {
     setPerms((prev) => {
       const next = { ...prev } as PermissionMap;
       for (const r of children as unknown as Resource[]) {
-        next[r] = { ...(next[r] ?? { view: false, create: false, edit: false, delete: false }), [action]: checked } as Record<Action, boolean>;
+        next[r] = { ...(next[r] ?? { view: false, create: false, edit: false, delete: false, approve: false, pay: false }), [action]: checked } as Record<Action, boolean>;
       }
       if (parent) {
-        next[parent as Resource] = { ...(next[parent as Resource] ?? { view: false, create: false, edit: false, delete: false }), [action]: checked } as Record<Action, boolean>;
+        next[parent as Resource] = { ...(next[parent as Resource] ?? { view: false, create: false, edit: false, delete: false, approve: false, pay: false }), [action]: checked } as Record<Action, boolean>;
       }
       return next;
     });
@@ -413,16 +415,16 @@ export default function UsersPage() {
     const isTrackingChild = (TRACKING_SHEET_SUB_RESOURCES as readonly string[]).includes(resource);
     setPerms((prev) => {
       const next = { ...prev } as PermissionMap;
-      next[resource] = { ...(next[resource] ?? { view: false, create: false, edit: false, delete: false }), [action]: checked } as Record<Action, boolean>;
+      next[resource] = { ...(next[resource] ?? { view: false, create: false, edit: false, delete: false, approve: false, pay: false }), [action]: checked } as Record<Action, boolean>;
       if (isReportChild) {
         // Hàm allChecked: xử lý allChecked
         const allChecked = (REPORT_SUB_RESOURCES as readonly string[]).every((r) => (r === resource ? checked : !!next[r as Resource]?.[action]));
-        next['report' as Resource] = { ...(next['report' as Resource] ?? { view: false, create: false, edit: false, delete: false }), [action]: allChecked } as Record<Action, boolean>;
+        next['report' as Resource] = { ...(next['report' as Resource] ?? { view: false, create: false, edit: false, delete: false, approve: false, pay: false }), [action]: allChecked } as Record<Action, boolean>;
       }
       if (isTrackingChild) {
         // Hàm allChecked: xử lý allChecked
         const allChecked = (TRACKING_SHEET_SUB_RESOURCES as readonly string[]).every((r) => (r === resource ? checked : !!next[r as Resource]?.[action]));
-        next['tracking_sheet' as Resource] = { ...(next['tracking_sheet' as Resource] ?? { view: false, create: false, edit: false, delete: false }), [action]: allChecked } as Record<Action, boolean>;
+        next['tracking_sheet' as Resource] = { ...(next['tracking_sheet' as Resource] ?? { view: false, create: false, edit: false, delete: false, approve: false, pay: false }), [action]: allChecked } as Record<Action, boolean>;
       }
       return next;
     });
@@ -706,6 +708,22 @@ export default function UsersPage() {
         confirmLoading={permSaving}
         destroyOnHidden
       >
+        <div style={{ marginBottom: 12, padding: '8px 12px', background: '#fafafa', borderRadius: 6, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+          <strong>Phiếu chi:</strong>
+          <Checkbox
+            checked={!!perms.advance_voucher?.approve}
+            onChange={(e) => setSinglePerm('advance_voucher', 'approve', e.target.checked)}
+          >
+            Duyệt
+          </Checkbox>
+          <Checkbox
+            checked={!!perms.advance_voucher?.pay}
+            onChange={(e) => setSinglePerm('advance_voucher', 'pay', e.target.checked)}
+          >
+            Chi tiền
+          </Checkbox>
+          <span style={{ color: '#999', fontSize: 12 }}>Duyệt: Trưởng bộ phận + Kế toán · Chi tiền: Thủ quỹ</span>
+        </div>
         <Table
           size="small"
           rowKey="resource"

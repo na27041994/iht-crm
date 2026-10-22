@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Input, Popconfirm, Table, Tag, Typography } from 'antd';
+import { App, Button, Input, Popconfirm, Table, Tabs, Tag, Tooltip, Typography } from 'antd';
 import { EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { usePermissions } from '@/hooks/usePermission';
 import AdvanceVoucherFormModal from '@/components/AdvanceVoucherFormModal';
+import AdvanceVoucherApprovalActions from '@/components/AdvanceVoucherApprovalActions';
 
 interface AdvanceVoucher {
   id: number;
@@ -13,6 +15,10 @@ interface AdvanceVoucher {
   type: string;
   advanceDate: string;
   currency: string;
+  approvalStatus: string;
+  rejectReason?: string | null;
+  createdById?: number | null;
+  advanceStaffId?: number | null;
   sheet: { id: number; sheetNumber: string } | null;
   customer: { id: number; companyName: string } | null;
   createdBy: { id: number; fullName: string } | null;
@@ -34,21 +40,54 @@ function fmtMoney(v: number | null | undefined) {
   return new Intl.NumberFormat('vi-VN').format(v / MONEY_SCALE);
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  draft: 'Nháp',
+  pending_dept: 'Chờ Trưởng bộ phận',
+  pending_accountant: 'Chờ Kế toán',
+  approved: 'Đã duyệt - chờ chi',
+  paid: 'Đã chi - chờ nhận',
+  received: 'Hoàn tất',
+  rejected: 'Từ chối',
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  draft: 'default',
+  pending_dept: 'warning',
+  pending_accountant: 'warning',
+  approved: 'processing',
+  paid: 'purple',
+  received: 'success',
+  rejected: 'error',
+};
+
+const STATUS_TABS = [
+  { key: '', label: 'Tất cả' },
+  { key: 'draft', label: 'Nháp' },
+  { key: 'pending', label: 'Chờ duyệt' },
+  { key: 'approved', label: 'Chờ chi' },
+  { key: 'paid', label: 'Chờ nhận' },
+  { key: 'received', label: 'Hoàn tất' },
+  { key: 'rejected', label: 'Từ chối' },
+];
+
 export default function AdvanceVouchersPage() {
   const { message } = App.useApp();
+  const { can } = usePermissions();
   const [data, setData] = useState<ListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const load = useCallback(
-    async (kw = '', pg = 1) => {
+    async (kw = '', pg = 1, st?: string) => {
       setLoading(true);
       try {
         const params = new URLSearchParams({ page: String(pg) });
         if (kw) params.set('search', kw);
+        if (st) params.set('status', st);
         const res = await apiFetch<ListResponse>(`/advance-vouchers?${params}`);
         setData(res);
       } catch (err) {
@@ -67,7 +106,7 @@ export default function AdvanceVouchersPage() {
   // Hàm handleSearch: xử lý handleSearch
   function handleSearch() {
     setPage(1);
-    load(search, 1);
+    load(search, 1, status);
   }
 
   // Hàm openCreate: xử lý openCreate
@@ -87,7 +126,7 @@ export default function AdvanceVouchersPage() {
     try {
       await apiFetch(`/advance-vouchers/${id}`, { method: 'DELETE' });
       message.success('Đã xóa phiếu chi tạm ứng');
-      load(search, page);
+      load(search, page, status);
     } catch (err) {
       message.error(err instanceof Error ? err.message : 'Xóa thất bại');
     }
@@ -111,10 +150,22 @@ export default function AdvanceVouchersPage() {
         placeholder="Tìm theo Advance No, khách hàng, job..."
         allowClear
         enterButton={<SearchOutlined />}
-        style={{ width: '100%', maxWidth: 420, marginBottom: 16 }}
+        style={{ width: '100%', maxWidth: 420, marginBottom: 12 }}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         onSearch={handleSearch}
+      />
+
+      <Tabs
+        activeKey={status ?? ''}
+        onChange={(k) => {
+          const st = k || undefined;
+          setStatus(st);
+          setPage(1);
+          load(search, 1, st);
+        }}
+        items={STATUS_TABS.map((t) => ({ key: t.key, label: t.label }))}
+        style={{ marginBottom: 4 }}
       />
 
       <Table<AdvanceVoucher>
@@ -129,58 +180,86 @@ export default function AdvanceVouchersPage() {
           showSizeChanger: false,
           onChange: (p) => {
             setPage(p);
-            load(search, p);
+            load(search, p, status);
           },
         }}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1150 }}
         columns={[
           {
             title: 'Advance No',
             dataIndex: 'advanceNo',
+            fixed: 'left' as const,
+            width: 120,
             render: (v: string, r: AdvanceVoucher) => (
               <Link href={`/advance-vouchers/${r.id}`} className="font-medium text-blue-600 hover:underline">
                 <Typography.Text code>{v}</Typography.Text>
               </Link>
             ),
           },
-          { title: 'Loại', dataIndex: 'type', render: (v: string) => <Tag color="blue">{v}</Tag> },
+          { title: 'Loại', dataIndex: 'type', width: 130, render: (v: string) => <Tag color="blue">{v}</Tag> },
           {
             title: 'Ngày tạo',
             dataIndex: 'advanceDate',
+            width: 100,
             render: (v: string) => new Date(v).toLocaleDateString('vi-VN'),
           },
-          { title: 'Nhân viên tạo', render: (_: unknown, r: AdvanceVoucher) => r.createdBy?.fullName ?? '-' },
-          { title: 'NV ứng tiền', render: (_: unknown, r: AdvanceVoucher) => r.advanceStaff?.fullName ?? r.createdBy?.fullName ?? '-' },
-          { title: 'Job', render: (_: unknown, r: AdvanceVoucher) => r.sheet?.sheetNumber ?? '-' },
+          { title: 'NV tạo', width: 130, render: (_: unknown, r: AdvanceVoucher) => r.createdBy?.fullName ?? '-' },
+          { title: 'NV ứng tiền', width: 130, render: (_: unknown, r: AdvanceVoucher) => r.advanceStaff?.fullName ?? r.createdBy?.fullName ?? '-' },
+          { title: 'Job', width: 110, render: (_: unknown, r: AdvanceVoucher) => r.sheet?.sheetNumber ?? '-' },
           {
             title: 'Khách hàng',
+            width: 180,
+            ellipsis: true,
             render: (_: unknown, r: AdvanceVoucher) => r.customer?.companyName ?? '-',
           },
           {
             title: 'Current',
             dataIndex: 'currency',
+            width: 80,
             align: 'center' as const,
             render: (v: string) => <Tag color={v === 'USD' ? 'green' : 'default'}>{v}</Tag>,
           },
           {
             title: 'Tổng tiền',
+            width: 130,
             align: 'right' as const,
             render: (_: unknown, r: AdvanceVoucher) => <span className="font-medium">{fmtMoney(r.totalAmount)}</span>,
           },
           {
+            title: 'Trạng thái',
+            dataIndex: 'approvalStatus',
+            width: 160,
+            render: (v: string, r: AdvanceVoucher) => (
+              <Tooltip title={v === 'rejected' ? r.rejectReason : undefined}>
+                <Tag color={STATUS_COLOR[v] ?? 'default'}>{STATUS_LABEL[v] ?? v}</Tag>
+              </Tooltip>
+            ),
+          },
+          {
             title: 'Thao tác',
             key: 'actions',
-            width: 110,
-            render: (_: unknown, r: AdvanceVoucher) => (
-              <div className="flex gap-1">
-                <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(r.id)} />
-                <Popconfirm title="Xóa phiếu này?" onConfirm={() => handleDelete(r.id)} okText="Xóa" cancelText="Hủy">
-                  <Button size="small" danger>
-                    Xóa
-                  </Button>
-                </Popconfirm>
-              </div>
-            ),
+            width: 320,
+            render: (_: unknown, r: AdvanceVoucher) => {
+              const editable = r.approvalStatus === 'draft' || r.approvalStatus === 'rejected';
+              return (
+                <div className="flex flex-wrap items-center gap-1">
+                  <AdvanceVoucherApprovalActions
+                    voucher={r}
+                    onChanged={() => load(search, page, status)}
+                  />
+                  {editable && can('advance_voucher', 'edit') && (
+                    <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(r.id)} />
+                  )}
+                  {editable && can('advance_voucher', 'delete') && (
+                    <Popconfirm title="Xóa phiếu này?" onConfirm={() => handleDelete(r.id)} okText="Xóa" cancelText="Hủy">
+                      <Button size="small" danger>
+                        Xóa
+                      </Button>
+                    </Popconfirm>
+                  )}
+                </div>
+              );
+            },
           },
         ]}
       />
@@ -189,7 +268,7 @@ export default function AdvanceVouchersPage() {
         open={modalOpen}
         editingId={editingId}
         onClose={() => setModalOpen(false)}
-        onSaved={() => load(search, page)}
+        onSaved={() => load(search, page, status)}
       />
     </div>
   );

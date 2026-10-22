@@ -1,20 +1,28 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../middleware/error.js';
 import { validate, validateQuery } from '../../middleware/validate.js';
-import { requireAuth, type AuthedRequest } from '../../middleware/auth.js';
+import { requireAuth, requireRole, type AuthedRequest } from '../../middleware/auth.js';
 import { requirePermission } from '../../middleware/permission.js';
-import { advanceVoucherSchema, advanceItemSchema, listAdvanceVouchersQuery, batchAdvanceVouchersQuery, exportAdvanceVouchersQuery } from './advanceVoucher.schema.js';
+import { advanceVoucherSchema, advanceItemSchema, advanceDecisionSchema, listAdvanceVouchersQuery, batchAdvanceVouchersQuery, exportAdvanceVouchersQuery } from './advanceVoucher.schema.js';
 import {
   listAdvanceVouchers,
   getAdvanceVoucher,
   getAdvanceVouchersByIds,
   getAdvanceVouchersForExport,
+  countAdvancePending,
   createAdvanceVoucher,
   updateAdvanceVoucher,
   deleteAdvanceVoucher,
   createAdvanceItem,
   updateAdvanceItem,
   deleteAdvanceItem,
+  submitAdvanceVoucher,
+  approveAdvanceDept,
+  approveAdvanceAccountant,
+  rejectAdvanceVoucher,
+  payAdvanceVoucher,
+  receiveAdvanceVoucher,
+  resetAdvanceVoucher,
 } from './advanceVoucher.service.js';
 import { buildAdvanceVouchersWorkbook } from './advanceVoucher.export.js';
 
@@ -27,16 +35,25 @@ advanceVoucherRouter.get(
   requirePermission('advance_voucher', 'view'),
   validateQuery(listAdvanceVouchersQuery),
   asyncHandler(async (req, res) => {
-    const { search, type, customerId, from, to, page, pageSize } = req.query as unknown as {
+    const { search, type, customerId, from, to, status, page, pageSize } = req.query as unknown as {
       search?: string;
       type?: string;
       customerId?: number;
       from?: Date;
       to?: Date;
+      status?: string;
       page: number;
       pageSize: number;
     };
-    res.json(await listAdvanceVouchers({ search, type, customerId, from, to, page, pageSize }));
+    res.json(await listAdvanceVouchers({ search, type, customerId, from, to, status, page, pageSize }));
+  }),
+);
+
+advanceVoucherRouter.get(
+  '/pending-count',
+  requirePermission('advance_voucher', 'view'),
+  asyncHandler(async (_req, res) => {
+    res.json(await countAdvancePending());
   }),
 );
 
@@ -77,6 +94,68 @@ advanceVoucherRouter.get(
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="phieu-chi-tam-ung.xlsx"');
     res.send(buffer);
+  }),
+);
+
+// ===== Duyệt phiếu chi =====
+advanceVoucherRouter.post(
+  '/:id/submit',
+  requirePermission('advance_voucher', 'view'),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    res.json(await submitAdvanceVoucher(Number(req.params.id), req.user!.sub));
+  }),
+);
+
+advanceVoucherRouter.post(
+  '/:id/approve-dept',
+  requirePermission('advance_voucher', 'approve'),
+  validate(advanceDecisionSchema),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    res.json(await approveAdvanceDept(Number(req.params.id), req.user!.sub, (req.body as any)?.note ?? null));
+  }),
+);
+
+advanceVoucherRouter.post(
+  '/:id/approve-accountant',
+  requirePermission('advance_voucher', 'approve'),
+  validate(advanceDecisionSchema),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    res.json(await approveAdvanceAccountant(Number(req.params.id), req.user!.sub, (req.body as any)?.note ?? null));
+  }),
+);
+
+advanceVoucherRouter.post(
+  '/:id/reject',
+  requirePermission('advance_voucher', 'approve'),
+  validate(advanceDecisionSchema),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    res.json(await rejectAdvanceVoucher(Number(req.params.id), req.user!.sub, (req.body as any)?.note ?? null));
+  }),
+);
+
+advanceVoucherRouter.post(
+  '/:id/pay',
+  requirePermission('advance_voucher', 'pay'),
+  validate(advanceDecisionSchema),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    res.json(await payAdvanceVoucher(Number(req.params.id), req.user!.sub, (req.body as any)?.note ?? null));
+  }),
+);
+
+advanceVoucherRouter.post(
+  '/:id/receive',
+  requirePermission('advance_voucher', 'view'),
+  validate(advanceDecisionSchema),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    res.json(await receiveAdvanceVoucher(Number(req.params.id), req.user!.sub, (req.body as any)?.note ?? null));
+  }),
+);
+
+advanceVoucherRouter.post(
+  '/:id/admin-reset',
+  requireRole('admin'),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    res.json(await resetAdvanceVoucher(Number(req.params.id), req.user!.sub));
   }),
 );
 

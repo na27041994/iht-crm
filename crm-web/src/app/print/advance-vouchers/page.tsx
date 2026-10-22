@@ -22,8 +22,30 @@ interface AdvanceVoucher {
   createdBy: { id: number; fullName: string } | null;
   advanceStaff: { id: number; fullName: string } | null;
   totalAmount?: number;
+  approvalStatus?: string;
+  rejectReason?: string | null;
+  submittedByName?: string | null;
+  submittedAt?: string | null;
+  deptApprovedByName?: string | null;
+  deptApprovedAt?: string | null;
+  accountantApprovedByName?: string | null;
+  accountantApprovedAt?: string | null;
+  paidByName?: string | null;
+  paidAt?: string | null;
+  receivedByName?: string | null;
+  receivedAt?: string | null;
   items: { id: number; amount: string; kind?: string | null; description?: string | null; note: string | null }[];
 }
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: 'Nháp',
+  pending_dept: 'Chờ Trưởng bộ phận',
+  pending_accountant: 'Chờ Kế toán',
+  approved: 'Đã duyệt - chờ chi',
+  paid: 'Đã chi - chờ nhận',
+  received: 'Hoàn tất',
+  rejected: 'Từ chối',
+};
 
 // Định dạng ngày YYYY/MM/DD
 function fmtDateSlash(v: string | null | undefined) {
@@ -147,6 +169,13 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
         </tbody>
       </table>
 
+      {v.approvalStatus && (
+        <div style={{ marginTop: 4, fontSize: 11, color: '#444' }}>
+          Trạng thái: <strong>{STATUS_LABEL[v.approvalStatus] ?? v.approvalStatus}</strong>
+          {v.approvalStatus === 'rejected' && v.rejectReason ? ` — Lý do: ${v.rejectReason}` : ''}
+        </div>
+      )}
+
       {/* Signatures: Người xin chi, Chủ quản đơn vị, Kế toán, Duyệt, Thủ quỹ, Người nhận tiền */}
       <table className="old-table" style={{ marginTop: 0 }}>
         <thead>
@@ -161,12 +190,30 @@ function VoucherDocument({ v }: { v: AdvanceVoucher }) {
         </thead>
         <tbody>
           <tr>
-            <td className="old-td sig-cell" style={{ height: 100 }}></td>
-            <td className="old-td sig-cell" style={{ height: 100 }}></td>
-            <td className="old-td sig-cell" style={{ height: 100 }}></td>
-            <td className="old-td sig-cell" style={{ height: 100 }}></td>
-            <td className="old-td sig-cell" style={{ height: 100 }}></td>
-            <td className="old-td sig-cell" style={{ height: 100 }}></td>
+            <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
+              <div style={{ fontSize: 12 }}>{v.submittedByName ?? v.createdBy?.fullName ?? ''}</div>
+              <div style={{ fontSize: 10, color: '#666' }}>{v.submittedAt ? fmtDateSlash(v.submittedAt) : ''}</div>
+            </td>
+            <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
+              <div style={{ fontSize: 12 }}>{v.deptApprovedByName ?? ''}</div>
+              <div style={{ fontSize: 10, color: '#666' }}>{v.deptApprovedAt ? fmtDateSlash(v.deptApprovedAt) : ''}</div>
+            </td>
+            <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
+              <div style={{ fontSize: 12 }}>{v.accountantApprovedByName ?? ''}</div>
+              <div style={{ fontSize: 10, color: '#666' }}>{v.accountantApprovedAt ? fmtDateSlash(v.accountantApprovedAt) : ''}</div>
+            </td>
+            <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
+              <div style={{ fontSize: 12 }}></div>
+              <div style={{ fontSize: 10, color: '#666' }}></div>
+            </td>
+            <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
+              <div style={{ fontSize: 12 }}>{v.paidByName ?? ''}</div>
+              <div style={{ fontSize: 10, color: '#666' }}>{v.paidAt ? fmtDateSlash(v.paidAt) : ''}</div>
+            </td>
+            <td className="old-td sig-cell" style={{ height: 100, verticalAlign: 'bottom', textAlign: 'center' }}>
+              <div style={{ fontSize: 12 }}>{v.receivedByName ?? v.advanceStaff?.fullName ?? ''}</div>
+              <div style={{ fontSize: 10, color: '#666' }}>{v.receivedAt ? fmtDateSlash(v.receivedAt) : ''}</div>
+            </td>
           </tr>
         </tbody>
       </table>

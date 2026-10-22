@@ -9,6 +9,8 @@ export type PermissionRow = {
   canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
+  canApprove: boolean;
+  canPay: boolean;
 };
 
 // Lấy raw rows quyền của user
@@ -31,6 +33,8 @@ export async function ensureDefaultPermissions(userId: number, role: string) {
     canCreate: defaults[r].create,
     canEdit: defaults[r].edit,
     canDelete: defaults[r].delete,
+    canApprove: defaults[r].approve,
+    canPay: defaults[r].pay,
   }));
   // Backfill new report/tracking children from parent value if parent already has a row
   if (rows.length > 0) {
@@ -57,7 +61,7 @@ export async function ensureDefaultPermissions(userId: number, role: string) {
 // Lưu quyền user: upsert từng resource
 export async function setUserPermissions(
   userId: number,
-  permissions: Array<{ resource: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean }>,
+  permissions: Array<{ resource: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean; canApprove?: boolean; canPay?: boolean }>,
 ) {
   // validate resources
   for (const p of permissions) {
@@ -69,12 +73,33 @@ export async function setUserPermissions(
     permissions.map((p) =>
       prisma.userPermission.upsert({
         where: { userId_resource: { userId, resource: p.resource } },
-        update: { canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete },
-        create: { userId, resource: p.resource, canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete },
+        update: { canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete, canApprove: !!p.canApprove, canPay: !!p.canPay },
+        create: { userId, resource: p.resource, canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete, canApprove: !!p.canApprove, canPay: !!p.canPay },
       }),
     ),
   );
   return getUserPermissions(userId);
+}
+
+type PermissionFlags = {
+  canView: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canApprove: boolean;
+  canPay: boolean;
+};
+
+// Trả về null nếu không có row để còn fallback; false nếu có row nhưng không đủ quyền
+function matchAction(row: PermissionFlags | null | undefined, action: Action): boolean | null {
+  if (!row) return null;
+  if (action === 'view') return row.canView;
+  if (action === 'create') return row.canCreate;
+  if (action === 'edit') return row.canEdit;
+  if (action === 'delete') return row.canDelete;
+  if (action === 'approve') return row.canApprove;
+  if (action === 'pay') return row.canPay;
+  return false;
 }
 
 // Kiểm quyền user có đủ quyền resource+action không (admin bypass, user -> role -> fallback cha->con -> defaults)
@@ -85,63 +110,39 @@ export async function hasPermission(userId: number, resource: Resource, action: 
   const perm = await prisma.userPermission.findUnique({
     where: { userId_resource: { userId, resource } },
   });
-  if (perm) {
-    if (action === 'view') return perm.canView;
-    if (action === 'create') return perm.canCreate;
-    if (action === 'edit') return perm.canEdit;
-    if (action === 'delete') return perm.canDelete;
-    return false;
-  }
+  const direct = matchAction(perm, action);
+  if (direct !== null) return direct;
+
   // Fallback theo vai trò (RolePermission)
   if (user?.role) {
     const roleRec = await prisma.role.findUnique({ where: { name: user.role } });
     if (roleRec) {
       const rp = await prisma.rolePermission.findUnique({ where: { roleId_resource: { roleId: roleRec.id, resource } } });
-      if (rp) {
-        if (action === 'view') return rp.canView;
-        if (action === 'create') return rp.canCreate;
-        if (action === 'edit') return rp.canEdit;
-        if (action === 'delete') return rp.canDelete;
-      }
+      const rpMatch = matchAction(rp, action);
+      if (rpMatch !== null) return rpMatch;
       // parent fallback cho role
       if ((REPORT_SUB_RESOURCES as readonly string[]).includes(resource)) {
         const pr = await prisma.rolePermission.findUnique({ where: { roleId_resource: { roleId: roleRec.id, resource: 'report' } } });
-        if (pr) {
-          if (action === 'view') return pr.canView;
-          if (action === 'create') return pr.canCreate;
-          if (action === 'edit') return pr.canEdit;
-          if (action === 'delete') return pr.canDelete;
-        }
+        const prMatch = matchAction(pr, action);
+        if (prMatch !== null) return prMatch;
       }
       if ((TRACKING_SHEET_SUB_RESOURCES as readonly string[]).includes(resource)) {
         const pr = await prisma.rolePermission.findUnique({ where: { roleId_resource: { roleId: roleRec.id, resource: 'tracking_sheet' } } });
-        if (pr) {
-          if (action === 'view') return pr.canView;
-          if (action === 'create') return pr.canCreate;
-          if (action === 'edit') return pr.canEdit;
-          if (action === 'delete') return pr.canDelete;
-        }
+        const prMatch = matchAction(pr, action);
+        if (prMatch !== null) return prMatch;
       }
     }
   }
   // Fallback parent cho user
   if ((REPORT_SUB_RESOURCES as readonly string[]).includes(resource)) {
     const parent = await prisma.userPermission.findUnique({ where: { userId_resource: { userId, resource: 'report' } } });
-    if (parent) {
-      if (action === 'view') return parent.canView;
-      if (action === 'create') return parent.canCreate;
-      if (action === 'edit') return parent.canEdit;
-      if (action === 'delete') return parent.canDelete;
-    }
+    const parentMatch = matchAction(parent, action);
+    if (parentMatch !== null) return parentMatch;
   }
   if ((TRACKING_SHEET_SUB_RESOURCES as readonly string[]).includes(resource)) {
     const parent = await prisma.userPermission.findUnique({ where: { userId_resource: { userId, resource: 'tracking_sheet' } } });
-    if (parent) {
-      if (action === 'view') return parent.canView;
-      if (action === 'create') return parent.canCreate;
-      if (action === 'edit') return parent.canEdit;
-      if (action === 'delete') return parent.canDelete;
-    }
+    const parentMatch = matchAction(parent, action);
+    if (parentMatch !== null) return parentMatch;
   }
   const role = user?.role ?? 'viewer';
   const defaults = defaultPermissionsForRole(role);
@@ -169,16 +170,16 @@ export async function getEffectivePermissions(userId: number): Promise<Record<Re
   for (const res of RESOURCES) {
     const row = map[res];
     if (row) {
-      result[res] = { view: row.canView, create: row.canCreate, edit: row.canEdit, delete: row.canDelete };
+      result[res] = { view: row.canView, create: row.canCreate, edit: row.canEdit, delete: row.canDelete, approve: row.canApprove, pay: row.canPay };
     } else if (roleMap[res]) {
       const rp = roleMap[res];
-      result[res] = { view: rp.canView, create: rp.canCreate, edit: rp.canEdit, delete: rp.canDelete };
+      result[res] = { view: rp.canView, create: rp.canCreate, edit: rp.canEdit, delete: rp.canDelete, approve: rp.canApprove, pay: rp.canPay };
     } else if ((REPORT_SUB_RESOURCES as readonly string[]).includes(res) && (map['report'] || roleMap['report'])) {
       const parent = map['report'] ?? roleMap['report'];
-      result[res] = { view: parent.canView, create: parent.canCreate, edit: parent.canEdit, delete: parent.canDelete };
+      result[res] = { view: parent.canView, create: parent.canCreate, edit: parent.canEdit, delete: parent.canDelete, approve: parent.canApprove, pay: parent.canPay };
     } else if ((TRACKING_SHEET_SUB_RESOURCES as readonly string[]).includes(res) && (map['tracking_sheet'] || roleMap['tracking_sheet'])) {
       const parent = map['tracking_sheet'] ?? roleMap['tracking_sheet'];
-      result[res] = { view: parent.canView, create: parent.canCreate, edit: parent.canEdit, delete: parent.canDelete };
+      result[res] = { view: parent.canView, create: parent.canCreate, edit: parent.canEdit, delete: parent.canDelete, approve: parent.canApprove, pay: parent.canPay };
     } else {
       result[res] = { ...defaults[res] };
     }

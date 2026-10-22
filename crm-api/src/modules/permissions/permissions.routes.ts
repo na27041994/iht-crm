@@ -20,6 +20,8 @@ const setPermissionsSchema = z.object({
       canCreate: z.boolean(),
       canEdit: z.boolean(),
       canDelete: z.boolean(),
+      canApprove: z.boolean().optional(),
+      canPay: z.boolean().optional(),
     }),
   ),
 });
@@ -32,6 +34,8 @@ permissionsRouter.get('/resources', asyncHandler(async (_req, res) => {
       { key: 'create', label: ACTION_LABELS.create },
       { key: 'edit', label: ACTION_LABELS.edit },
       { key: 'delete', label: ACTION_LABELS.delete },
+      { key: 'approve', label: ACTION_LABELS.approve },
+      { key: 'pay', label: ACTION_LABELS.pay },
     ],
   });
 }));
@@ -73,7 +77,7 @@ permissionsRouter.put(
       res.status(404).json({ error: 'Không tìm thấy user' });
       return;
     }
-    const { permissions } = req.body as { permissions: Array<{ resource: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean }> };
+    const { permissions } = req.body as { permissions: Array<{ resource: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean; canApprove?: boolean; canPay?: boolean }> };
     const result = await setUserPermissions(userId, permissions);
     res.json(result);
   }),

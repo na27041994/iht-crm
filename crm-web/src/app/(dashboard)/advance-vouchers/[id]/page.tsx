@@ -1,12 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Breadcrumb, Button, Card, Descriptions, Empty, Popconfirm, Table, Tag, Tooltip, Typography } from 'antd';
+import { App, Breadcrumb, Button, Card, Descriptions, Empty, Popconfirm, Table, Tag, Timeline, Tooltip, Typography } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import dayjs from 'dayjs';
 import { apiFetch } from '@/lib/api';
+import { usePermissions } from '@/hooks/usePermission';
 import AdvanceVoucherFormModal from '@/components/AdvanceVoucherFormModal';
 import AdvanceItemModal, { AdvanceItem } from '@/components/AdvanceItemModal';
+import AdvanceVoucherApprovalActions from '@/components/AdvanceVoucherApprovalActions';
 
 interface AdvanceVoucher {
   id: number;
@@ -25,6 +28,66 @@ interface AdvanceVoucher {
   note: string | null;
   totalAmount: number;
   items: AdvanceItem[];
+  approvalStatus: string;
+  rejectReason: string | null;
+  submittedByName: string | null;
+  submittedAt: string | null;
+  deptApprovedByName: string | null;
+  deptApprovedAt: string | null;
+  deptApproveNote: string | null;
+  accountantApprovedByName: string | null;
+  accountantApprovedAt: string | null;
+  accountantApproveNote: string | null;
+  paidByName: string | null;
+  paidAt: string | null;
+  paidNote: string | null;
+  receivedByName: string | null;
+  receivedAt: string | null;
+  receivedNote: string | null;
+  logs: Array<{
+    id: number;
+    action: string;
+    fromStatus: string | null;
+    toStatus: string | null;
+    byName: string | null;
+    note: string | null;
+    createdAt: string;
+  }>;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: 'Nháp',
+  pending_dept: 'Chờ Trưởng bộ phận',
+  pending_accountant: 'Chờ Kế toán',
+  approved: 'Đã duyệt - chờ chi',
+  paid: 'Đã chi - chờ nhận',
+  received: 'Hoàn tất',
+  rejected: 'Từ chối',
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  draft: 'default',
+  pending_dept: 'warning',
+  pending_accountant: 'warning',
+  approved: 'processing',
+  paid: 'purple',
+  received: 'success',
+  rejected: 'error',
+};
+
+const ACTION_LABEL: Record<string, string> = {
+  submit: 'Trình duyệt',
+  approve_dept: 'Trưởng bộ phận duyệt',
+  approve_accountant: 'Kế toán duyệt',
+  reject_dept: 'Trưởng bộ phận từ chối',
+  reject_accountant: 'Kế toán từ chối',
+  pay: 'Thủ quỹ xác nhận đã chi',
+  receive: 'Người nhận xác nhận đã nhận',
+  admin_reset: 'Admin mở khóa',
+};
+
+function fmtDateTime(v: string | null) {
+  return v ? dayjs(v).format('DD/MM/YYYY HH:mm') : '-';
 }
 
 const MONEY_SCALE = 100;
@@ -35,6 +98,7 @@ function fmtMoney(v: number | string | null | undefined) {
 
 export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { message } = App.useApp();
+  const { can } = usePermissions();
   const [voucher, setVoucher] = useState<AdvanceVoucher | null>(null);
   const [loading, setLoading] = useState(true);
   const [id, setId] = useState<number | null>(null);
@@ -107,8 +171,10 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
     );
   }
 
+  const editable = voucher.approvalStatus === 'draft' || voucher.approvalStatus === 'rejected';
   const info = [
     { label: 'Advance No', value: voucher.advanceNo },
+    { label: 'Trạng thái', value: <Tag color={STATUS_COLOR[voucher.approvalStatus] ?? 'default'}>{STATUS_LABEL[voucher.approvalStatus] ?? voucher.approvalStatus}</Tag> },
     { label: 'Loại', value: voucher.type },
     { label: 'Ngày tạo', value: new Date(voucher.advanceDate).toLocaleDateString('vi-VN') },
     { label: 'Nhân viên tạo', value: voucher.createdBy?.fullName },
@@ -123,6 +189,11 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
     { label: 'Order To', value: voucher.orderTo },
     { label: 'Container Qty', value: voucher.containerQty },
     { label: 'Qty', value: voucher.qty },
+    { label: 'Người trình', value: voucher.submittedByName ? `${voucher.submittedByName} · ${fmtDateTime(voucher.submittedAt)}` : '-' },
+    { label: 'Trưởng bộ phận', value: voucher.deptApprovedByName ? `${voucher.deptApprovedByName} · ${fmtDateTime(voucher.deptApprovedAt)}` : '-' },
+    { label: 'Kế toán', value: voucher.accountantApprovedByName ? `${voucher.accountantApprovedByName} · ${fmtDateTime(voucher.accountantApprovedAt)}` : '-' },
+    { label: 'Thủ quỹ', value: voucher.paidByName ? `${voucher.paidByName} · ${fmtDateTime(voucher.paidAt)}` : '-' },
+    { label: 'Người nhận', value: voucher.receivedByName ? `${voucher.receivedByName} · ${fmtDateTime(voucher.receivedAt)}` : '-' },
   ];
 
   return (
@@ -137,13 +208,16 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
             Phiếu {voucher.advanceNo}
           </Typography.Title>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <AdvanceVoucherApprovalActions voucher={voucher} onChanged={load} size="middle" />
           <Button icon={<PrinterOutlined />} onClick={() => window.open(`/print/advance-vouchers?ids=${voucher.id}`, '_blank')}>
             In phiếu
           </Button>
-          <Button type="primary" icon={<EditOutlined />} onClick={() => setFormOpen(true)} block className="sm:!w-auto">
-            Sửa phiếu
-          </Button>
+          {editable && can('advance_voucher', 'edit') && (
+            <Button type="primary" icon={<EditOutlined />} onClick={() => setFormOpen(true)} block className="sm:!w-auto">
+              Sửa phiếu
+            </Button>
+          )}
         </div>
       </div>
 
@@ -161,14 +235,44 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
             {voucher.note}
           </Typography.Paragraph>
         )}
+        {voucher.approvalStatus === 'rejected' && voucher.rejectReason && (
+          <Typography.Paragraph style={{ marginTop: 8, marginBottom: 0 }}>
+            <Typography.Text strong type="danger">Lý do từ chối: </Typography.Text>
+            <Typography.Text type="danger">{voucher.rejectReason}</Typography.Text>
+          </Typography.Paragraph>
+        )}
+      </Card>
+
+      <Card title="Lịch sử duyệt" style={{ marginBottom: 16 }}>
+        {voucher.logs?.length ? (
+          <Timeline
+            items={voucher.logs.map((log) => ({
+              color: log.toStatus === 'rejected' ? 'red' : log.toStatus === 'received' ? 'green' : 'blue',
+              children: (
+                <div>
+                  <div>
+                    <strong>{ACTION_LABEL[log.action] ?? log.action}</strong>
+                    {log.byName ? ` · ${log.byName}` : ''}
+                    <span style={{ color: '#999', marginLeft: 8 }}>{fmtDateTime(log.createdAt)}</span>
+                  </div>
+                  {log.note && <div style={{ color: '#666' }}>{log.note}</div>}
+                </div>
+              ),
+            }))}
+          />
+        ) : (
+          <Typography.Text type="secondary">Chưa có lịch sử duyệt</Typography.Text>
+        )}
       </Card>
 
       <Card
         title={`Các khoản chi (${voucher.items.length})`}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={openAddItem} size="small">
-            Thêm khoản chi
-          </Button>
+          editable && can('advance_voucher', 'edit') ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={openAddItem} size="small">
+              Thêm khoản chi
+            </Button>
+          ) : null
         }
       >
         <Table<AdvanceItem>
@@ -187,14 +291,17 @@ export default function AdvanceVoucherDetailPage({ params }: { params: Promise<{
               title: 'Thao tác',
               key: 'actions',
               width: 110,
-              render: (_: unknown, item: AdvanceItem) => (
-                <div className="flex gap-1">
-                  <Button size="small" icon={<EditOutlined />} onClick={() => openEditItem(item)} />
-                  <Popconfirm title="Xóa khoản chi này?" onConfirm={() => deleteItem(item)} okText="Xóa" cancelText="Hủy">
-                    <Button size="small" danger icon={<DeleteOutlined />} />
-                  </Popconfirm>
-                </div>
-              ),
+              render: (_: unknown, item: AdvanceItem) => {
+                if (!editable || !can('advance_voucher', 'edit')) return null;
+                return (
+                  <div className="flex gap-1">
+                    <Button size="small" icon={<EditOutlined />} onClick={() => openEditItem(item)} />
+                    <Popconfirm title="Xóa khoản chi này?" onConfirm={() => deleteItem(item)} okText="Xóa" cancelText="Hủy">
+                      <Button size="small" danger icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  </div>
+                );
+              },
             },
           ]}
           summary={() => {
