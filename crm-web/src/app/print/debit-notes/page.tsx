@@ -313,18 +313,6 @@ function JobDebitBlock({ sheet }: { sheet: SheetWithDebits }) {
             <td className="old-td-right old-bold">{totalVat ? totalVat.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) : '-'}</td>
             <td className="old-td-right old-bold">{totalAmt.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
           </tr>
-          {tamUng > 0 && (
-            <>
-              <tr>
-                <td colSpan={7} className="old-td-right old-bold">CHI HỘ 代墊費</td>
-                <td className="old-td-right old-bold">{tamUng.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
-              </tr>
-              <tr>
-                <td colSpan={7} className="old-td-right old-bold">PHÍ DỊCH VỤ IHT - 服務費</td>
-                <td className="old-td-right old-bold">{serviceFee.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}</td>
-              </tr>
-            </>
-          )}
         </tbody>
       </table>
 
