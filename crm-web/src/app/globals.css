@@ -4,5 +4,5 @@
 
 @import 'antd/dist/reset.css';
 
-/* Allow long numbers to wrap in tracking sheet money columns */
-.money-wrap { word-break: break-all !important; white-space: normal !important; }
+/* Keep money values on one line in tracking sheet tables */
+.money-wrap { white-space: nowrap !important; word-break: keep-all !important; }
