@@ -3,3 +3,6 @@
 @tailwind utilities;
 
 @import 'antd/dist/reset.css';
+
+/* Allow long numbers to wrap in tracking sheet money columns */
+.money-wrap { word-break: break-all !important; white-space: normal !important; }
