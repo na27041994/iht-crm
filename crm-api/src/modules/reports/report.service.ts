@@ -343,7 +343,7 @@ const LIFTING_ROWS = Prisma.sql`
 
 const DEBIT_ROWS = Prisma.sql`
   SELECT dn.id AS "rowId", dn.type, dn.description, dn."invoiceNumber", dn."total"::float8 AS amount,
-    COALESCE(s."etaDate", s."createdAt"::date) AS d,
+    s."createdAt"::date AS d,
     s.id AS "sheetId", s."sheetNumber", s."customerId",
     cu."companyName", cu."customerName", cu."code" AS "customerCode",
     dn.currency, dn."quantity"::float8 AS quantity, dn."taxRate"::float8 AS "taxRate"
@@ -641,9 +641,7 @@ export async function getDebitSheets(opts: {
       end.setHours(23, 59, 59, 999);
       dateCond.lte = end;
     }
-    andConditions.push({
-      OR: [{ etaDate: dateCond }, { AND: [{ etaDate: null }, { createdAt: dateCond }] }],
-    });
+    andConditions.push({ createdAt: dateCond });
   }
   if (andConditions.length) where.AND = andConditions;
 
