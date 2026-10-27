@@ -485,7 +485,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             showTotal: (t) => `${t} mục`,
           }}
           locale={{ emptyText: 'Chưa có mục Job Order' }}
-          scroll={{ x: 1000 }}
+          scroll={{ x: 'max-content' }}
           summary={() => {
             const total = totalOrder;
             return (
@@ -510,9 +510,9 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             { title: 'Phân loại', dataIndex: 'type', width: 140, render: (v: string) => <Tag color="blue">{v}</Tag> },
             { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'NV giao nhận', key: 'deliveryStaff', width: 140, ellipsis: true, render: (_: unknown, r: JobOrderItem) => (r as any).deliveryStaff?.fullName ?? '-' },
-            { title: 'Trước thuế', dataIndex: 'pretaxAmount', className: 'money-wrap', width: 120, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : fmtMoney(v)) },
+            { title: 'Trước thuế', dataIndex: 'pretaxAmount', className: 'money-wrap', width: 160, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : fmtMoney(v)) },
             { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
-            { title: 'Thành Tiền', dataIndex: 'portAmt', className: 'money-wrap', width: 120, align: 'right' as const, render: fmtMoney },
+            { title: 'Thành Tiền', dataIndex: 'portAmt', className: 'money-wrap', width: 160, align: 'right' as const, render: fmtMoney },
             { title: 'Ghi chú', dataIndex: 'note', width: 200, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             {
               title: 'Thao tác',
@@ -569,7 +569,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             showTotal: (t) => `${t} mục`,
           }}
           locale={{ emptyText: 'Chưa có mục Job Book' }}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 'max-content' }}
           summary={() => {
             const total = totalBooking;
             return (
@@ -601,12 +601,12 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             { title: 'Loại', dataIndex: 'type', width: 140, render: (v: string) => <Tag color={isRefundBookingType(v) ? 'red' : 'blue'}>{v}</Tag> },
             { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Đơn vị tính', dataIndex: 'unit', render: (v: string | null) => v ?? '-' },
-            { title: 'Số lượng', dataIndex: 'quantity', className: 'money-wrap', width: 120, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
-            { title: 'Trước thuế', dataIndex: 'pretaxAmount', className: 'money-wrap', width: 120, align: 'right' as const, render: fmtMoney },
+            { title: 'Số lượng', dataIndex: 'quantity', className: 'money-wrap', width: 160, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
+            { title: 'Trước thuế', dataIndex: 'pretaxAmount', className: 'money-wrap', width: 160, align: 'right' as const, render: fmtMoney },
             { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
-            { title: 'Tiền thuế', dataIndex: 'taxAmount', className: 'money-wrap', width: 120, align: 'right' as const, render: fmtMoney },
-            { title: 'Sau thuế', dataIndex: 'afterTaxAmount', className: 'money-wrap', width: 120, align: 'right' as const, render: fmtMoney },
-            { title: 'Tổng tiền', dataIndex: 'total', className: 'money-wrap', width: 120, align: 'right' as const, render: (v: string | null, r: JobBookingItem) => (v == null ? '-' : Number(v) < 0 ? <span className="font-medium" style={{ color: '#cf1322' }}>{fmtMoney(v)}</span> : <span className="font-medium">{fmtMoney(v)}</span>) },
+            { title: 'Tiền thuế', dataIndex: 'taxAmount', className: 'money-wrap', width: 160, align: 'right' as const, render: fmtMoney },
+            { title: 'Sau thuế', dataIndex: 'afterTaxAmount', className: 'money-wrap', width: 160, align: 'right' as const, render: fmtMoney },
+            { title: 'Tổng tiền', dataIndex: 'total', className: 'money-wrap', width: 160, align: 'right' as const, render: (v: string | null, r: JobBookingItem) => (v == null ? '-' : Number(v) < 0 ? <span className="font-medium" style={{ color: '#cf1322' }}>{fmtMoney(v)}</span> : <span className="font-medium">{fmtMoney(v)}</span>) },
             { title: 'Ghi chú', dataIndex: 'note', width: 180, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             {
               title: 'Duyệt',
@@ -685,7 +685,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             showTotal: (t) => `${t} mục`,
           }}
           locale={{ emptyText: 'Chưa có mục Debit Note' }}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 'max-content' }}
           summary={() => {
             const total = totalDebit;
             return (
@@ -703,12 +703,12 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
             { title: 'Mô tả', dataIndex: 'description', width: 220, ellipsis: true, render: (v: string | null) => (v ? <Tooltip title={v}><span>{v}</span></Tooltip> : '-') },
             { title: 'Unit', dataIndex: 'unit', render: (v: string | null) => v ?? '-' },
             { title: 'Current', dataIndex: 'currency', align: 'center' as const, render: (v: string) => <Tag color={v === 'USD' ? 'green' : 'default'}>{v}</Tag> },
-            { title: 'Số lượng', dataIndex: 'quantity', className: 'money-wrap', width: 120, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
-            { title: 'Giá VND', dataIndex: 'priceVnd', className: 'money-wrap', width: 120, align: 'right' as const, render: fmtMoney },
-            { title: 'Giá USD', dataIndex: 'priceUsd', className: 'money-wrap', width: 120, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : (Number(v) / MONEY_SCALE).toLocaleString('vi-VN')) },
-            { title: 'Tỷ giá', dataIndex: 'exchangeRate', className: 'money-wrap', width: 120, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v).toLocaleString('vi-VN')) },
+            { title: 'Số lượng', dataIndex: 'quantity', className: 'money-wrap', width: 160, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v)) },
+            { title: 'Giá VND', dataIndex: 'priceVnd', className: 'money-wrap', width: 160, align: 'right' as const, render: fmtMoney },
+            { title: 'Giá USD', dataIndex: 'priceUsd', className: 'money-wrap', width: 160, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : (Number(v) / MONEY_SCALE).toLocaleString('vi-VN')) },
+            { title: 'Tỷ giá', dataIndex: 'exchangeRate', className: 'money-wrap', width: 160, align: 'right' as const, render: (v: string | null) => (v == null ? '-' : Number(v).toLocaleString('vi-VN')) },
             { title: 'Thuế', dataIndex: 'taxRate', align: 'center' as const, render: (v: string | null) => (v == null ? '-' : `${Number(v)}%`) },
-            { title: 'Tổng tiền', dataIndex: 'total', className: 'money-wrap', width: 120, align: 'right' as const, render: (v: string | null) => <span className="font-medium">{fmtMoney(v)}</span> },
+            { title: 'Tổng tiền', dataIndex: 'total', className: 'money-wrap', width: 160, align: 'right' as const, render: (v: string | null) => <span className="font-medium">{fmtMoney(v)}</span> },
             {
               title: 'Thao tác',
               key: 'actions',
