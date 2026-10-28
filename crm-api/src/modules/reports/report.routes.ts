@@ -151,7 +151,7 @@ const liftingExportQuery = z.object({
 reportRouter.get('/lifting/export', validateQuery(liftingExportQuery), requirePermission('report_lifting', 'view'), asyncHandler(async (req, res) => {
   const { from, to, ids } = req.query as { from?: string; to?: string; ids?: string };
   if (ids) {
-    const idList = ids.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+    const idList = ids.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 1000);
     if (!idList.length) {
       res.status(400).json({ error: 'Danh sách ids trống hoặc quá 100' });
       return;
@@ -211,7 +211,7 @@ reportRouter.get('/lifting/sheets', validateQuery(z.object({
 }));
 
 reportRouter.get('/lifting/batch', validateQuery(z.object({ ids: z.string().min(1) })), requirePermission('report_lifting', 'view'), asyncHandler(async (req, res) => {
-  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 1000);
   const { prisma } = await import('../../lib/prisma.js');
   const sheets = await prisma.trackingSheet.findMany({
     where: { id: { in: ids }, isDelete: 1 },
@@ -288,7 +288,7 @@ reportRouter.get('/debit/export', validateQuery(debitExportQuery), requirePermis
   const fromDate = from ? new Date(from) : undefined;
   const toDate = to ? new Date(to) : undefined;
   if (ids) {
-    const idList = ids.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+    const idList = ids.split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 1000);
     if (!idList.length) {
       res.status(400).json({ error: 'Danh sách ids trống hoặc quá 100' });
       return;
@@ -348,7 +348,7 @@ reportRouter.get('/debit/sheets', validateQuery(z.object({
 }));
 
 reportRouter.get('/debit/batch', validateQuery(z.object({ ids: z.string().min(1) })), requirePermission('report_debit', 'view'), asyncHandler(async (req, res) => {
-  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 1000);
   const { prisma } = await import('../../lib/prisma.js');
   const sheets = await prisma.trackingSheet.findMany({
     where: { id: { in: ids }, isDelete: 1 },
@@ -366,7 +366,7 @@ reportRouter.get('/debit/batch', validateQuery(z.object({ ids: z.string().min(1)
 
 // Xuất Excel nhiều phiếu debit theo đúng form bản in (1 header + từng job + TOTAL cuối)
 reportRouter.get('/debit/template-export', validateQuery(z.object({ ids: z.string().min(1) })), requirePermission('report_debit', 'view'), asyncHandler(async (req, res) => {
-  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 1000);
   const { prisma } = await import('../../lib/prisma.js');
   const sheets = await prisma.trackingSheet.findMany({
     where: { id: { in: ids }, isDelete: 1 },
@@ -390,7 +390,7 @@ reportRouter.get('/debit/template-export', validateQuery(z.object({ ids: z.strin
 
 // Xuất Excel debit khổ ngang theo mẫu cũ (1 bảng rộng, subtotal từng job + TOTAL AMT cuối)
 reportRouter.get('/debit/landscape-export', validateQuery(z.object({ ids: z.string().min(1) })), requirePermission('report_debit', 'view'), asyncHandler(async (req, res) => {
-  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+  const ids = String(req.query.ids).split(',').map((s) => Number(s.trim())).filter((n) => Number.isInteger(n) && n > 0).slice(0, 1000);
   const { prisma } = await import('../../lib/prisma.js');
   const sheets = await prisma.trackingSheet.findMany({
     where: { id: { in: ids }, isDelete: 1 },
