@@ -26,6 +26,7 @@ export default function DebitReportPage() {
   const [sheetsPage, setSheetsPage] = useState(1);
   const [sheetsLoading, setSheetsLoading] = useState(false);
   const [selectedSheetIds, setSelectedSheetIds] = useState<number[]>([]);
+  const [selectingAll, setSelectingAll] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [exportAllOpen, setExportAllOpen] = useState(false);
   const [exportAllForm] = Form.useForm();
@@ -80,6 +81,34 @@ export default function DebitReportPage() {
   useEffect(() => {
     loadSheets(1);
   }, [loadSheets]);
+
+  // Chon tat ca phieu theo bo loc (tat ca trang)
+  async function selectAllSheets() {
+    setSelectingAll(true);
+    try {
+      const ids: number[] = [];
+      let pg = 1;
+      let total = 0;
+      do {
+        const params = new URLSearchParams({ page: String(pg), pageSize: '100' });
+        if (sheetSearch.trim()) params.set('search', sheetSearch.trim());
+        if (sheetCustomerId) params.set('customerId', String(sheetCustomerId));
+        if (range?.[0]) params.set('from', range[0].format('YYYY-MM-DD'));
+        if (range?.[1]) params.set('to', range[1].format('YYYY-MM-DD'));
+        const res = await apiFetch<{ items: any[]; total: number }>(`/reports/debit/sheets?${params}`);
+        ids.push(...res.items.map((s: any) => s.id));
+        total = res.total;
+        pg += 1;
+        if (!res.items.length) break;
+      } while (ids.length < total);
+      setSelectedSheetIds(ids);
+      message.success(`Da chon ${ids.length} phieu (tat ca trang)`);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : 'Chon tat ca that bai');
+    } finally {
+      setSelectingAll(false);
+    }
+  }
 
   // Hàm handleSearchSheets: xử lý handleSearchSheets
   function handleSearchSheets() {
@@ -267,6 +296,7 @@ export default function DebitReportPage() {
             <Button loading={exporting} onClick={() => { exportAllForm.setFieldsValue({ range: range ?? undefined }); setExportAllOpen(true); }}>
               Xuất tất cả
             </Button>
+            <Button loading={selectingAll} onClick={selectAllSheets}>Chọn tất cả (mọi trang)</Button>
             {selectedSheetIds.length > 0 && <Button onClick={() => setSelectedSheetIds([])}>Bỏ chọn</Button>}
           </Space>
         </div>
@@ -278,6 +308,18 @@ export default function DebitReportPage() {
             selectedRowKeys: selectedSheetIds,
             onChange: (keys) => setSelectedSheetIds(keys as number[]),
             preserveSelectedRowKeys: true,
+            selections: [
+              {
+                key: 'all-pages',
+                text: 'Chọn tất cả các trang',
+                onSelect: () => { selectAllSheets(); },
+              },
+              {
+                key: 'clear',
+                text: 'Bỏ chọn tất cả',
+                onSelect: () => setSelectedSheetIds([]),
+              },
+            ],
           }}
           pagination={{
             current: sheetsPage,
