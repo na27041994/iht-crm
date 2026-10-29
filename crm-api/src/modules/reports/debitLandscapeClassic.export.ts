@@ -115,7 +115,7 @@ export async function buildDebitLandscapeClassicWorkbook(sheets: any[]): Promise
     let jVat = 0;
     let jTotal = 0;
     // Dòng job info riêng, cột debit để trống (giống file mẫu)
-    lrow(ws, [...jobInfo, '', '', '', '', '', '', '', '']);
+    lrow(ws, [...jobInfo, (s as any).invoiceNumber ?? '', '', '', '', '', '', '', '']);
     debits.forEach((dd) => {
       const vat = vatAmount(dd);
       const price = unitPrice(dd);
