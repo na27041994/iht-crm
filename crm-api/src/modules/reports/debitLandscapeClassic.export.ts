@@ -124,8 +124,8 @@ export async function buildDebitLandscapeClassicWorkbook(sheets: any[]): Promise
       jTotal = Math.round((jTotal + amt) * 100) / 100;
       lrow(ws, [
         ...Array(12).fill(''),
-        dd.invoiceNumber ?? '',
         '',
+        dd.invoiceNumber ?? '',
         dd.description ?? dd.type,
         dd.unit ?? '',
         dd.quantity != null ? Number(dd.quantity) : '',
