@@ -221,6 +221,16 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
     load();
   }, [load]);
 
+  // Luu phieu vua xem de highlight khi quay lai danh sach
+  useEffect(() => {
+    if (!sheet) return;
+    try {
+      sessionStorage.setItem('tracking-sheets-last-viewed', JSON.stringify({ id: sheet.id, sheetNumber: sheet.sheetNumber, time: Date.now() }));
+    } catch {
+      // ignore
+    }
+  }, [sheet]);
+
   // Hàm openAddOrder: xử lý openAddOrder
   function openAddOrder() {
     setEditingOrder(null);

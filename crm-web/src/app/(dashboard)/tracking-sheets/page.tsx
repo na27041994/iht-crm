@@ -66,6 +66,7 @@ export default function TrackingSheetsPage() {
 }
 
 const LIST_STATE_KEY = 'tracking-sheets-list-state';
+const LAST_VIEWED_KEY = 'tracking-sheets-last-viewed';
 
 // Định dạng ngày DD/MM/YYYY
 function fmtDate(v: string | null) {
@@ -112,6 +113,7 @@ function TrackingSheetsContent() {
   const [importOpen, setImportOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [highlightedId, setHighlightedId] = useState<number | null>(null);
   // Check đúng quyền con khớp backend (tracking_sheet_list / tracking_sheet_import_history),
   // không dùng quyền cha tracking_sheet để tránh nút ẩn dù đã được tick quyền con
   const canView = usePermission('tracking_sheet_list', 'view');
@@ -148,6 +150,33 @@ function TrackingSheetsContent() {
     setSearchInput(effectiveSearch);
     load(effectiveSearch, effectivePage, effectiveFrom, effectiveTo);
   }, [effectiveSearch, effectivePage, effectiveFrom, effectiveTo, load]);
+
+  // Highlight phieu vua xem khi quay lai danh sach
+  useEffect(() => {
+    if (!data) return;
+    try {
+      const raw = sessionStorage.getItem(LAST_VIEWED_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { id?: number };
+      const id = Number(parsed?.id);
+      if (!id || !data.items.some((s) => s.id === id)) {
+        setHighlightedId(null);
+        return;
+      }
+      setHighlightedId(id);
+      const scrollTimer = window.setTimeout(() => {
+        const el = document.querySelector('.tracking-sheet-highlighted');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 120);
+      const clearTimer = window.setTimeout(() => setHighlightedId(null), 8000);
+      return () => {
+        window.clearTimeout(scrollTimer);
+        window.clearTimeout(clearTimer);
+      };
+    } catch {
+      setHighlightedId(null);
+    }
+  }, [data]);
 
   // Hàm applyUrl: xử lý applyUrl
   function applyUrl(kw: string, pg: number, from = '', to = '') {
@@ -306,6 +335,7 @@ function TrackingSheetsContent() {
           <Table<TrackingSheet>
             size="small"
             rowKey="id"
+            rowClassName={(record: TrackingSheet) => (record.id === highlightedId ? 'tracking-sheet-highlighted' : '')}
             loading={loading}
             tableLayout="fixed"
             dataSource={data?.items ?? []}

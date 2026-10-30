@@ -6,3 +6,7 @@
 
 /* Keep money values on one line in tracking sheet tables */
 .money-wrap { white-space: nowrap !important; word-break: keep-all !important; }
+
+
+/* Highlight phieu theo doi vua xem */
+.tracking-sheet-highlighted td { background-color: #fff7e6 !important; }
