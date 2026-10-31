@@ -75,6 +75,7 @@ export async function buildRefundReportWorkbook(
   from?: Date,
   to?: Date,
   type?: string,
+  search?: string,
 ): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'I.H.T Logistics';
@@ -85,7 +86,7 @@ export async function buildRefundReportWorkbook(
 
   const wsDetail = wb.addWorksheet('Chi tiet');
   setupSheet(wsDetail, DETAIL_COLUMNS);
-  for await (const it of iterateRefundItems(from, to, type)) {
+  for await (const it of iterateRefundItems(from, to, type, search)) {
     wsDetail.addRow({
       sheetNumber: it.sheetNumber,
       source: it.source === 'booking' ? 'Job Book tàu' : 'Job Order',

@@ -186,12 +186,13 @@ export async function* iterateRefundItems(
   from: Date | undefined,
   to: Date | undefined,
   type?: string,
+  search?: string,
   batchSize = 20000,
 ): AsyncGenerator<RefundItem> {
   let offset = 0;
   for (;;) {
     // Không lọc dim: lấy tất cả dòng (dim customer + id null sẽ chỉ lấy phiếu không khách)
-    const { rows } = await getRefundItems({ type, from, to, offset, limit: batchSize });
+    const { rows } = await getRefundItems({ type, search, from, to, offset, limit: batchSize });
     for (const r of rows) yield r;
     if (rows.length < batchSize) break;
     offset += batchSize;

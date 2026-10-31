@@ -108,7 +108,7 @@ reportRouter.get('/refund/export', validateQuery(refundReportQuery), requirePerm
   const fromDate = from ? new Date(from) : undefined;
   const toDate = to ? new Date(to) : undefined;
   const data = await getRefundReport(fromDate, toDate, type, search);
-  const buf = await buildRefundReportWorkbook(data, fromDate, toDate, type);
+  const buf = await buildRefundReportWorkbook(data, fromDate, toDate, type, search);
   const parts = ['bao-cao-hoan-phi'];
   if (fromDate) parts.push(fromDate.toISOString().slice(0, 10));
   if (toDate) parts.push(toDate.toISOString().slice(0, 10));
