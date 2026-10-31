@@ -108,18 +108,19 @@ export type TrackingSheetWithRelations = Prisma.TrackingSheetGetPayload<{
 }>;
 
 // Hàm nextSheetNumber: xử lý nextSheetNumber
-async function nextSheetNumber(now = new Date()): Promise<string> {
+async function nextSheetNumber(branch = 'main', now = new Date()): Promise<string> {
   const y = String(now.getFullYear()).slice(-2);
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
-  const prefix = `J${y}${m}${d}-`;
+  const letter = branch === 'sub' ? 'H' : 'J';
+  const prefix = `${letter}${y}${m}${d}-`;
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const end = new Date(start.getTime() + 86400000);
 
   // Retry loop to handle concurrent requests
   for (let attempt = 0; attempt < 10; attempt++) {
     const count = await prisma.trackingSheet.count({
-      where: { createdAt: { gte: start, lt: end } },
+      where: { branch, createdAt: { gte: start, lt: end } },
     });
     const candidate = `${prefix}${String(count + 1).padStart(3, '0')}`;
 
@@ -268,11 +269,12 @@ export async function getTrackingSheetsForExport(opts: {
 
 // Tạo phiếu theo dõi mới, sinh mã sheetNumber (chống duplicate khi bấm liên tục)
 export async function createTrackingSheet(input: TrackingSheetInput, createdById?: number) {
+  const branch = input.branch ?? 'main';
   for (let attempt = 0; attempt < 5; attempt++) {
-    const sheetNumber = await nextSheetNumber();
+    const sheetNumber = await nextSheetNumber(branch);
     try {
       return await prisma.trackingSheet.create({
-        data: { ...input, sheetNumber, createdById },
+        data: { ...input, branch, sheetNumber, createdById },
         include: trackingSheetInclude,
       });
     } catch (e: any) {

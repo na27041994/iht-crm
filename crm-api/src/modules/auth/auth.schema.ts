@@ -23,6 +23,7 @@ export const createUserSchema = z.object({
   avatarUrl: optionalText,
   role: z.string().min(2).max(30).regex(/^[a-z0-9_]+$/, 'Tên vai trò không hợp lệ'),
   annualLeaveQuota: z.coerce.number().min(0).max(365).optional(),
+  branch: z.enum(['main', 'sub']).optional().default('main'),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
@@ -37,6 +38,7 @@ export const updateUserSchema = z
     avatarUrl: optionalText,
     role: z.string().min(2).max(30).regex(/^[a-z0-9_]+$/, 'Tên vai trò không hợp lệ').optional(),
     annualLeaveQuota: z.coerce.number().min(0).max(365).optional(),
+    branch: z.enum(['main', 'sub']).optional(),
     isActive: z.boolean().optional(),
     password: z
       .string()

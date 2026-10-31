@@ -48,6 +48,7 @@ export async function createUser(input: CreateUserInput) {
       address: input.address,
       avatarUrl: input.avatarUrl,
       role: input.role,
+      branch: input.branch ?? 'main',
       annualLeaveQuota: input.annualLeaveQuota ?? 12,
     },
     select: {
@@ -60,6 +61,7 @@ export async function createUser(input: CreateUserInput) {
       address: true,
       avatarUrl: true,
       role: true,
+      branch: true,
       isActive: true,
     },
   });
@@ -83,6 +85,7 @@ export async function listUsers() {
       address: true,
       avatarUrl: true,
       role: true,
+      branch: true,
       isActive: true,
       annualLeaveQuota: true,
       lastLoginAt: true,
@@ -115,6 +118,7 @@ export async function getUser(id: number) {
       address: true,
       avatarUrl: true,
       role: true,
+      branch: true,
       isActive: true,
       annualLeaveQuota: true,
       isDelete: true,
@@ -159,6 +163,7 @@ export async function updateUser(id: number, input: UpdateUserInput, actorId: nu
   }
   if (input.isActive !== undefined) data.isActive = input.isActive;
   if (input.annualLeaveQuota !== undefined) data.annualLeaveQuota = input.annualLeaveQuota;
+  if (input.branch !== undefined) data.branch = input.branch;
   if (input.password !== undefined) {
     data.passwordHash = await bcrypt.hash(input.password, 10);
   }
@@ -176,6 +181,7 @@ export async function updateUser(id: number, input: UpdateUserInput, actorId: nu
       address: true,
       avatarUrl: true,
       role: true,
+      branch: true,
       isActive: true,
       annualLeaveQuota: true,
       lastLoginAt: true,

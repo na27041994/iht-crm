@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const trackingSheetSchema = z.object({
+  branch: z.enum(['main', 'sub']).optional().default('main'),
   docStaffId: z.number().int().positive().optional().nullable(),
   deliveryStaffId: z.number().int().positive().optional().nullable(),
   nw: z.coerce.number().nonnegative().optional().nullable(),
