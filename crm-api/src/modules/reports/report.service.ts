@@ -33,21 +33,29 @@ const REFUND_ROWS = Prisma.sql`
   SELECT jb."sheetId", 'booking' AS source, jb.id AS "rowId", jb.type, jb.description,
     COALESCE(jb.total, jb."afterTaxAmount", jb."pretaxAmount", 0)::float8 AS amount,
     COALESCE(s."etaDate", s."createdAt"::date) AS d,
-    s."sheetNumber", s."customerId",
-    cu."companyName", cu."customerName"
+    s."sheetNumber", s."customerId", s."carrierId", s."agentId",
+    cu."companyName", cu."customerName",
+    ca."carrierName", ca."companyName" AS "carrierCompanyName",
+    ag."agentName", ag."companyName" AS "agentCompanyName"
   FROM job_bookings jb
   JOIN tracking_sheets s ON s.id = jb."sheetId" AND s."isDelete" = 1
   LEFT JOIN customers cu ON cu.id = s."customerId"
+  LEFT JOIN carriers ca ON ca.id = s."carrierId"
+  LEFT JOIN agents ag ON ag.id = s."agentId"
   WHERE jb."isDelete" = 1 AND jb.type IN (${Prisma.join(REFUND_TYPES.map((t) => Prisma.sql`${t}`))})
   UNION ALL
   SELECT jo."sheetId", 'order', jo.id, jo.type, jo.description,
     COALESCE(jo."portAmt", 0)::float8,
     COALESCE(s."etaDate", s."createdAt"::date),
-    s."sheetNumber", s."customerId",
-    cu."companyName", cu."customerName"
+    s."sheetNumber", s."customerId", s."carrierId", s."agentId",
+    cu."companyName", cu."customerName",
+    ca."carrierName", ca."companyName" AS "carrierCompanyName",
+    ag."agentName", ag."companyName" AS "agentCompanyName"
   FROM job_orders jo
   JOIN tracking_sheets s ON s.id = jo."sheetId" AND s."isDelete" = 1
   LEFT JOIN customers cu ON cu.id = s."customerId"
+  LEFT JOIN carriers ca ON ca.id = s."carrierId"
+  LEFT JOIN agents ag ON ag.id = s."agentId"
   WHERE jo."isDelete" = 1 AND jo.type IN (${Prisma.join(REFUND_TYPES.map((t) => Prisma.sql`${t}`))})
 `;
 
@@ -72,6 +80,12 @@ interface RawRefundRow {
   customerId: number | null;
   companyName: string | null;
   customerName: string | null;
+  carrierId: number | null;
+  carrierName: string | null;
+  carrierCompanyName: string | null;
+  agentId: number | null;
+  agentName: string | null;
+  agentCompanyName: string | null;
 }
 
 // Hàm mapRefundRow: xử lý mapRefundRow
@@ -88,25 +102,30 @@ function mapRefundRow(r: RawRefundRow): RefundItem {
     customerId: r.customerId == null ? null : Number(r.customerId),
     customerName:
       r.customerId == null ? 'Chưa có khách hàng' : (r.companyName || r.customerName || '-'),
-    carrierId: null,
-    carrierName: null,
-    agentId: null,
-    agentName: null,
+    carrierId: r.carrierId == null ? null : Number(r.carrierId),
+    carrierName:
+      r.carrierId == null ? null : (r.carrierName || r.carrierCompanyName || '-'),
+    agentId: r.agentId == null ? null : Number(r.agentId),
+    agentName:
+      r.agentId == null ? null : (r.agentName || r.agentCompanyName || '-'),
   };
 }
 
 // Hàm getRefundReport: xử lý getRefundReport
-export async function getRefundReport(from?: Date, to?: Date, type?: string, search?: string) {
+export async function getRefundReport(from?: Date, to?: Date, type?: string, search?: string, customerId?: number, carrierId?: number, agentId?: number) {
   const range = refundRangeCond(from, to);
   const typeCond = type ? Prisma.sql` AND r.type = ${type}` : Prisma.empty;
   const searchCond = search ? Prisma.sql` AND (r."companyName" ILIKE ${`%${search}%`} OR r."customerName" ILIKE ${`%${search}%`})` : Prisma.empty;
+  const customerCond = customerId ? Prisma.sql` AND r."customerId" = ${customerId}` : Prisma.empty;
+  const carrierCond = carrierId ? Prisma.sql` AND r."carrierId" = ${carrierId}` : Prisma.empty;
+  const agentCond = agentId ? Prisma.sql` AND r."agentId" = ${agentId}` : Prisma.empty;
 
   const [totals, customers, types] = await Promise.all([
     prisma.$queryRaw<Array<{ rowCount: number; totalAmount: number }>>(Prisma.sql`
       SELECT COUNT(*)::int AS "rowCount",
         ROUND(COALESCE(SUM(r.amount), 0)::numeric, 2)::float8 AS "totalAmount"
       FROM (${REFUND_ROWS}) r
-      WHERE TRUE${range}${typeCond}${searchCond}
+      WHERE TRUE${range}${typeCond}${searchCond}${customerCond}${carrierCond}${agentCond}
     `),
     prisma.$queryRaw<Array<{ id: number | null; name: string; rowCount: number; sheetCount: number; totalAmount: number }>>(Prisma.sql`
       SELECT r."customerId" AS id,
@@ -116,7 +135,7 @@ export async function getRefundReport(from?: Date, to?: Date, type?: string, sea
         COUNT(DISTINCT r."sheetId")::int AS "sheetCount",
         ROUND(COALESCE(SUM(r.amount), 0)::numeric, 2)::float8 AS "totalAmount"
       FROM (${REFUND_ROWS}) r
-      WHERE TRUE${range}${typeCond}${searchCond}
+      WHERE TRUE${range}${typeCond}${searchCond}${customerCond}${carrierCond}${agentCond}
       GROUP BY r."customerId"
       ORDER BY "totalAmount" DESC
     `),
@@ -127,7 +146,7 @@ export async function getRefundReport(from?: Date, to?: Date, type?: string, sea
         COUNT(DISTINCT r."sheetId")::int AS "sheetCount",
         ROUND(COALESCE(SUM(r.amount), 0)::numeric, 2)::float8 AS "totalAmount"
       FROM (${REFUND_ROWS}) r
-      WHERE TRUE${range}${typeCond}${searchCond}
+      WHERE TRUE${range}${typeCond}${searchCond}${customerCond}${carrierCond}${agentCond}
       GROUP BY r.type
       ORDER BY "totalAmount" DESC
     `),
@@ -153,6 +172,9 @@ export async function getRefundItems(opts: {
   id?: string | number | null;
   type?: string;
   search?: string;
+  customerId?: number;
+  carrierId?: number;
+  agentId?: number;
   from?: Date;
   to?: Date;
   offset?: number;
@@ -161,6 +183,9 @@ export async function getRefundItems(opts: {
   const range = refundRangeCond(opts.from, opts.to);
   const typeFilter = opts.type ? Prisma.sql` AND r.type = ${opts.type}` : Prisma.empty;
   const searchFilter = opts.search ? Prisma.sql` AND (r."companyName" ILIKE ${`%${opts.search}%`} OR r."customerName" ILIKE ${`%${opts.search}%`})` : Prisma.empty;
+  const customerFilter = opts.customerId ? Prisma.sql` AND r."customerId" = ${opts.customerId}` : Prisma.empty;
+  const carrierFilter = opts.carrierId ? Prisma.sql` AND r."carrierId" = ${opts.carrierId}` : Prisma.empty;
+  const agentFilter = opts.agentId ? Prisma.sql` AND r."agentId" = ${opts.agentId}` : Prisma.empty;
   let dimCond: Prisma.Sql = Prisma.empty;
   if (opts.dim === 'customer') {
     dimCond = opts.id == null ? Prisma.sql` AND r."customerId" IS NULL` : Prisma.sql` AND r."customerId" = ${opts.id as number}`;
@@ -171,12 +196,12 @@ export async function getRefundItems(opts: {
   const [rows, counts] = await Promise.all([
     prisma.$queryRaw<RawRefundRow[]>(Prisma.sql`
       SELECT * FROM (${REFUND_ROWS}) r
-      WHERE TRUE${range}${typeFilter}${searchFilter}${dimCond}
+      WHERE TRUE${range}${typeFilter}${searchFilter}${customerFilter}${carrierFilter}${agentFilter}${dimCond}
       ORDER BY r.d ASC, r.source ASC, r."rowId" ASC
       LIMIT ${opts.limit ?? 50} OFFSET ${opts.offset ?? 0}
     `),
     prisma.$queryRaw<Array<{ n: number }>>(Prisma.sql`
-      SELECT COUNT(*)::int AS n FROM (${REFUND_ROWS}) r WHERE TRUE${range}${typeFilter}${searchFilter}${dimCond}
+      SELECT COUNT(*)::int AS n FROM (${REFUND_ROWS}) r WHERE TRUE${range}${typeFilter}${searchFilter}${customerFilter}${carrierFilter}${agentFilter}${dimCond}
     `),
   ]);
   return { rows: rows.map(mapRefundRow), total: counts[0]?.n ?? 0 };
@@ -187,12 +212,15 @@ export async function* iterateRefundItems(
   to: Date | undefined,
   type?: string,
   search?: string,
+  customerId?: number,
+  carrierId?: number,
+  agentId?: number,
   batchSize = 20000,
 ): AsyncGenerator<RefundItem> {
   let offset = 0;
   for (;;) {
     // Không lọc dim: lấy tất cả dòng (dim customer + id null sẽ chỉ lấy phiếu không khách)
-    const { rows } = await getRefundItems({ type, search, from, to, offset, limit: batchSize });
+    const { rows } = await getRefundItems({ type, search, customerId, carrierId, agentId, from, to, offset, limit: batchSize });
     for (const r of rows) yield r;
     if (rows.length < batchSize) break;
     offset += batchSize;

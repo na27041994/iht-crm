@@ -58,7 +58,7 @@ const SOURCE_LABEL: Record<string, string> = { booking: 'Job Book tàu', order: 
 type RefundDim = 'customer' | 'type';
 
 // Hàm DetailTable: xử lý DetailTable
-function DetailTable({ dim, groupId, from, to, typeFilter, search }: { dim: RefundDim; groupId: string | number | null; from?: string; to?: string; typeFilter?: string; search?: string }) {
+function DetailTable({ dim, groupId, from, to, typeFilter, customerId, carrierId, agentId }: { dim: RefundDim; groupId: string | number | null; from?: string; to?: string; typeFilter?: string; customerId?: number; carrierId?: number; agentId?: number }) {
   const [page, setPage] = useState(1);
   const pageSize = 50;
   const [rows, setRows] = useState<RefundItem[]>([]);
@@ -73,7 +73,9 @@ function DetailTable({ dim, groupId, from, to, typeFilter, search }: { dim: Refu
     if (from) params.set('from', from);
     if (to) params.set('to', to);
     if (typeFilter) params.set('type', typeFilter);
-    if (search) params.set('search', search);
+    if (customerId) params.set('customerId', String(customerId));
+    if (carrierId) params.set('carrierId', String(carrierId));
+    if (agentId) params.set('agentId', String(agentId));
     apiFetch<{ rows: RefundItem[]; total: number }>(`/reports/refund/items?${params.toString()}`)
       .then((r) => {
         if (!cancelled) {
@@ -144,18 +146,25 @@ export default function RefundReportPage() {
   const [exporting, setExporting] = useState(false);
   const [activeTab, setActiveTab] = useState('customers');
   const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
-  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerId, setCustomerId] = useState<number | undefined>(undefined);
+  const [carrierId, setCarrierId] = useState<number | undefined>(undefined);
+  const [agentId, setAgentId] = useState<number | undefined>(undefined);
+  const [customers, setCustomers] = useState<{ id: number; companyName: string; customerName: string }[]>([]);
+  const [carriers, setCarriers] = useState<{ id: number; carrierName: string; companyName: string }[]>([]);
+  const [agents, setAgents] = useState<{ id: number; agentName: string; companyName: string }[]>([]);
 
   const REFUND_TYPES = ['Refund khách hàng', 'Refund hãng tàu', 'Refund đại lý'];
 
-  const load = useCallback(async (f?: { from?: string; to?: string; type?: string; search?: string }) => {
+  const load = useCallback(async (f?: { from?: string; to?: string; type?: string; customerId?: number; carrierId?: number; agentId?: number }) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (f?.from) params.set('from', f.from);
       if (f?.to) params.set('to', f.to);
       if (f?.type) params.set('type', f.type);
-      if (f?.search) params.set('search', f.search);
+      if (f?.customerId) params.set('customerId', String(f.customerId));
+      if (f?.carrierId) params.set('carrierId', String(f.carrierId));
+      if (f?.agentId) params.set('agentId', String(f.agentId));
       const qs = params.toString();
       const res = await apiFetch<RefundReport>(`/reports/refund${qs ? `?${qs}` : ''}`);
       setData(res);
@@ -168,11 +177,14 @@ export default function RefundReportPage() {
 
   useEffect(() => {
     load();
+    apiFetch<{ items: { id: number; companyName: string; customerName: string }[] }>('/customers?pageSize=500').then((r) => setCustomers(r.items)).catch(() => {});
+    apiFetch<{ items: { id: number; carrierName: string; companyName: string }[] }>('/carriers?pageSize=500').then((r) => setCarriers(r.items)).catch(() => {});
+    apiFetch<{ items: { id: number; agentName: string; companyName: string }[] }>('/agents?pageSize=500').then((r) => setAgents(r.items)).catch(() => {});
   }, [load]);
 
   // Hàm applyRange: xử lý applyRange
   function applyRange() {
-    load({ from: range?.[0].format('YYYY-MM-DD'), to: range?.[1].format('YYYY-MM-DD'), type: typeFilter, search: customerSearch.trim() || undefined });
+    load({ from: range?.[0].format('YYYY-MM-DD'), to: range?.[1].format('YYYY-MM-DD'), type: typeFilter, customerId, carrierId, agentId });
   }
 
   // Hàm handleExport: xử lý handleExport
@@ -185,7 +197,9 @@ export default function RefundReportPage() {
         params.set('to', range[1].format('YYYY-MM-DD'));
       }
       if (typeFilter) params.set('type', typeFilter);
-      if (customerSearch.trim()) params.set('search', customerSearch.trim());
+      if (customerId) params.set('customerId', String(customerId));
+      if (carrierId) params.set('carrierId', String(carrierId));
+      if (agentId) params.set('agentId', String(agentId));
       const qs = params.toString();
       const blob = await apiDownload(`/reports/refund/export${qs ? `?${qs}` : ''}`);
       const parts = ['bao-cao-hoan-phi'];
@@ -241,13 +255,35 @@ export default function RefundReportPage() {
           options={REFUND_TYPES.map((t) => ({ value: t, label: t }))}
           allowClear
         />
-        <Input
-          value={customerSearch}
-          onChange={(e) => setCustomerSearch(e.target.value)}
-          onPressEnter={applyRange}
-          style={{ width: 240 }}
-          placeholder="Tim theo ten khach hang"
+        <Select
+          value={customerId}
+          onChange={(v) => setCustomerId(v)}
+          style={{ width: 220 }}
+          placeholder="Khách hàng"
+          options={customers.map((c) => ({ value: c.id, label: c.companyName || c.customerName }))}
           allowClear
+          showSearch
+          optionFilterProp="label"
+        />
+        <Select
+          value={carrierId}
+          onChange={(v) => setCarrierId(v)}
+          style={{ width: 200 }}
+          placeholder="Hãng tàu"
+          options={carriers.map((c) => ({ value: c.id, label: c.carrierName || c.companyName }))}
+          allowClear
+          showSearch
+          optionFilterProp="label"
+        />
+        <Select
+          value={agentId}
+          onChange={(v) => setAgentId(v)}
+          style={{ width: 200 }}
+          placeholder="Đại lý"
+          options={agents.map((a) => ({ value: a.id, label: a.agentName || a.companyName }))}
+          allowClear
+          showSearch
+          optionFilterProp="label"
         />
         <Space>
           <Button type="primary" onClick={applyRange}>
@@ -289,7 +325,9 @@ export default function RefundReportPage() {
                     from={rangeParams?.from}
                     to={rangeParams?.to}
                     typeFilter={typeFilter}
-                    search={customerSearch.trim() || undefined}
+                    customerId={customerId}
+                    carrierId={carrierId}
+                    agentId={agentId}
                   />
                 ),
                 rowExpandable: (record) => record.rowCount > 0,

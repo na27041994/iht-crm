@@ -38,6 +38,9 @@ const refundReportQuery = z.object({
   to: z.coerce.date().optional(),
   type: z.string().optional(),
   search: z.string().optional(),
+  customerId: z.coerce.number().int().optional(),
+  carrierId: z.coerce.number().int().optional(),
+  agentId: z.coerce.number().int().optional(),
 });
 
 const refundItemsQuery = z.object({
@@ -47,6 +50,9 @@ const refundItemsQuery = z.object({
   to: z.coerce.date().optional(),
   type: z.string().optional(),
   search: z.string().optional(),
+  customerId: z.coerce.number().int().optional(),
+  carrierId: z.coerce.number().int().optional(),
+  agentId: z.coerce.number().int().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
 });
@@ -80,11 +86,14 @@ reportRouter.get('/dashboard', requirePermission('report', 'view'), asyncHandler
 }));
 
 reportRouter.get('/refund/items', validateQuery(refundItemsQuery), requirePermission('report_refund', 'view'), asyncHandler(async (req, res) => {
-  const { dim, id, type, search, page, pageSize } = req.query as unknown as {
+  const { dim, id, type, search, customerId, carrierId, agentId, page, pageSize } = req.query as unknown as {
     dim: 'customer' | 'type';
     id?: string;
     type?: string;
     search?: string;
+    customerId?: number;
+    carrierId?: number;
+    agentId?: number;
     page: number;
     pageSize: number;
   };
@@ -95,6 +104,9 @@ reportRouter.get('/refund/items', validateQuery(refundItemsQuery), requirePermis
     id: parsedId as string | number | null,
     type,
     search,
+    customerId,
+    carrierId,
+    agentId,
     from,
     to,
     offset: (page - 1) * pageSize,
@@ -104,11 +116,11 @@ reportRouter.get('/refund/items', validateQuery(refundItemsQuery), requirePermis
 }));
 
 reportRouter.get('/refund/export', validateQuery(refundReportQuery), requirePermission('report_refund', 'view'), asyncHandler(async (req, res) => {
-  const { from, to, type, search } = req.query as { from?: string; to?: string; type?: string; search?: string };
+  const { from, to, type, search, customerId, carrierId, agentId } = req.query as { from?: string; to?: string; type?: string; search?: string; customerId?: string; carrierId?: string; agentId?: string };
   const fromDate = from ? new Date(from) : undefined;
   const toDate = to ? new Date(to) : undefined;
-  const data = await getRefundReport(fromDate, toDate, type, search);
-  const buf = await buildRefundReportWorkbook(data, fromDate, toDate, type, search);
+  const data = await getRefundReport(fromDate, toDate, type, search, customerId ? Number(customerId) : undefined, carrierId ? Number(carrierId) : undefined, agentId ? Number(agentId) : undefined);
+  const buf = await buildRefundReportWorkbook(data, fromDate, toDate, type, search, customerId ? Number(customerId) : undefined, carrierId ? Number(carrierId) : undefined, agentId ? Number(agentId) : undefined);
   const parts = ['bao-cao-hoan-phi'];
   if (fromDate) parts.push(fromDate.toISOString().slice(0, 10));
   if (toDate) parts.push(toDate.toISOString().slice(0, 10));
