@@ -144,9 +144,10 @@ async function nextSheetNumber(branch = 'main', now = new Date()): Promise<strin
 }
 
 // Liệt kê phiếu theo dõi có phân trang, tìm kiếm và lọc theo ngày tạo (nhẹ: không load jobs, chỉ _count)
-export async function listTrackingSheets(search?: string, page = 1, pageSize = 20, from?: Date, to?: Date) {
+export async function listTrackingSheets(search?: string, page = 1, pageSize = 20, from?: Date, to?: Date, branch?: string) {
   const safePageSize = Math.min(Math.max(pageSize, 1), 50);
   const where: Prisma.TrackingSheetWhereInput = { isDelete: 1 };
+  if (branch && branch !== 'main') where.branch = branch;
   if (from || to) {
     where.createdAt = {};
     if (from) where.createdAt.gte = from;
@@ -204,18 +205,22 @@ export async function listTrackingSheets(search?: string, page = 1, pageSize = 2
 }
 
 // Lấy chi tiết một phiếu theo dõi
-export async function getTrackingSheet(id: number) {
+export async function getTrackingSheet(id: number, branch?: string) {
   const sheet = await prisma.trackingSheet.findFirst({ where: { id, isDelete: 1 }, include: trackingSheetInclude });
+  if (sheet && branch && branch !== 'main' && sheet.branch !== branch) throw new AppError('Khong tim thay phieu theo doi', 404);
   if (!sheet) throw new AppError('Không tìm thấy phiếu theo dõi', 404);
   return sheet;
 }
 
 // Lấy nhiều phiếu theo dõi theo ids (giới hạn 100 để tránh payload lớn khi in)
-export async function getTrackingSheetsByIds(ids: number[]) {
+export async function getTrackingSheetsByIds(ids: number[], branch?: string) {
   if (!ids.length) return [];
   const capped = ids.slice(0, 100);
+  const where: any = { id: { in: capped }, isDelete: 1 };
+  if (branch && branch !== 'main') where.branch = branch;
   return prisma.trackingSheet.findMany({
-    where: { id: { in: capped }, isDelete: 1 },
+    where,
+
     orderBy: { id: 'asc' },
     include: trackingSheetInclude,
   });
@@ -228,8 +233,10 @@ export async function getTrackingSheetsForExport(opts: {
   from?: Date;
   to?: Date;
   ids?: number[];
+  branch?: string;
 }) {
   const where: Prisma.TrackingSheetWhereInput = { isDelete: 1 };
+  if (opts.branch && opts.branch !== 'main') where.branch = opts.branch;
   if (opts.ids?.length) {
     where.id = { in: opts.ids };
   } else {
@@ -268,8 +275,8 @@ export async function getTrackingSheetsForExport(opts: {
 }
 
 // Tạo phiếu theo dõi mới, sinh mã sheetNumber (chống duplicate khi bấm liên tục)
-export async function createTrackingSheet(input: TrackingSheetInput, createdById?: number) {
-  const branch = input.branch ?? 'main';
+export async function createTrackingSheet(input: TrackingSheetInput, createdById?: number, branchOverride?: string) {
+  const branch = branchOverride && branchOverride !== 'main' ? branchOverride : (input.branch ?? 'main');
   for (let attempt = 0; attempt < 5; attempt++) {
     const sheetNumber = await nextSheetNumber(branch);
     try {

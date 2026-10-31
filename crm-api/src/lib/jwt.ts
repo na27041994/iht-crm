@@ -5,6 +5,7 @@ export interface TokenPayload {
   sub: number;
   email: string;
   role: string;
+  branch?: string;
 }
 
 // Hàm signToken: xử lý signToken

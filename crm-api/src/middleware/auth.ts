@@ -7,13 +7,18 @@ export interface AuthedRequest extends Request {
 }
 
 // Middleware xác thực JWT: requireAuth
-export function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Thiếu token xác thực' });
   }
   try {
-    req.user = verifyToken(header.slice(7));
+    const payload = verifyToken(header.slice(7));
+    if (!payload.branch) {
+      const u = await prisma.user.findUnique({ where: { id: payload.sub }, select: { branch: true } });
+      payload.branch = u?.branch ?? 'main';
+    }
+    req.user = payload;
     next();
   } catch {
     return res.status(401).json({ error: 'Token không hợp lệ hoặc đã hết hạn' });

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { asyncHandler, AppError } from '../../middleware/error.js';
 import { validate } from '../../middleware/validate.js';
 import { requireAuth, type AuthedRequest } from '../../middleware/auth.js';
+import { prisma } from '../../lib/prisma.js';
 import { requirePermission } from '../../middleware/permission.js';
 import { loginSchema, createUserSchema, updateUserSchema } from './auth.schema.js';
 import {
@@ -23,7 +24,8 @@ authRouter.post('/login', validate(loginSchema), asyncHandler(async (req, res) =
 }));
 
 authRouter.get('/me', requireAuth, asyncHandler(async (req: AuthedRequest, res) => {
-  res.json(req.user);
+  const user = await prisma.user.findUnique({ where: { id: req.user!.sub }, select: { id: true, email: true, fullName: true, role: true, branch: true } });
+  res.json({ ...req.user, fullName: user?.fullName, branch: user?.branch ?? req.user?.branch ?? 'main' });
 }));
 
 authRouter.post(

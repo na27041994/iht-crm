@@ -80,6 +80,7 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
   const [fetchingCarriers, setFetchingCarriers] = useState(false);
   const carrierSearchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [myBranch, setMyBranch] = useState<string>('main');
   const [fetchingAgents, setFetchingAgents] = useState(false);
   const agentSearchTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -148,6 +149,7 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
 
   useEffect(() => {
     setLoading(true);
+    apiFetch<{ branch?: string }>('/auth/me').then((me) => { if (me?.branch) setMyBranch(me.branch); }).catch(() => {});
     // Tải sẵn 50 dòng mỗi dropdown (thiếu quyền xem thì để trống, không chặn form)
     Promise.all([
       apiFetch<{ items: CustomerOption[] }>('/customers?pageSize=50').catch(() => ({ items: [] as CustomerOption[] })),
@@ -159,13 +161,13 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
         setCarriers(ca.items);
         setAgents(ag.items);
         form.resetFields();
-        form.setFieldsValue({ branch: 'main' });
+        form.setFieldsValue({ branch: myBranch !== 'main' ? myBranch : 'main' });
         if (!editingId) return Promise.resolve();
         return apiFetch<TrackingSheetFormValues & { id: number; sheetNumber: string; etaDate: string | null; declarationDate: string | null }>(
           `/tracking-sheets/${editingId}`,
         ).then((s) => {
         form.setFieldsValue({
-              branch: (s as any).branch ?? 'main',
+              branch: myBranch !== 'main' ? myBranch : ((s as any).branch ?? 'main'),
               sheetNumber: (s as any).sheetNumber ?? '',
               nw: s.nw == null ? undefined : Number(s.nw),
               containerNumber: s.containerNumber ?? '',
@@ -258,7 +260,7 @@ const TrackingSheetForm = forwardRef<TrackingSheetFormHandle, TrackingSheetFormP
       <Form form={form} layout="vertical" size="small" onFinish={handleSubmit} style={{ marginTop: 12 }}>
         <div className={gridClassName}>
           <Form.Item label="Chi nhánh" name="branch" initialValue="main">
-            <Select options={[{ value: 'main', label: 'Tổng (J)' }, { value: 'sub', label: 'Phụ (H)' }]} />
+            <Select disabled={myBranch !== 'main'} options={[{ value: 'main', label: 'Tổng (J)' }, { value: 'sub', label: 'Phụ (H)' }]} />
           </Form.Item>
           {editingId ? (
             <Form.Item label="Mã phiếu" name="sheetNumber">

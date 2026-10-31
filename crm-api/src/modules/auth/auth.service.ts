@@ -18,7 +18,7 @@ export async function login(input: LoginInput) {
 
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
-  const token = signToken({ sub: user.id, email: user.email, role: user.role });
+  const token = signToken({ sub: user.id, email: user.email, role: user.role, branch: user.branch ?? 'main' });
   return {
     token,
     user: {
@@ -26,6 +26,7 @@ export async function login(input: LoginInput) {
       email: user.email,
       fullName: user.fullName,
       role: user.role,
+      branch: user.branch ?? 'main',
     },
   };
 }

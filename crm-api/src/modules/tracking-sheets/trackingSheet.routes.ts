@@ -172,7 +172,7 @@ trackingSheetRouter.get(
       page: number;
       pageSize: number;
     };
-    res.json(await listTrackingSheets(search, page, pageSize, from, to));
+    res.json(await listTrackingSheets(search, page, pageSize, from, to, (req as AuthedRequest).user?.branch));
   }),
 );
 
@@ -185,7 +185,7 @@ trackingSheetRouter.get(
       .split(',')
       .map((s) => Number(s.trim()))
       .filter((n) => Number.isInteger(n) && n > 0);
-    res.json(await getTrackingSheetsByIds(ids));
+    res.json(await getTrackingSheetsByIds(ids, (req as AuthedRequest).user?.branch));
   }),
 );
 
@@ -260,7 +260,7 @@ trackingSheetRouter.get(
           .map((s) => Number(s.trim()))
           .filter((n) => Number.isInteger(n) && n > 0)
       : undefined;
-    const sheets = await getTrackingSheetsForExport({ search, customerId, from, to, ids: idList });
+    const sheets = await getTrackingSheetsForExport({ search, customerId, from, to, ids: idList, branch: (req as AuthedRequest).user?.branch });
     const buffer = await buildTrackingSheetsWorkbook(sheets);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename="phieu-theo-doi.xlsx"');
@@ -284,7 +284,7 @@ trackingSheetRouter.get(
   }),
   asyncHandler(async (req, res) => {
     const { type } = req.query as unknown as { type: 'order' | 'booking' | 'debit' };
-    const sheet = await getTrackingSheet(Number(req.params.id));
+    const sheet = await getTrackingSheet(Number(req.params.id), (req as AuthedRequest).user?.branch);
     if (!sheet) {
       res.status(404).json({ error: 'Không tìm thấy phiếu theo dõi' });
       return;
@@ -308,11 +308,14 @@ trackingSheetRouter.post(
   validate(trackingSheetSchema),
   requirePermission('tracking_sheet_list', 'create'),
   asyncHandler(async (req: AuthedRequest, res) => {
-    res.status(201).json(await createTrackingSheet(req.body, req.user?.sub));
+    res.status(201).json(await createTrackingSheet(req.body, req.user?.sub, (req as AuthedRequest).user?.branch));
   }),
 );
 
-trackingSheetRouter.put('/:id', validate(trackingSheetSchema), requirePermission('tracking_sheet_list', 'edit'), asyncHandler(async (req, res) => {
+trackingSheetRouter.put('/:id', validate(trackingSheetSchema), requirePermission('tracking_sheet_list', 'edit'), asyncHandler(async (req: AuthedRequest, res) => {
+  if (req.user?.branch && req.user.branch !== 'main') {
+    (req.body as any).branch = req.user.branch;
+  }
   res.json(await updateTrackingSheet(Number(req.params.id), req.body));
 }));
 
