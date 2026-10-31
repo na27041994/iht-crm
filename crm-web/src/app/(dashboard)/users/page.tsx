@@ -44,6 +44,7 @@ interface User {
   address: string | null;
   avatarUrl: string | null;
   role: string;
+  branch?: string | null;
   isActive: boolean;
   annualLeaveQuota: string | number | null;
   lastLoginAt: string | null;
@@ -76,6 +77,7 @@ interface EditValues {
   phone?: string;
   address?: string;
   role: string;
+  branch?: string | null;
   isActive: boolean;
   annualLeaveQuota?: number;
 }
@@ -150,7 +152,7 @@ export default function UsersPage() {
     setEditing(null);
     setPreview('');
     form.resetFields();
-    form.setFieldsValue({ role: 'viewer', isActive: true, annualLeaveQuota: 12 });
+    form.setFieldsValue({ role: 'viewer', branch: 'main', isActive: true, annualLeaveQuota: 12 });
     setModalOpen(true);
   }
 
@@ -166,6 +168,7 @@ export default function UsersPage() {
       phone: user.phone ?? '',
       address: user.address ?? '',
       role: user.role,
+      branch: user.branch ?? 'main',
       isActive: user.isActive,
       annualLeaveQuota: user.annualLeaveQuota == null ? 12 : Number(user.annualLeaveQuota),
     });
@@ -223,6 +226,7 @@ export default function UsersPage() {
           phone: values.phone || null,
           address: values.address || null,
           role: values.role,
+          branch: values.branch ?? 'main',
           isActive: values.isActive,
           annualLeaveQuota: values.annualLeaveQuota ?? 12,
           avatarUrl: form.getFieldValue('avatarUrl') || null,
@@ -243,6 +247,7 @@ export default function UsersPage() {
           phone: values.phone || null,
           address: values.address || null,
           role: values.role,
+          branch: values.branch ?? 'main',
           annualLeaveQuota: values.annualLeaveQuota ?? 12,
           avatarUrl: form.getFieldValue('avatarUrl') || null,
         };
@@ -684,6 +689,9 @@ export default function UsersPage() {
           <div className="grid grid-cols-2 gap-4">
             <Form.Item label="Vai trò" name="role" rules={[{ required: true }]}>
               <Select options={availableRoles.length ? availableRoles.map((r) => ({ value: r.name, label: r.displayName })) : FALLBACK_ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }))} />
+            </Form.Item>
+            <Form.Item label="Chi nhánh" name="branch">
+              <Select options={[{ value: 'main', label: 'Tổng (J)' }, { value: 'sub', label: 'Phụ (H)' }]} />
             </Form.Item>
             <Form.Item label="Quota phép năm (ngày/năm)" name="annualLeaveQuota" tooltip="Số ngày nghỉ phép năm của nhân viên trong 1 năm">
               <InputNumber min={0} max={365} precision={1} style={{ width: '100%' }} placeholder="12" />
