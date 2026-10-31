@@ -96,16 +96,17 @@ function mapRefundRow(r: RawRefundRow): RefundItem {
 }
 
 // Hàm getRefundReport: xử lý getRefundReport
-export async function getRefundReport(from?: Date, to?: Date, type?: string) {
+export async function getRefundReport(from?: Date, to?: Date, type?: string, search?: string) {
   const range = refundRangeCond(from, to);
   const typeCond = type ? Prisma.sql` AND r.type = ${type}` : Prisma.empty;
+  const searchCond = search ? Prisma.sql` AND (r."companyName" ILIKE ${`%${search}%`} OR r."customerName" ILIKE ${`%${search}%`})` : Prisma.empty;
 
   const [totals, customers, types] = await Promise.all([
     prisma.$queryRaw<Array<{ rowCount: number; totalAmount: number }>>(Prisma.sql`
       SELECT COUNT(*)::int AS "rowCount",
         ROUND(COALESCE(SUM(r.amount), 0)::numeric, 2)::float8 AS "totalAmount"
       FROM (${REFUND_ROWS}) r
-      WHERE TRUE${range}${typeCond}
+      WHERE TRUE${range}${typeCond}${searchCond}
     `),
     prisma.$queryRaw<Array<{ id: number | null; name: string; rowCount: number; sheetCount: number; totalAmount: number }>>(Prisma.sql`
       SELECT r."customerId" AS id,
@@ -115,7 +116,7 @@ export async function getRefundReport(from?: Date, to?: Date, type?: string) {
         COUNT(DISTINCT r."sheetId")::int AS "sheetCount",
         ROUND(COALESCE(SUM(r.amount), 0)::numeric, 2)::float8 AS "totalAmount"
       FROM (${REFUND_ROWS}) r
-      WHERE TRUE${range}${typeCond}
+      WHERE TRUE${range}${typeCond}${searchCond}
       GROUP BY r."customerId"
       ORDER BY "totalAmount" DESC
     `),
@@ -126,7 +127,7 @@ export async function getRefundReport(from?: Date, to?: Date, type?: string) {
         COUNT(DISTINCT r."sheetId")::int AS "sheetCount",
         ROUND(COALESCE(SUM(r.amount), 0)::numeric, 2)::float8 AS "totalAmount"
       FROM (${REFUND_ROWS}) r
-      WHERE TRUE${range}${typeCond}
+      WHERE TRUE${range}${typeCond}${searchCond}
       GROUP BY r.type
       ORDER BY "totalAmount" DESC
     `),
@@ -151,6 +152,7 @@ export async function getRefundItems(opts: {
   dim?: RefundDim;
   id?: string | number | null;
   type?: string;
+  search?: string;
   from?: Date;
   to?: Date;
   offset?: number;
@@ -158,6 +160,7 @@ export async function getRefundItems(opts: {
 }): Promise<{ rows: RefundItem[]; total: number }> {
   const range = refundRangeCond(opts.from, opts.to);
   const typeFilter = opts.type ? Prisma.sql` AND r.type = ${opts.type}` : Prisma.empty;
+  const searchFilter = opts.search ? Prisma.sql` AND (r."companyName" ILIKE ${`%${opts.search}%`} OR r."customerName" ILIKE ${`%${opts.search}%`})` : Prisma.empty;
   let dimCond: Prisma.Sql = Prisma.empty;
   if (opts.dim === 'customer') {
     dimCond = opts.id == null ? Prisma.sql` AND r."customerId" IS NULL` : Prisma.sql` AND r."customerId" = ${opts.id as number}`;
@@ -168,12 +171,12 @@ export async function getRefundItems(opts: {
   const [rows, counts] = await Promise.all([
     prisma.$queryRaw<RawRefundRow[]>(Prisma.sql`
       SELECT * FROM (${REFUND_ROWS}) r
-      WHERE TRUE${range}${typeFilter}${dimCond}
+      WHERE TRUE${range}${typeFilter}${searchFilter}${dimCond}
       ORDER BY r.d ASC, r.source ASC, r."rowId" ASC
       LIMIT ${opts.limit ?? 50} OFFSET ${opts.offset ?? 0}
     `),
     prisma.$queryRaw<Array<{ n: number }>>(Prisma.sql`
-      SELECT COUNT(*)::int AS n FROM (${REFUND_ROWS}) r WHERE TRUE${range}${typeFilter}${dimCond}
+      SELECT COUNT(*)::int AS n FROM (${REFUND_ROWS}) r WHERE TRUE${range}${typeFilter}${searchFilter}${dimCond}
     `),
   ]);
   return { rows: rows.map(mapRefundRow), total: counts[0]?.n ?? 0 };

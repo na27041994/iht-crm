@@ -37,6 +37,7 @@ const refundReportQuery = z.object({
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
   type: z.string().optional(),
+  search: z.string().optional(),
 });
 
 const refundItemsQuery = z.object({
@@ -45,6 +46,7 @@ const refundItemsQuery = z.object({
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
   type: z.string().optional(),
+  search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
 });
@@ -78,10 +80,11 @@ reportRouter.get('/dashboard', requirePermission('report', 'view'), asyncHandler
 }));
 
 reportRouter.get('/refund/items', validateQuery(refundItemsQuery), requirePermission('report_refund', 'view'), asyncHandler(async (req, res) => {
-  const { dim, id, type, page, pageSize } = req.query as unknown as {
+  const { dim, id, type, search, page, pageSize } = req.query as unknown as {
     dim: 'customer' | 'type';
     id?: string;
     type?: string;
+    search?: string;
     page: number;
     pageSize: number;
   };
@@ -91,6 +94,7 @@ reportRouter.get('/refund/items', validateQuery(refundItemsQuery), requirePermis
     dim,
     id: parsedId as string | number | null,
     type,
+    search,
     from,
     to,
     offset: (page - 1) * pageSize,
@@ -100,10 +104,10 @@ reportRouter.get('/refund/items', validateQuery(refundItemsQuery), requirePermis
 }));
 
 reportRouter.get('/refund/export', validateQuery(refundReportQuery), requirePermission('report_refund', 'view'), asyncHandler(async (req, res) => {
-  const { from, to, type } = req.query as { from?: string; to?: string; type?: string };
+  const { from, to, type, search } = req.query as { from?: string; to?: string; type?: string; search?: string };
   const fromDate = from ? new Date(from) : undefined;
   const toDate = to ? new Date(to) : undefined;
-  const data = await getRefundReport(fromDate, toDate, type);
+  const data = await getRefundReport(fromDate, toDate, type, search);
   const buf = await buildRefundReportWorkbook(data, fromDate, toDate, type);
   const parts = ['bao-cao-hoan-phi'];
   if (fromDate) parts.push(fromDate.toISOString().slice(0, 10));
@@ -118,8 +122,8 @@ reportRouter.get('/refund/export', validateQuery(refundReportQuery), requirePerm
 }));
 
 reportRouter.get('/refund', validateQuery(refundReportQuery), requirePermission('report_refund', 'view'), asyncHandler(async (req, res) => {
-  const { from, to, type } = req.query as { from?: string; to?: string; type?: string };
-  res.json(await getRefundReport(from ? new Date(from) : undefined, to ? new Date(to) : undefined, type));
+  const { from, to, type, search } = req.query as { from?: string; to?: string; type?: string; search?: string };
+  res.json(await getRefundReport(from ? new Date(from) : undefined, to ? new Date(to) : undefined, type, search));
 }));
 
 reportRouter.get('/lifting/items', validateQuery(refundItemsQuery), requirePermission('report_lifting', 'view'), asyncHandler(async (req, res) => {

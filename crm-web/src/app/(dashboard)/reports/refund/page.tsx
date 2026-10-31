@@ -2,7 +2,7 @@
 const MONEY_SCALE = 100;
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Card, Select, Space, Statistic, Table, Tabs, Tag, Typography } from 'antd';
+import { App, Button, Card, Input, Select, Space, Statistic, Table, Tabs, Tag, Typography } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
@@ -58,7 +58,7 @@ const SOURCE_LABEL: Record<string, string> = { booking: 'Job Book tàu', order: 
 type RefundDim = 'customer' | 'type';
 
 // Hàm DetailTable: xử lý DetailTable
-function DetailTable({ dim, groupId, from, to, typeFilter }: { dim: RefundDim; groupId: string | number | null; from?: string; to?: string; typeFilter?: string }) {
+function DetailTable({ dim, groupId, from, to, typeFilter, search }: { dim: RefundDim; groupId: string | number | null; from?: string; to?: string; typeFilter?: string; search?: string }) {
   const [page, setPage] = useState(1);
   const pageSize = 50;
   const [rows, setRows] = useState<RefundItem[]>([]);
@@ -73,6 +73,7 @@ function DetailTable({ dim, groupId, from, to, typeFilter }: { dim: RefundDim; g
     if (from) params.set('from', from);
     if (to) params.set('to', to);
     if (typeFilter) params.set('type', typeFilter);
+    if (search) params.set('search', search);
     apiFetch<{ rows: RefundItem[]; total: number }>(`/reports/refund/items?${params.toString()}`)
       .then((r) => {
         if (!cancelled) {
@@ -143,16 +144,18 @@ export default function RefundReportPage() {
   const [exporting, setExporting] = useState(false);
   const [activeTab, setActiveTab] = useState('customers');
   const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
+  const [customerSearch, setCustomerSearch] = useState('');
 
   const REFUND_TYPES = ['Refund khách hàng', 'Refund hãng tàu', 'Refund đại lý'];
 
-  const load = useCallback(async (f?: { from?: string; to?: string; type?: string }) => {
+  const load = useCallback(async (f?: { from?: string; to?: string; type?: string; search?: string }) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (f?.from) params.set('from', f.from);
       if (f?.to) params.set('to', f.to);
       if (f?.type) params.set('type', f.type);
+      if (f?.search) params.set('search', f.search);
       const qs = params.toString();
       const res = await apiFetch<RefundReport>(`/reports/refund${qs ? `?${qs}` : ''}`);
       setData(res);
@@ -169,7 +172,7 @@ export default function RefundReportPage() {
 
   // Hàm applyRange: xử lý applyRange
   function applyRange() {
-    load({ from: range?.[0].format('YYYY-MM-DD'), to: range?.[1].format('YYYY-MM-DD'), type: typeFilter });
+    load({ from: range?.[0].format('YYYY-MM-DD'), to: range?.[1].format('YYYY-MM-DD'), type: typeFilter, search: customerSearch.trim() || undefined });
   }
 
   // Hàm handleExport: xử lý handleExport
@@ -182,6 +185,7 @@ export default function RefundReportPage() {
         params.set('to', range[1].format('YYYY-MM-DD'));
       }
       if (typeFilter) params.set('type', typeFilter);
+      if (customerSearch.trim()) params.set('search', customerSearch.trim());
       const qs = params.toString();
       const blob = await apiDownload(`/reports/refund/export${qs ? `?${qs}` : ''}`);
       const parts = ['bao-cao-hoan-phi'];
@@ -237,6 +241,14 @@ export default function RefundReportPage() {
           options={REFUND_TYPES.map((t) => ({ value: t, label: t }))}
           allowClear
         />
+        <Input
+          value={customerSearch}
+          onChange={(e) => setCustomerSearch(e.target.value)}
+          onPressEnter={applyRange}
+          style={{ width: 240 }}
+          placeholder="Tim theo ten khach hang"
+          allowClear
+        />
         <Space>
           <Button type="primary" onClick={applyRange}>
             Xem báo cáo
@@ -277,6 +289,7 @@ export default function RefundReportPage() {
                     from={rangeParams?.from}
                     to={rangeParams?.to}
                     typeFilter={typeFilter}
+                    search={customerSearch.trim() || undefined}
                   />
                 ),
                 rowExpandable: (record) => record.rowCount > 0,
