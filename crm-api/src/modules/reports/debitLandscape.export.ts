@@ -93,7 +93,7 @@ export async function buildDebitLandscapeWorkbook(sheets: any[]): Promise<Buffer
 
   const header = ws.addRow(HEADERS);
   header.font = { bold: true, size: 10 };
-  header.alignment = { vertical: 'middle', wrapText: true };
+  header.alignment = { vertical: 'middle', wrapText: false };
 
   let gVat = 0;
   let gTotal = 0;

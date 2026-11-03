@@ -18,7 +18,7 @@ function styleHeader(row: ExcelJS.Row) {
       bottom: { style: 'thin' },
       right: { style: 'thin' },
     };
-    cell.alignment = { vertical: 'middle', wrapText: true };
+    cell.alignment = { vertical: 'middle', wrapText: false };
   });
   row.height = 20;
 }
@@ -236,7 +236,7 @@ export async function buildImportTemplateWorkbook(): Promise<Buffer> {
     font: { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 } as any,
     fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } } as any,
     border: { top: { style: 'thin' as const }, left: { style: 'thin' as const }, bottom: { style: 'thin' as const }, right: { style: 'thin' as const } } as any,
-    alignment: { vertical: 'middle' as const, wrapText: true } as any,
+    alignment: { vertical: 'middle' as const, wrapText: false } as any,
   };
 
   // Hàm styleHdr: xử lý styleHdr
@@ -443,7 +443,7 @@ function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): Excel
     cell.alignment = {
       horizontal: perCol ?? (o.center ? 'center' : o.right ? 'right' : 'left'),
       vertical: 'middle',
-      wrapText: true,
+      wrapText: false,
     };
   });
   return row;
@@ -641,7 +641,7 @@ export async function buildJobsWorkbook(sheet: any, type: 'order' | 'booking' | 
       c.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 } as any;
       c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } } as any;
       c.border = { top: { style: 'thin' as const }, left: { style: 'thin' as const }, bottom: { style: 'thin' as const }, right: { style: 'thin' as const } } as any;
-      c.alignment = { vertical: 'middle' as const, wrapText: true } as any;
+      c.alignment = { vertical: 'middle' as const, wrapText: false } as any;
     });
     ws.getRow(1).height = 20;
     ws.views = [{ state: 'frozen', ySplit: 1 }];

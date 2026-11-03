@@ -16,7 +16,7 @@ function styleHeader(row: ExcelJS.Row) {
       bottom: { style: 'thin' },
       right: { style: 'thin' },
     };
-    cell.alignment = { vertical: 'middle', wrapText: true };
+    cell.alignment = { vertical: 'middle', wrapText: false };
   });
   row.height = 20;
 }

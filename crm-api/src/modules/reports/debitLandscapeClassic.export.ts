@@ -70,7 +70,7 @@ function lrow(ws: ExcelJS.Worksheet, values: unknown[], o: { bold?: boolean } = 
   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
     if (o.bold) cell.font = { bold: true, size: 10 };
     else cell.font = { size: 10 };
-    cell.alignment = { vertical: 'middle', wrapText: true };
+    cell.alignment = { vertical: 'middle', wrapText: false };
     // Price(18) / Tax Amt(19) / Total Amt(20) / GW(11): số -> text chuẩn Việt
     if ((colNumber === 18 || colNumber === 19 || colNumber === 20 || colNumber === 11) && typeof cell.value === 'number') {
       cell.value = vndText(cell.value);
@@ -92,7 +92,7 @@ export async function buildDebitLandscapeClassicWorkbook(sheets: any[]): Promise
 
   const header = ws.addRow(HEADERS);
   header.font = { bold: true, size: 10 };
-  header.alignment = { vertical: 'middle', wrapText: true };
+  header.alignment = { vertical: 'middle', wrapText: false };
 
   let gVat = 0;
   let gTotal = 0;
