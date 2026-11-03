@@ -530,7 +530,7 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
   }
   ws.addRow(['', '', '', '', '', '', '', '', '']);
 
-  xrow(ws, ['STT', 'Descriptions', 'Invoice No', 'Unit', 'Qty', 'Price', 'VAT Tax', 'Total Amt'], { bold: true, center: true, border: true });
+  xrow(ws, ['STT', 'Descriptions', 'Invoice No', 'Unit', 'Qty', 'Price', 'Amount', 'VAT Tax', 'Total Amt'], { bold: true, center: true, border: true });
   const debits: any[] = s.debitNotes ?? [];
   const t = debitSheetTotals(s);
   // Căn lề dòng item: STT giữa, text trái, Unit/Qty giữa, tiền phải
@@ -542,13 +542,13 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     const invNo = dd.invoiceNumber ?? '';
     const ir = xrow(
       ws,
-      [idx + 1, dd.description ?? dd.type, invNo, dd.unit ?? '', dd.quantity != null ? Number(dd.quantity) : '', price, vat ? vat : '-', amt],
+      [idx + 1, dd.description ?? dd.type, invNo, dd.unit ?? '', dd.quantity != null ? Number(dd.quantity) : '', price, (price == null ? '' : Math.round(price * (dd.quantity != null ? Number(dd.quantity) : 1) * 100) / 100), vat ? vat : '-', amt],
       { money: true, border: true, aligns: ['center', 'left', 'left', 'center', 'center', 'right', 'right', 'right'] },
     );
     void ir;
   });
   const pretaxTotal = Math.round((t.total - t.vat) * 100) / 100;
-  const r = xrow(ws, ['JOB AMT', '', '', '', '', '', t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true, border: true });
+  const r = xrow(ws, ['', '', '', '', '', '', 'JOB AMT', t.vat ? t.vat : '00', t.total], { bold: true, right: true, money: true, border: true });
   xmerge(ws, r, 1, 6);
   if (t.tamUng > 0) {
     const r2 = xrow(ws, ['', '', '', '', '', 'TỔNG CỘNG 合計', pretaxTotal, t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true, borderCols: [6, 9] });
@@ -605,7 +605,7 @@ export async function buildDebitMultiTemplateWorkbook(sheets: any[], exporterNam
   const ws = wb.addWorksheet('Debit Note');
   ws.columns = [
     { width: 6 }, { width: 32 }, { width: 16 }, { width: 10 },
-    { width: 10 }, { width: 15 }, { width: 14 }, { width: 16 },
+    { width: 10 }, { width: 15 }, { width: 14 }, { width: 14 }, { width: 16 },
   ];
   if (!sheets.length) {
     const buffer = await wb.xlsx.writeBuffer();
@@ -621,7 +621,7 @@ export async function buildDebitMultiTemplateWorkbook(sheets: any[], exporterNam
   }
   const gPretax = Math.round((gTotal - gVat) * 100) / 100;
   const f = (n: number) => n;
-  const r = xrow(ws, ['TOTAL AMT', '', '', '', '', f(gPretax), gVat ? gVat : '-', f(gTotal)], { bold: true, right: true, money: true, border: true });
+  const r = xrow(ws, ['', '', '', '', '', 'TOTAL AMT', f(gPretax), gVat ? gVat : '00', f(gTotal)], { bold: true, right: true, money: true, border: true });
   xmerge(ws, r, 1, 5);
   writeDebitBankSign(ws);
 
