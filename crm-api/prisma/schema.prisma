@@ -65,6 +65,7 @@ model User {
   leaveRequests    LeaveRequest[] @relation("LeaveRequester")
   leaveApprovals   LeaveRequest[] @relation("LeaveApprover")
 
+  @@index([branch])
   @@map("users")
 }
 
@@ -279,6 +280,7 @@ model TrackingSheet {
   @@index([createdAt])
   @@index([isDelete, createdAt(sort: Desc)])
   @@index([isDelete, etaDate])
+  @@index([branch, createdAt(sort: Desc)])
   @@map("tracking_sheets")
 }
 
