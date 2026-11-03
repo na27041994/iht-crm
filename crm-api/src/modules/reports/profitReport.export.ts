@@ -37,7 +37,7 @@ export async function buildProfitWorkbook(
     { header: 'STT', key: 'stt', width: 6 },
     { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
     { header: 'Khách hàng', key: 'customerName', width: 30 },
-    { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
+    { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy', alignment: { horizontal: 'left' } } },
     { header: 'Doanh thu (Debit)', key: 'revenue', width: 18, style: { numFmt: '#,##0.00' } },
     { header: 'Tổng phí (chưa thuế)', key: 'totalFees', width: 18, style: { numFmt: '#,##0.00' } },
     { header: 'Cược (Cont + sửa chữa)', key: 'cuocFees', width: 18, style: { numFmt: '#,##0.00' } },

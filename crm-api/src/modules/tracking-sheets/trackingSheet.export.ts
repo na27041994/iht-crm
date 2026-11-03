@@ -173,15 +173,15 @@ export async function buildTrackingSheetsWorkbook(sheets: TrackingSheetWithRelat
     { header: 'Phân Luồng', key: 'phanLuong', width: 14 },
     { header: 'NW (kg)', key: 'nw', width: 11 },
     { header: 'GW (kg)', key: 'gw', width: 11 },
-    { header: 'Ngày ETA/ETD', key: 'etaDate', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
+    { header: 'Ngày ETA/ETD', key: 'etaDate', width: 14, style: { numFmt: 'dd/mm/yyyy', alignment: { horizontal: 'left' } } },
     { header: 'Custom No', key: 'customNo', width: 15 },
-    { header: 'Ngày tờ khai', key: 'declarationDate', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
+    { header: 'Ngày tờ khai', key: 'declarationDate', width: 14, style: { numFmt: 'dd/mm/yyyy', alignment: { horizontal: 'left' } } },
     { header: 'Số bill', key: 'billNumber', width: 17 },
     { header: 'Invoice No', key: 'invoiceNumber', width: 17 },
     { header: 'Consignee', key: 'consignee', width: 26 },
     { header: 'Shipper', key: 'shipper', width: 26 },
     { header: 'Ghi chú', key: 'note', width: 26 },
-    { header: 'Ngày tạo', key: 'createdAt', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
+    { header: 'Ngày tạo', key: 'createdAt', width: 14, style: { numFmt: 'dd/mm/yyyy', alignment: { horizontal: 'left' } } },
     { header: 'Người tạo', key: 'createdBy', width: 20 },
   ]);
   for (const s of sheets) {

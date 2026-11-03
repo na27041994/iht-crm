@@ -37,7 +37,7 @@ export async function buildReceiptVouchersWorkbook(vouchers: any[]): Promise<Buf
     { header: 'STT', key: 'stt', width: 6 },
     { header: 'Số phiếu', key: 'receiptNo', width: 14 },
     { header: 'Đối tượng', key: 'payerType', width: 14 },
-    { header: 'Ngày thu', key: 'receiptDate', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
+    { header: 'Ngày thu', key: 'receiptDate', width: 14, style: { numFmt: 'dd/mm/yyyy', alignment: { horizontal: 'left' } } },
     { header: 'Tiền tệ', key: 'currency', width: 10 },
     { header: 'Người nộp', key: 'payer', width: 32 },
     { header: 'Người tạo', key: 'createdBy', width: 18 },

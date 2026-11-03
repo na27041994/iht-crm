@@ -48,7 +48,7 @@ export async function buildAdvanceVouchersWorkbook(vouchers: any[]): Promise<Buf
     { header: 'STT', key: 'stt', width: 6 },
     { header: 'Số phiếu', key: 'advanceNo', width: 14 },
     { header: 'Loại', key: 'type', width: 16 },
-    { header: 'Ngày chi', key: 'advanceDate', width: 14, style: { numFmt: 'dd/mm/yyyy' } },
+    { header: 'Ngày chi', key: 'advanceDate', width: 14, style: { numFmt: 'dd/mm/yyyy', alignment: { horizontal: 'left' } } },
     { header: 'Tiền tệ', key: 'currency', width: 10 },
     { header: 'Phiếu theo dõi', key: 'sheetNumber', width: 16 },
     { header: 'Khách hàng', key: 'customer', width: 28 },

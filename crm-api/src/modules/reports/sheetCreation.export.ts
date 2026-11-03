@@ -57,8 +57,8 @@ export async function buildSheetCreationWorkbook(
     { header: 'Nhân viên tạo', key: 'name', width: 26 },
     { header: 'Mã phiếu', key: 'sheetNumber', width: 16 },
     { header: 'Khách hàng', key: 'customerName', width: 32 },
-    { header: 'Ngày tạo', key: 'createdAt', width: 18, style: { numFmt: 'dd/mm/yyyy hh:mm' } },
-    { header: 'Ngày ETA', key: 'etaDate', width: 13, style: { numFmt: 'dd/mm/yyyy' } },
+    { header: 'Ngày tạo', key: 'createdAt', width: 18, style: { numFmt: 'dd/mm/yyyy hh:mm', alignment: { horizontal: 'left' } } },
+    { header: 'Ngày ETA', key: 'etaDate', width: 13, style: { numFmt: 'dd/mm/yyyy', alignment: { horizontal: 'left' } } },
   ]);
   for (const g of groups) {
     for await (const it of iterateSheetItems(g.id, from, to)) {
