@@ -524,7 +524,7 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
     ['Container No:', s.containerNumber ?? '', '', ''],
   ];
   for (const [l1, v1, l2, v2] of jobInfo) {
-    const r = xrow(ws, [l1, v1, '', '', l2, v2, '', '', ''], { bold: true });
+    const r = xrow(ws, [l1, v1, '', '', l2, v2, '', '', ''], {});
     xmerge(ws, r, 2, 4);
     xmerge(ws, r, 6, 9);
   }
