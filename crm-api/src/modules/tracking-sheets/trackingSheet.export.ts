@@ -556,10 +556,6 @@ function writeDebitJobBlock(ws: ExcelJS.Worksheet, s: any): { vat: number; total
   if (t.tamUng > 0) {
     const r2 = xrow(ws, ['', '', '', '', '', 'TỔNG CỘNG 合計', pretaxTotal, t.vat ? t.vat : '-', t.total], { bold: true, right: true, money: true, borderCols: [6, 9] });
     xmerge(ws, r2, 1, 5);
-    const r3 = xrow(ws, ['', '', '', '', '', '', '', 'CHI HỘ 代墊費', t.tamUng], { bold: true, right: true, money: true, borderCols: [8, 9] });
-    xmerge(ws, r3, 1, 7);
-    const r4 = xrow(ws, ['', '', '', '', '', '', '', 'PHÍ DỊCH VỤ IHT - 服務費', t.serviceFee], { bold: true, right: true, money: true, borderCols: [8, 9] });
-    xmerge(ws, r4, 1, 7);
   }
   ws.addRow(['', '', '', '', '', '', '', '', '']);
   return { vat: t.vat, total: t.total };
