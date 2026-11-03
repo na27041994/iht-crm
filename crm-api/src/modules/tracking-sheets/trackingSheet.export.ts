@@ -494,7 +494,7 @@ function writeDebitHeader(ws: ExcelJS.Worksheet, s: any, exporterName = '') {
   xmerge(ws, r, 1, 9);
   ws.addRow(['', '', '', '', '', '', '', '', '']);
 
-  r = xrow(ws, ['RECEIVE', '', '', '', 'Date:', today, '', '', ''], { bold: true, center: true, border: true });
+  r = xrow(ws, ['RECEIVE', '', '', '', 'Date:', today, '', '', ''], { bold: true, center: true, border: true, aligns: [undefined, undefined, undefined, undefined, 'center', 'left', 'left', 'left', 'left'] });
   xmerge(ws, r, 1, 4);
   xmerge(ws, r, 6, 9);
   r = xrow(ws, ['To:', customer.companyName ?? '', '', '', 'Please Contact With:', contactName, '', '', ''], { border: true, boldCells: [1, 5] });
