@@ -438,7 +438,7 @@ function xrow(ws: ExcelJS.Worksheet, values: unknown[], o: XRowOpts = {}): Excel
     if (o.bold || o.size) cell.font = { bold: !!o.bold, size: o.size ?? 11 };
     if (o.boldCells?.includes(colNumber)) cell.font = { ...(cell.font ?? {}), bold: true };
     if (o.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: o.fill } };
-    if (o.money && typeof cell.value === 'number') cell.value = vndText(cell.value);
+    if (o.money && typeof cell.value === 'number') { cell.value = vndText(cell.value); cell.numFmt = '#,##0.00'; }
     const perCol = o.aligns?.[colNumber - 1];
     cell.alignment = {
       horizontal: perCol ?? (o.center ? 'center' : o.right ? 'right' : 'left'),

@@ -74,6 +74,8 @@ function lrow(ws: ExcelJS.Worksheet, values: unknown[], o: { bold?: boolean } = 
     // Price(18) / Tax Amt(19) / Total Amt(20) / GW(11): số -> text chuẩn Việt
     if ((colNumber === 18 || colNumber === 19 || colNumber === 20 || colNumber === 11) && typeof cell.value === 'number') {
       cell.value = vndText(cell.value);
+      if (colNumber === 18 || colNumber === 19 || colNumber === 20) cell.numFmt = '#,##0.00';
+      else cell.numFmt = '#,##0.###';
     }
   });
   return row;

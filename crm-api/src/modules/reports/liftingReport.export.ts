@@ -43,7 +43,7 @@ const DETAIL_COLUMNS: Partial<ExcelJS.Column>[] = [
   { header: 'Mô tả', key: 'description', width: 28 },
   { header: 'Khách hàng', key: 'customerName', width: 30 },
   { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
-  { header: 'Số tiền', key: 'amount', width: 15 },
+  { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#,##0.00' } },
 ];
 
 const MONEY_SCALE = 100;
@@ -150,7 +150,7 @@ export async function buildLiftingSelectedWorkbook(sheets: any[]): Promise<Buffe
     { header: 'Mô tả', key: 'description', width: 28 },
     { header: 'Khách hàng', key: 'customerName', width: 30 },
     { header: 'Ngày', key: 'date', width: 12, style: { numFmt: 'dd/mm/yyyy' } },
-    { header: 'Số tiền', key: 'amount', width: 15 },
+    { header: 'Số tiền', key: 'amount', width: 15, style: { numFmt: '#,##0.00' } },
   ]);
   for (const s of sheets) {
     for (const o of s.jobOrders || []) {
