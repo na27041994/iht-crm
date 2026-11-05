@@ -134,6 +134,7 @@ export default function TrackingSheetDetailPage({ params }: { params: Promise<{ 
         containerNumber: sheet.containerNumber || '-',
         containerQuantity: sheet.containerQuantity || '-',
         billNumber: sheet.billNumber || '-',
+        customNo: sheet.customNo || '-',
       }
     : null;
   const [orderModalOpen, setOrderModalOpen] = useState(false);

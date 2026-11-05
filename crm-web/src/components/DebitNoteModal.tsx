@@ -10,6 +10,7 @@ import DescriptionAutocomplete from '@/components/DescriptionAutocomplete';
 // Thông tin phiếu truyền từ trang chi tiết để hiển thị cạnh form khi nhập
 export interface DebitSheetInfo {
   sheetNumber: string;
+  customNo: string;
   customer: string;
   route: string;
   containerNumber: string;
@@ -212,6 +213,7 @@ export default function DebitNoteModal({ open, sheetId, editing, onClose, onSave
         ['Container', sheetInfo.containerNumber],
         ['Số lượng container', sheetInfo.containerQuantity],
         ['Bill', sheetInfo.billNumber],
+        ['Custom No', sheetInfo.customNo],
       ].map(([k, v]) => (
         <div key={k} style={{ display: 'flex', gap: 8, padding: '4px 0', borderTop: '1px solid #e8e8e8' }}>
           <span style={{ color: '#888', minWidth: 90 }}>{k}</span>
