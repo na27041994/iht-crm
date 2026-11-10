@@ -17,6 +17,7 @@ interface ExportFormValues {
   search?: string;
   customerId?: number;
   range?: [Dayjs, Dayjs];
+  layout?: 'vertical' | 'landscape';
 }
 
 interface ExportExcelModalProps {
@@ -67,8 +68,10 @@ export default function ExportExcelModal({ open, onClose }: ExportExcelModalProp
       if (values.customerId) q.set('customerId', String(values.customerId));
       if (values.range?.[0]) q.set('from', values.range[0].startOf('day').toISOString());
       if (values.range?.[1]) q.set('to', values.range[1].endOf('day').toISOString());
+      if (values.layout) q.set('layout', values.layout);
       const blob = await apiDownload(`/tracking-sheets/export?${q.toString()}`);
-      saveBlob(blob, `phieu-theo-doi-${dayjs().format('YYYYMMDD-HHmmss')}.xlsx`);
+      const name = values.layout === 'landscape' ? `phieu-theo-doi-ngang-${dayjs().format('YYYYMMDD-HHmmss')}.xlsx` : `phieu-theo-doi-${dayjs().format('YYYYMMDD-HHmmss')}.xlsx`;
+      saveBlob(blob, name);
       message.success('Đã xuất file Excel');
       onClose();
     } catch (err) {
@@ -94,6 +97,9 @@ export default function ExportExcelModal({ open, onClose }: ExportExcelModalProp
       ]}
     >
       <Form form={form} layout="vertical" onFinish={handleExport} style={{ marginTop: 16 }}>
+        <Form.Item label="Kiểu xuất" name="layout" initialValue="vertical">
+          <Select options={[{ value: 'vertical', label: 'Dọc (mặc định)' }, { value: 'landscape', label: 'Ngang' }]} />
+        </Form.Item>
         <Form.Item label="Tìm kiếm (mã phiếu, container, tuyến...)" name="search">
           <Input placeholder="Bỏ trống để lấy tất cả" allowClear />
         </Form.Item>

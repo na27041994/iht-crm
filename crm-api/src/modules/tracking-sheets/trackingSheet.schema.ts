@@ -106,6 +106,7 @@ export const exportTrackingSheetsQuery = z.object({
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
   ids: z.string().optional(),
+  layout: z.enum(['vertical', 'landscape']).optional().default('vertical'),
 });
 
 export const exportJobsQuery = z.object({

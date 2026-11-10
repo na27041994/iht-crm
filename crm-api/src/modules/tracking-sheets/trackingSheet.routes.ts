@@ -25,7 +25,7 @@ import {
   updateDebitNote,
   deleteDebitNote,
 } from './trackingSheet.service.js';
-import { buildTrackingSheetsWorkbook, buildJobsWorkbook, buildImportTemplateWorkbook } from './trackingSheet.export.js';
+import { buildTrackingSheetsWorkbook, buildTrackingSheetsLandscapeWorkbook, buildJobsWorkbook, buildImportTemplateWorkbook } from './trackingSheet.export.js';
 import { parseImportExcel, createTrackingSheetsFromImport } from './trackingSheet.import.js';
 import { prisma } from '../../lib/prisma.js';
 
@@ -247,12 +247,13 @@ trackingSheetRouter.get(
   validateQuery(exportTrackingSheetsQuery),
   requirePermission('tracking_sheet_list', 'view'),
   asyncHandler(async (req, res) => {
-    const { search, customerId, from, to, ids } = req.query as unknown as {
+    const { search, customerId, from, to, ids, layout } = req.query as unknown as {
       search?: string;
       customerId?: number;
       from?: Date;
       to?: Date;
       ids?: string;
+      layout?: 'vertical' | 'landscape';
     };
     const idList = ids
       ? ids
@@ -261,9 +262,12 @@ trackingSheetRouter.get(
           .filter((n) => Number.isInteger(n) && n > 0)
       : undefined;
     const sheets = await getTrackingSheetsForExport({ search, customerId, from, to, ids: idList, branch: (req as AuthedRequest).user?.branch });
-    const buffer = await buildTrackingSheetsWorkbook(sheets);
+    const buffer = layout === 'landscape'
+      ? await buildTrackingSheetsLandscapeWorkbook(sheets)
+      : await buildTrackingSheetsWorkbook(sheets);
+    const filename = layout === 'landscape' ? 'phieu-theo-doi-ngang.xlsx' : 'phieu-theo-doi.xlsx';
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="phieu-theo-doi.xlsx"');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(buffer);
   }),
 );
