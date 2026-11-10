@@ -780,14 +780,12 @@ export async function buildTrackingSheetsLandscapeWorkbook(sheets: TrackingSheet
     const orders: any[] = (s as any).jobOrders ?? [];
     const bookings: any[] = (s as any).jobBookings ?? [];
 
-    if (!orders.length && !bookings.length) {
-      ws.addRow([...info, '', '', '', '', '', '', '', '', '', '', '', '', '']);
-      continue;
-    }
+    // Chỉ 1 dòng thông tin phiếu
+    ws.addRow([...info, '', '', '', '', '', '', '', '', '', '', '', '', '']);
 
     for (const o of orders) {
       ws.addRow([
-        ...info,
+        ...Array(13).fill(''),
         'Job Order',
         o.description ?? o.type ?? '',
         (o as any).deliveryStaff?.fullName ?? '',
@@ -807,7 +805,7 @@ export async function buildTrackingSheetsLandscapeWorkbook(sheets: TrackingSheet
     for (const b of bookings) {
       const approval = (b as any).approvalStatus;
       ws.addRow([
-        ...info,
+        ...Array(13).fill(''),
         'Job Book tàu',
         b.description ?? b.type ?? '',
         '',
