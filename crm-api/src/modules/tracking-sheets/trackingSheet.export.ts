@@ -762,73 +762,66 @@ export async function buildTrackingSheetsLandscapeWorkbook(sheets: TrackingSheet
     ];
   }
 
-  // Sheet 1: Job Order ngang
-  const wsOrder = wb.addWorksheet('Job Order ngang');
-  const orderHeaders = [...sheetInfoHeaders, 'Phân loại', 'Mô tả', 'NV giao nhận', 'Trước thuế', 'Thuế (%)', 'Thành tiền', 'Ghi chú (job)'];
-  const orderWidths = [...sheetInfoWidths, 18, 34, 18, 13, 8, 13, 26];
-  wsOrder.columns = orderWidths.map((w, i) => {
-    const moneyCols = [16, 18]; // 0-based: Trước thuế, Thành tiền
-    return moneyCols.includes(i) ? { width: w, style: { numFmt: '#,##0.00' } } : { width: w };
+  const headers = [...sheetInfoHeaders, 'Loại', 'Mô tả', 'NV giao nhận', 'Đơn vị', 'Số lượng', 'Trước thuế', 'Thuế (%)', 'Tiền thuế', 'Sau thuế', 'Tổng tiền', 'Ghi chú (job)', 'Duyệt', 'Người nhập'];
+  const widths = [...sheetInfoWidths, 18, 34, 18, 12, 10, 13, 8, 13, 13, 13, 26, 14, 18];
+
+  const ws = wb.addWorksheet('Phieu theo doi ngang');
+  ws.columns = widths.map((w, i) => {
+    const moneyCols = [18, 20, 21, 22, 23]; // 0-based: Trước thuế, Tiền thuế, Sau thuế, Tổng tiền (Ghi chú index 24)
+    // Actually money columns: Trước thuế=18, Tiền thuế=20, Sau thuế=21, Tổng tiền=22
+    return [18, 20, 21, 22].includes(i) ? { width: w, style: { numFmt: '#,##0.00' } } : { width: w };
   });
-  const h1 = wsOrder.addRow(orderHeaders);
-  h1.font = { bold: true, size: 10 };
-  h1.alignment = { vertical: 'middle', wrapText: false };
+  const h = ws.addRow(headers);
+  h.font = { bold: true, size: 10 };
+  h.alignment = { vertical: 'middle', wrapText: false };
+
   for (const s of sheets) {
     const info = sheetInfo(s);
     const orders: any[] = (s as any).jobOrders ?? [];
-    if (!orders.length) {
-      wsOrder.addRow([...info, '', '', '', '', '', '', '']);
-    } else {
-      for (const o of orders) {
-        wsOrder.addRow([
-          ...info,
-          o.type ?? '',
-          o.description ?? '',
-          (o as any).deliveryStaff?.fullName ?? '',
-          vndText(numMoney((o as any).pretaxAmount)),
-          num((o as any).taxRate),
-          vndText(numMoney(o.portAmt)),
-          o.note ?? '',
-        ]);
-      }
-    }
-  }
-
-  // Sheet 2: Job Book tau ngang
-  const wsBooking = wb.addWorksheet('Job Book tau ngang');
-  const bookingHeaders = [...sheetInfoHeaders, 'Loại', 'Mô tả', 'Đơn vị', 'Số lượng', 'Trước thuế', 'Thuế (%)', 'Tiền thuế', 'Sau thuế', 'Tổng tiền', 'Ghi chú (job)', 'Duyệt', 'Người nhập'];
-  const bookingWidths = [...sheetInfoWidths, 18, 34, 12, 10, 13, 8, 13, 13, 13, 26, 14, 18];
-  wsBooking.columns = bookingWidths.map((w, i) => {
-    const moneyCols = [16, 18, 19, 20]; // 0-based trong sheet: Trước thuế, Tiền thuế, Sau thuế, Tổng tiền
-    return moneyCols.includes(i) ? { width: w, style: { numFmt: '#,##0.00' } } : { width: w };
-  });
-  const h2 = wsBooking.addRow(bookingHeaders);
-  h2.font = { bold: true, size: 10 };
-  h2.alignment = { vertical: 'middle', wrapText: false };
-  for (const s of sheets) {
-    const info = sheetInfo(s);
     const bookings: any[] = (s as any).jobBookings ?? [];
-    if (!bookings.length) {
-      wsBooking.addRow([...info, '', '', '', '', '', '', '', '', '', '', '', '']);
-    } else {
-      for (const b of bookings) {
-        const approval = (b as any).approvalStatus;
-        wsBooking.addRow([
-          ...info,
-          b.type ?? '',
-          b.description ?? '',
-          b.unit ?? '',
-          num(b.quantity),
-          vndText(numMoney(b.pretaxAmount)),
-          num(b.taxRate),
-          vndText(numMoney(b.taxAmount)),
-          vndText(numMoney(b.afterTaxAmount)),
-          vndText(numMoney(b.total)),
-          (b as any).note ?? '',
-          approval === 'approved' ? 'Đã duyệt' : approval === 'rejected' ? 'Từ chối' : approval === 'pending' ? 'Chờ duyệt' : '',
-          (b as any).createdByName ?? '',
-        ]);
-      }
+
+    if (!orders.length && !bookings.length) {
+      ws.addRow([...info, '', '', '', '', '', '', '', '', '', '', '', '', '']);
+      continue;
+    }
+
+    for (const o of orders) {
+      ws.addRow([
+        ...info,
+        'Job Order',
+        o.description ?? o.type ?? '',
+        (o as any).deliveryStaff?.fullName ?? '',
+        '',
+        '',
+        vndText(numMoney((o as any).pretaxAmount)),
+        num((o as any).taxRate),
+        '',
+        '',
+        vndText(numMoney(o.portAmt)),
+        o.note ?? '',
+        '',
+        '',
+      ]);
+    }
+
+    for (const b of bookings) {
+      const approval = (b as any).approvalStatus;
+      ws.addRow([
+        ...info,
+        'Job Book tàu',
+        b.description ?? b.type ?? '',
+        '',
+        b.unit ?? '',
+        num(b.quantity),
+        vndText(numMoney(b.pretaxAmount)),
+        num(b.taxRate),
+        vndText(numMoney(b.taxAmount)),
+        vndText(numMoney(b.afterTaxAmount)),
+        vndText(numMoney(b.total)),
+        (b as any).note ?? '',
+        approval === 'approved' ? 'Đã duyệt' : approval === 'rejected' ? 'Từ chối' : approval === 'pending' ? 'Chờ duyệt' : '',
+        (b as any).createdByName ?? '',
+      ]);
     }
   }
 
