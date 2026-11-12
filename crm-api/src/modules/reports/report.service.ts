@@ -834,12 +834,12 @@ export type ProfitRow = {
 // Hàm getProfitReport: xử lý getProfitReport
 export async function getProfitReport(from?: Date, to?: Date, customerId?: number) {
   const conds: Prisma.Sql[] = [];
-  if (from) conds.push(Prisma.sql`s."createdAt" >= ${from.toISOString().slice(0, 10)}::date`);
-  if (to) conds.push(Prisma.sql`s."createdAt" <= ${to.toISOString().slice(0, 10)}::date`);
+  if (from) conds.push(Prisma.sql`s."createdAt"::date >= ${from.toISOString().slice(0, 10)}::date`);
+  if (to) conds.push(Prisma.sql`s."createdAt"::date <= ${to.toISOString().slice(0, 10)}::date`);
   if (customerId) conds.push(Prisma.sql`s."customerId" = ${customerId}`);
   if (conds.length === 0) {
     const yearStart = new Date(new Date().getFullYear(), 0, 1);
-    conds.push(Prisma.sql`s."createdAt" >= ${yearStart.toISOString().slice(0, 10)}::date`);
+    conds.push(Prisma.sql`s."createdAt"::date >= ${yearStart.toISOString().slice(0, 10)}::date`);
   }
   const dateCond = Prisma.sql` AND ${Prisma.join(conds, ' AND ')}`;
 
