@@ -70,7 +70,21 @@ export default function ProfitReportPage() {
 
   useEffect(() => {
     load();
-    apiFetch<{ items: { id: number; companyName: string; customerName: string }[] }>('/customers?pageSize=500').then((r) => setCustomers(r.items)).catch(() => {});
+    (async () => {
+      try {
+        const all: { id: number; companyName: string; customerName: string }[] = [];
+        let pg = 1;
+        let total = 0;
+        do {
+          const res = await apiFetch<{ items: { id: number; companyName: string; customerName: string }[]; total: number }>(`/customers?page=${pg}&pageSize=100`);
+          all.push(...res.items);
+          total = res.total;
+          pg += 1;
+          if (!res.items.length) break;
+        } while (all.length < total);
+        setCustomers(all);
+      } catch {}
+    })();
   }, [load]);
 
   // Hàm applyFilter: xử lý applyFilter
