@@ -820,6 +820,8 @@ export async function getLiftingSheets(opts: {
 export type ProfitRow = {
   sheetId: number;
   sheetNumber: string;
+  customerId: number | null;
+  customerCode: string;
   customerName: string;
   revenue: number;
   totalFees: number;
@@ -830,10 +832,11 @@ export type ProfitRow = {
 };
 
 // Hàm getProfitReport: xử lý getProfitReport
-export async function getProfitReport(from?: Date, to?: Date) {
+export async function getProfitReport(from?: Date, to?: Date, customerId?: number) {
   const conds: Prisma.Sql[] = [];
   if (from) conds.push(Prisma.sql`s."etaDate" >= ${from.toISOString().slice(0, 10)}::date`);
   if (to) conds.push(Prisma.sql`s."etaDate" <= ${to.toISOString().slice(0, 10)}::date`);
+  if (customerId) conds.push(Prisma.sql`s."customerId" = ${customerId}`);
   if (conds.length === 0) {
     const yearStart = new Date(new Date().getFullYear(), 0, 1);
     conds.push(Prisma.sql`s."etaDate" >= ${yearStart.toISOString().slice(0, 10)}::date`);
@@ -845,16 +848,18 @@ export async function getProfitReport(from?: Date, to?: Date) {
   const rows = await prisma.$queryRaw<Array<{
     sheetId: number;
     sheetNumber: string;
+    customerId: number | null;
     customerName: string | null;
     companyName: string | null;
+    customerCode: string | null;
     revenue: number;
     totalFees: number;
     cuocFees: number;
     etaDate: Date | string | null;
     createdAt: Date;
   }>>(Prisma.sql`
-    SELECT s.id AS "sheetId", s."sheetNumber",
-      cu."customerName", cu."companyName",
+    SELECT s.id AS "sheetId", s."sheetNumber", s."customerId",
+      cu."customerName", cu."companyName", cu."code" AS "customerCode",
       COALESCE(dn.rev, 0)::float8 AS revenue,
       (COALESCE(jb.total_fees, 0) + COALESCE(jo.order_fees, 0))::float8 AS "totalFees",
       (COALESCE(jb.cuoc_fees, 0) + COALESCE(jo.order_cuoc, 0))::float8 AS "cuocFees",
@@ -886,6 +891,8 @@ export async function getProfitReport(from?: Date, to?: Date) {
     return {
       sheetId: Number(r.sheetId),
       sheetNumber: r.sheetNumber,
+      customerId: r.customerId == null ? null : Number(r.customerId),
+      customerCode: r.customerCode ?? '',
       customerName: r.companyName || r.customerName || '-',
       revenue,
       totalFees,

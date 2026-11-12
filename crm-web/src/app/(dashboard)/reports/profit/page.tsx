@@ -2,7 +2,7 @@
 const MONEY_SCALE = 100;
 
 import { useCallback, useEffect, useState } from 'react';
-import { App, Button, Card, Space, Statistic, Table, Typography } from 'antd';
+import { App, Button, Card, Select, Space, Statistic, Table, Typography } from 'antd';
 import { DownloadOutlined, PrinterOutlined, SearchOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
@@ -12,6 +12,8 @@ import { SlashRangePicker } from '@/components/SlashDatePicker';
 interface ProfitRow {
   sheetId: number;
   sheetNumber: string;
+  customerId: number | null;
+  customerCode: string;
   customerName: string;
   revenue: number;
   totalFees: number;
@@ -46,13 +48,16 @@ export default function ProfitReportPage() {
   const [data, setData] = useState<ProfitReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [customerId, setCustomerId] = useState<number | undefined>(undefined);
+  const [customers, setCustomers] = useState<{ id: number; companyName: string; customerName: string }[]>([]);
 
-  const load = useCallback(async (f?: { from?: string; to?: string }) => {
+  const load = useCallback(async (f?: { from?: string; to?: string; customerId?: number }) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (f?.from) params.set('from', f.from);
       if (f?.to) params.set('to', f.to);
+      if (f?.customerId) params.set('customerId', String(f.customerId));
       const qs = params.toString();
       const res = await apiFetch<ProfitReport>(`/reports/profit${qs ? `?${qs}` : ''}`);
       setData(res);
@@ -65,11 +70,12 @@ export default function ProfitReportPage() {
 
   useEffect(() => {
     load();
+    apiFetch<{ items: { id: number; companyName: string; customerName: string }[] }>('/customers?pageSize=500').then((r) => setCustomers(r.items)).catch(() => {});
   }, [load]);
 
   // Hàm applyFilter: xử lý applyFilter
   function applyFilter() {
-    load({ from: range?.[0].format('YYYY-MM-DD'), to: range?.[1].format('YYYY-MM-DD') });
+    load({ from: range?.[0].format('YYYY-MM-DD'), to: range?.[1].format('YYYY-MM-DD'), customerId });
   }
 
   // Hàm handleExport: xử lý handleExport
@@ -81,6 +87,7 @@ export default function ProfitReportPage() {
         params.set('from', range[0].format('YYYY-MM-DD'));
         params.set('to', range[1].format('YYYY-MM-DD'));
       }
+      if (customerId) params.set('customerId', String(customerId));
       const qs = params.toString();
       const blob = await apiDownload(`/reports/profit/export${qs ? `?${qs}` : ''}`);
       const parts = ['bao-cao-loi-nhuan'];
@@ -167,6 +174,16 @@ export default function ProfitReportPage() {
           }}
           allowClear
           placeholder={['Từ ngày', 'Đến ngày']} format="DD/MM/YYYY"
+        />
+        <Select
+          value={customerId}
+          onChange={(v) => setCustomerId(v)}
+          style={{ width: 240 }}
+          placeholder="Khách hàng"
+          options={customers.map((c) => ({ value: c.id, label: c.companyName || c.customerName }))}
+          allowClear
+          showSearch
+          optionFilterProp="label"
         />
         <Space>
           <Button type="primary" icon={<SearchOutlined />} onClick={applyFilter}>

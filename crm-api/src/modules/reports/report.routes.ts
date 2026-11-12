@@ -474,12 +474,14 @@ reportRouter.post('/debit/upload-export', requirePermission('report_debit', 'vie
 
 reportRouter.get('/profit', validateQuery(refundReportQuery), requirePermission('report_profit', 'view'), asyncHandler(async (req, res) => {
   const { from, to } = parseRefundRange(req);
-  res.json(await getProfitReport(from ? new Date(from) : undefined, to ? new Date(to) : undefined));
+  const customerId = (req.query as any).customerId ? Number((req.query as any).customerId) : undefined;
+  res.json(await getProfitReport(from ? new Date(from) : undefined, to ? new Date(to) : undefined, customerId));
 }));
 
 reportRouter.get('/profit/export', validateQuery(refundReportQuery), requirePermission('report_profit', 'view'), asyncHandler(async (req, res) => {
   const { from, to } = parseRefundRange(req);
-  const data = await getProfitReport(from ? new Date(from) : undefined, to ? new Date(to) : undefined);
+  const customerId = (req.query as any).customerId ? Number((req.query as any).customerId) : undefined;
+  const data = await getProfitReport(from ? new Date(from) : undefined, to ? new Date(to) : undefined, customerId);
   const buf = await buildProfitWorkbook(data.items, { totalRevenue: data.totalRevenue, totalServiceFees: data.totalServiceFees, totalCuocFees: data.totalCuocFees, totalProfit: data.totalProfit }, from ? new Date(from) : undefined, to ? new Date(to) : undefined);
   const parts = ['bao-cao-loi-nhuan'];
   if (from) parts.push(new Date(from).toISOString().slice(0, 10));
